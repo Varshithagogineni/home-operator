@@ -1,0 +1,339 @@
+{
+  "_note": "SAMPLE DATA for local development. Brands and model numbers are placeholders, not real products. Replace with your own appliances.",
+  "appliances": [
+    {
+      "id": "dishwasher-1",
+      "nickname": "Dishwasher",
+      "room": "kitchen",
+      "category": "dishwasher",
+      "brand": "Sample",
+      "model_number": "SAMPLE-DW-01",
+      "purchase_date": "2024-03-15",
+      "warranty_until": "2025-03-15",
+      "consumables": [
+        {
+          "name": "rinse aid",
+          "part_number": null,
+          "size": "any standard rinse aid"
+        }
+      ],
+      "maintenance": [
+        {
+          "task": "clean the filter",
+          "interval_days": 90
+        }
+      ]
+    },
+    {
+      "id": "furnace-1",
+      "nickname": "Furnace",
+      "room": "basement",
+      "category": "furnace",
+      "brand": "Sample",
+      "model_number": "SAMPLE-FN-80",
+      "purchase_date": "2021-10-04",
+      "warranty_until": "2031-10-04",
+      "consumables": [
+        {
+          "name": "air filter",
+          "part_number": "SAMPLE-AF-20251",
+          "size": "20 by 25 by 1 inch, MERV 11"
+        }
+      ],
+      "maintenance": [
+        {
+          "task": "replace the air filter",
+          "interval_days": 90
+        },
+        {
+          "task": "professional tune-up",
+          "interval_days": 365
+        }
+      ]
+    },
+    {
+      "id": "fridge-1",
+      "nickname": "Fridge",
+      "room": "kitchen",
+      "category": "refrigerator",
+      "brand": "Sample",
+      "model_number": "SAMPLE-RF-36",
+      "purchase_date": "2023-06-10",
+      "warranty_until": "2024-06-10",
+      "consumables": [
+        {
+          "name": "water filter",
+          "part_number": "SAMPLE-WF-100",
+          "size": null
+        }
+      ],
+      "maintenance": [
+        {
+          "task": "replace the water filter",
+          "interval_days": 180
+        }
+      ]
+    },
+    {
+      "id": "washer-1",
+      "nickname": "Washer",
+      "room": "laundry room",
+      "category": "washing machine",
+      "brand": "Sample",
+      "model_number": "SAMPLE-WM-45",
+      "purchase_date": "2025-11-01",
+      "warranty_until": "2026-11-01",
+      "consumables": [],
+      "maintenance": [
+        {
+          "task": "run a cleaning cycle",
+          "interval_days": 30
+        }
+      ]
+    }
+  ],
+  "service_log": [
+    {
+      "appliance_id": "dishwasher-1",
+      "task": "clean the filter",
+      "date": "2026-02-10",
+      "notes": null
+    },
+    {
+      "appliance_id": "furnace-1",
+      "task": "replace the air filter",
+      "date": "2026-06-01",
+      "notes": "Used a MERV 11 filter."
+    },
+    {
+      "appliance_id": "furnace-1",
+      "task": "professional tune-up",
+      "date": "2025-10-20",
+      "notes": null
+    },
+    {
+      "appliance_id": "fridge-1",
+      "task": "replace the water filter",
+      "date": "2026-04-01",
+      "notes": null
+    },
+    {
+      "appliance_id": "washer-1",
+      "task": "run a cleaning cycle",
+      "date": "2026-09-01",
+      "notes": null
+    }
+  ],
+  "procedures": [
+    {
+      "id": "dw-clean-filter",
+      "appliance_id": "dishwasher-1",
+      "title": "Clean the dishwasher filter",
+      "task": "clean the filter",
+      "minutes": 10,
+      "tools_needed": [
+        "warm soapy water",
+        "a soft brush",
+        "rubber gloves"
+      ],
+      "safety_note": "Turn the dishwasher off first, and watch for broken glass or sharp debris in the sump.",
+      "steps": [
+        "Turn the dishwasher off and open the door.",
+        "Slide out the bottom rack so you can reach the floor of the tub.",
+        "Find the round filter in the floor of the tub and twist it counter-clockwise, then lift it out.",
+        "Rinse the filter under warm running water and brush away any food debris.",
+        "Wipe out the opening underneath, checking for glass, seeds or bits of label.",
+        "Put the filter back and twist it clockwise until it seats firmly. A loose filter is the most common mistake.",
+        "Slide the rack back in and run a short rinse cycle to check that the water drains."
+      ]
+    },
+    {
+      "id": "fn-replace-filter",
+      "appliance_id": "furnace-1",
+      "title": "Replace the furnace air filter",
+      "task": "replace the air filter",
+      "minutes": 5,
+      "tools_needed": [
+        "a new 20 by 25 by 1 inch MERV 11 filter"
+      ],
+      "safety_note": "Switch the furnace off at its service switch or breaker before opening any panel.",
+      "steps": [
+        "Turn the furnace off at the service switch on its side, or at the breaker.",
+        "Open the blower door panel, usually the lower front panel.",
+        "Before pulling the old filter out, look at the arrow printed on its frame and note which way it points.",
+        "Slide the old filter out.",
+        "Slide the new filter in with its arrow pointing the same way, toward the blower.",
+        "Close the panel and turn the furnace back on."
+      ]
+    },
+    {
+      "id": "fr-replace-water-filter",
+      "appliance_id": "fridge-1",
+      "title": "Replace the refrigerator water filter",
+      "task": "replace the water filter",
+      "minutes": 10,
+      "tools_needed": [
+        "a new water filter",
+        "a towel",
+        "a large jug"
+      ],
+      "safety_note": "Expect a small amount of water to spill when the old filter comes out.",
+      "steps": [
+        "Find the filter housing, usually inside the fridge at the top right or behind the bottom grille.",
+        "Put a towel underneath, then turn the old filter a quarter turn counter-clockwise and pull it straight out.",
+        "Take the cap off the new filter and push it in, then turn it clockwise until it stops.",
+        "Run about two gallons of water through the dispenser into a jug to clear air and carbon dust.",
+        "Hold the filter reset button for three seconds to clear the indicator light."
+      ]
+    },
+    {
+      "id": "wm-cleaning-cycle",
+      "appliance_id": "washer-1",
+      "title": "Run a washer cleaning cycle",
+      "task": "run a cleaning cycle",
+      "minutes": 90,
+      "tools_needed": [
+        "a washer cleaning tablet or two cups of white vinegar",
+        "a cloth"
+      ],
+      "safety_note": "Run this cycle empty. Never mix vinegar with bleach.",
+      "steps": [
+        "Take everything out of the drum and check that it is empty.",
+        "Wipe the rubber door seal, folding it back to reach the underside where residue collects.",
+        "Put a cleaning tablet in the empty drum, or two cups of white vinegar in the detergent drawer.",
+        "Run the Tub Clean or Clean Washer cycle, or the hottest normal cycle if there is no clean setting.",
+        "When it finishes, wipe the drum dry and leave the door open so it can air out."
+      ]
+    }
+  ],
+  "symptoms": [
+    {
+      "appliance_id": "dishwasher-1",
+      "symptom": "will not drain, standing water in the bottom",
+      "keywords": [
+        "drain",
+        "draining",
+        "standing",
+        "water",
+        "full",
+        "pooling",
+        "wont",
+        "empty"
+      ],
+      "causes": [
+        {
+          "cause": "The filter is clogged with food debris.",
+          "likelihood": "most likely",
+          "procedure_id": "dw-clean-filter"
+        },
+        {
+          "cause": "The drain hose is kinked or blocked.",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "A new garbage disposal still has its knockout plug in place.",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The drain pump has failed.",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "appliance_id": "furnace-1",
+      "symptom": "weak airflow from the vents",
+      "keywords": [
+        "airflow",
+        "air",
+        "weak",
+        "blowing",
+        "vents",
+        "heat",
+        "cold",
+        "warm"
+      ],
+      "causes": [
+        {
+          "cause": "The air filter is dirty and restricting airflow.",
+          "likelihood": "most likely",
+          "procedure_id": "fn-replace-filter"
+        },
+        {
+          "cause": "Supply vents are closed or blocked by furniture.",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The blower motor or capacitor is failing.",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "appliance_id": "fridge-1",
+      "symptom": "dispenser water tastes bad or runs slowly",
+      "keywords": [
+        "water",
+        "taste",
+        "tastes",
+        "bad",
+        "slow",
+        "dispenser",
+        "ice",
+        "smell"
+      ],
+      "causes": [
+        {
+          "cause": "The water filter is past its service life.",
+          "likelihood": "most likely",
+          "procedure_id": "fr-replace-water-filter"
+        },
+        {
+          "cause": "Air is trapped in the water line after a recent filter change.",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The supply line is partly kinked behind the fridge.",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "appliance_id": "washer-1",
+      "symptom": "musty or mildew smell from the drum",
+      "keywords": [
+        "smell",
+        "smells",
+        "musty",
+        "mildew",
+        "mold",
+        "odor",
+        "stink"
+      ],
+      "causes": [
+        {
+          "cause": "Residue has built up in the drum and door seal.",
+          "likelihood": "most likely",
+          "procedure_id": "wm-cleaning-cycle"
+        },
+        {
+          "cause": "The door is kept closed between washes, trapping moisture.",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The drain pump filter is holding stagnant water.",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    }
+  ]
+}
