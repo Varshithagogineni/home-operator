@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Operator — simulated Alexa+ experience</title>
+<style>
+:root{
+  --bg:#080C11; --panel:#111A22; --panel-2:#16212B; --line:#243342;
+  --ink:#E9F1F6; --muted:#8CA3B3;
+  --accent:#36C9F2; --accent-2:#5B8CFF;
+  --ok:#54D6A0; --warn:#F0B44B; --bad:#F2795B;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--sans);
+  display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 18px 40px}
+.label{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.stage{width:100%;max-width:1180px;display:grid;grid-template-columns:minmax(0,768px) minmax(260px,1fr);gap:20px;align-items:start}
+@media (max-width:1080px){.stage{grid-template-columns:minmax(0,1fr)}}
+
+/* device screen */
+.device{background:linear-gradient(180deg,#0E1720,#0A1119);border:1px solid var(--line);border-radius:18px;
+  box-shadow:0 30px 70px rgba(0,0,0,.55);overflow:hidden}
+.screen{height:480px;padding:26px 30px;display:flex;flex-direction:column;gap:18px;position:relative}
+.orb{width:54px;height:54px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 34% 30%,#9BE9FF,var(--accent) 45%,var(--accent-2));
+  box-shadow:0 0 28px rgba(54,201,242,.55)}
+.orb.thinking{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.09);opacity:1}}
+@media (prefers-reduced-motion: reduce){.orb.thinking{animation:none}}
+.said{display:flex;gap:16px;align-items:flex-start}
+.said p{margin:0;font-size:25px;line-height:1.3;font-weight:500;text-wrap:balance}
+.heard{font-size:14px;color:var(--muted)}
+.heard b{color:var(--ink);font-weight:500}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;overflow:auto;flex:1}
+.card h3{margin:0 0 12px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);font-weight:500}
+.row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:17px}
+.row:last-child{border-bottom:0}
+.row span:last-child{color:var(--muted);text-align:right}
+.pill{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.top{background:rgba(242,121,91,.16);color:var(--bad)}
+.pill.mid{background:rgba(240,180,75,.16);color:var(--warn)}
+.pill.low{background:rgba(140,163,179,.16);color:var(--muted)}
+.pill.ok{background:rgba(84,214,160,.16);color:var(--ok)}
+.cause{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:17px}
+.cause:last-child{border-bottom:0}
+.cause small{display:block;color:var(--muted);font-size:14px;margin-top:3px}
+.stepwrap{display:flex;flex-direction:column;gap:14px;height:100%}
+.steptext{font-size:32px;line-height:1.25;font-weight:500;text-wrap:balance}
+.dots{display:flex;gap:7px;flex-wrap:wrap}
+.dot{width:26px;height:5px;border-radius:99px;background:var(--line)}
+.dot.done{background:var(--accent)}
+.meta{font:500 12px/1 var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.safety{font-size:14px;color:var(--warn);background:rgba(240,180,75,.1);border-radius:9px;padding:9px 12px}
+
+/* controls */
+.controls{width:100%;max-width:768px;display:flex;flex-direction:column;gap:12px}
+form{display:flex;gap:10px}
+input[type=text]{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:12px;padding:14px 16px;font:400 16px var(--sans)}
+input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:12px;
+  padding:13px 17px;font:500 15px var(--sans);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;color:#04121A;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:8px 12px;font-size:13.5px;border-radius:999px;color:var(--muted)}
+.chips button:hover{color:var(--ink)}
+
+/* tool log */
+.log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+  display:flex;flex-direction:column;gap:10px;max-height:518px;overflow:auto}
+.log .entry{font:400 12.5px/1.5 var(--mono);border-left:2px solid var(--accent);padding-left:10px}
+.log .entry b{color:var(--accent);font-weight:500}
+.log .entry span{color:var(--muted);display:block;word-break:break-word}
+.log .empty{color:var(--muted);font-size:13.5px}
+footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<p class="label">Simulated Alexa+ experience · Home Operator</p>
+
+<div class="stage">
+  <div class="device">
+    <div class="screen">
+      <div class="said"><div class="orb" id="orb"></div><p id="spoken">Ask me about anything in your home.</p></div>
+      <p class="heard" id="heard">&nbsp;</p>
+      <div class="card" id="card"><h3>Ready</h3><div class="row"><span>Try "why won't my dishwasher drain?"</span><span>6 tools live</span></div></div>
+    </div>
+  </div>
+
+  <div class="log" id="log"><h3 class="label">MCP tool calls</h3><p class="empty">Every reply below is a real call to the local MCP server.</p></div>
+</div>
+
+<div class="controls">
+  <form id="form">
+    <input type="text" id="input" autocomplete="off" placeholder="Say something to Alexa…" aria-label="What you say">
+    <button class="primary" type="submit">Send</button>
+    <button type="button" id="mute" aria-pressed="false" title="Toggle speech">🔊</button>
+  </form>
+  <div class="chips" id="chips"></div>
+</div>
+
+<footer>A simulation for development and demo purposes. Not affiliated with Amazon. The assistant side is scripted; every answer comes from the real Home Operator MCP server.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let rpcId = 0, lastAppliance = null, speak = true;
+
+const CHIPS = [
+  "Why won't my dishwasher drain?",
+  "Walk me through cleaning the filter",
+  "Next",
+  "Say that again",
+  "What filter does the furnace take?",
+  "Anything I should take care of?"
+];
+
+async function callTool(name, args) {
+  const t0 = performance.now();
+  const res = await fetch("/mcp", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
+      "MCP-Protocol-Version": "2025-03-26"
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method: "tools/call",
+                           params: { name, arguments: args } })
+  });
+  const payload = await res.json();
+  const ms = Math.round(performance.now() - t0);
+  logCall(name, args, ms);
+  if (payload.error) throw new Error(payload.error.message);
+  return JSON.parse(payload.result.content[0].text);
+}
+
+function logCall(name, args, ms) {
+  const log = $("log");
+  const empty = log.querySelector(".empty");
+  if (empty) empty.remove();
+  const el = document.createElement("div");
+  el.className = "entry";
+  el.innerHTML = `<b>${name}</b> · ${ms} ms<span>${escapeHtml(JSON.stringify(args))}</span>`;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function applianceIn(text) {
+  const t = text.toLowerCase();
+  for (const [word, name] of [["dishwasher", "dishwasher"], ["furnace", "furnace"], ["fridge", "fridge"],
+                              ["refrigerator", "fridge"], ["washer", "washer"], ["washing machine", "washer"]]) {
+    if (t.includes(word) && !(word === "washer" && t.includes("dishwasher"))) return name;
+  }
+  return null;
+}
+
+function route(text) {
+  const t = text.toLowerCase().trim();
+  const appliance = applianceIn(t) || lastAppliance;
+  if (applianceIn(t)) lastAppliance = applianceIn(t);
+
+  if (/^(next|continue|done|ok next|got it)\b/.test(t)) return { tool: "navigate_repair", args: { action: "next" } };
+  if (/(go back|previous|back a step|^back)/.test(t)) return { tool: "navigate_repair", args: { action: "back" } };
+  if (/(say that again|repeat|again please|what was that|one more time)/.test(t))
+    return { tool: "navigate_repair", args: { action: "repeat" } };
+
+  if (/(walk me through|how do i|show me how|talk me through|guide me)/.test(t))
+    return { tool: "start_repair", args: { appliance: appliance || "dishwasher", task: t } };
+
+  if (/(i (just )?(replaced|changed|cleaned|did)|finished)/.test(t))
+    return { tool: "log_service", args: { appliance: appliance || "fridge", task: t } };
+
+  if (/(anything|what).*(due|overdue|take care|need|maintenance)/.test(t) || /what needs doing/.test(t))
+    return { tool: "get_maintenance_due", args: {} };
+
+  if (appliance && /(won'?t|wont|not |isn'?t|problem|broken|smell|taste|weird|noise|drain|airflow|slow)/.test(t))
+    return { tool: "diagnose_symptom", args: { appliance, symptom: text } };
+
+  if (appliance) return { tool: "get_appliance", args: { appliance } };
+
+  return null;
+}
+
+function say(line) {
+  $("spoken").textContent = line;
+  if (!speak || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(line);
+  u.rate = 1.02; u.pitch = 1.0;
+  speechSynthesis.speak(u);
+}
+
+const list = (arr, last = "and") =>
+  arr.length <= 1 ? (arr[0] || "") : arr.slice(0, -1).join(", ") + " " + last + " " + arr[arr.length - 1];
+
+function card(title, inner) { $("card").innerHTML = `<h3>${title}</h3>${inner}`; }
+
+function renderAppliance(d) {
+  if (d.found === false) {
+    const names = (d.known_appliances || d.candidates || []).map(a => a.nickname);
+    say(d.candidates ? `Which one, the ${list(names, "or")}?` : `I don't have that one. I know your ${list(names)}.`);
+    card("Registered appliances", names.map(n => `<div class="row"><span>${n}</span><span></span></div>`).join(""));
+    return;
+  }
+  const part = d.consumables[0];
+  say(part
+    ? `Your ${d.nickname} takes ${part.size || part.name}${part.part_number ? `, part number ${part.part_number}` : ""}. Last serviced ${d.last_service ? d.last_service.days_ago + " days ago" : "never"}.`
+    : `Your ${d.nickname} is a ${d.brand} ${d.model_number}.`);
+  card(d.nickname, `
+    <div class="row"><span>Model</span><span>${d.brand} ${d.model_number}</span></div>
+    ${d.consumables.map(c => `<div class="row"><span>${c.name}</span><span>${[c.size, c.part_number].filter(Boolean).join(" · ") || "—"}</span></div>`).join("")}
+    <div class="row"><span>Warranty</span><span><span class="pill ${d.warranty.status === "active" ? "ok" : "low"}">${d.warranty.status}</span> until ${d.warranty.until}</span></div>
+    ${d.last_service ? `<div class="row"><span>Last service</span><span>${d.last_service.task}, ${d.last_service.days_ago} days ago</span></div>` : ""}`);
+}
+
+function renderDiagnosis(d) {
+  if (d.found === false && d.known_symptoms) {
+    say(`I don't have that one for the ${d.nickname}. I can help with ${list(d.known_symptoms, "or")}.`);
+    card(`${d.nickname} · known problems`, d.known_symptoms.map(s =>
+      `<div class="row"><span>${s}</span><span></span></div>`).join(""));
+    return;
+  }
+  if (d.found === false) { renderAppliance(d); return; }
+  const top = d.causes[0];
+  say(`Most likely, ${top.cause.toLowerCase().replace(/\.$/, "")}${top.days_since_last_done != null
+      ? `. You last did that ${top.days_since_last_done} days ago` : ""}. Want me to walk you through it?`);
+  card(`${d.nickname} · ${d.symptom}`, d.causes.map(c => `
+    <div class="cause">
+      <span class="pill ${c.likelihood === "most likely" ? "top" : c.likelihood === "possible" ? "mid" : "low"}">${c.likelihood}</span>
+      <div>${c.cause}${c.fix_available ? `<small>Fix: ${c.fix} · about ${c.minutes} min${c.days_since_last_done != null ? ` · last done ${c.days_since_last_done} days ago` : ""}</small>` : ""}</div>
+    </div>`).join(""));
+}
+
+function renderStep(d) {
+  if (d.started === false || d.active === false && !d.finished) {
+    say(d.message);
+    card("Available repairs", (d.available_repairs || []).map(r => `<div class="row"><span>${r}</span><span></span></div>`).join(""));
+    return;
+  }
+  if (d.finished) {
+    say(`${d.message} I've logged it. Next one is due ${d.logged.next_due}.`);
+    card("Repair complete", `
+      <div class="row"><span>${d.procedure}</span><span><span class="pill ok">done</span></span></div>
+      <div class="row"><span>Logged</span><span>${d.logged.task}, ${d.logged.date}</span></div>
+      <div class="row"><span>Next due</span><span>${d.logged.next_due}</span></div>`);
+    return;
+  }
+  const dots = Array.from({ length: d.total_steps }, (_, i) =>
+    `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
+  say(d.step_number === 1
+    ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()}`
+    : `Step ${d.step_number}. ${d.step}`);
+  card(d.procedure, `<div class="stepwrap">
+      <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
+      <div class="dots">${dots}</div>
+      <div class="steptext">${d.step}</div>
+      ${d.step_number === 1 && d.safety_note ? `<div class="safety">${d.safety_note}</div>` : ""}
+    </div>`);
+}
+
+function renderDue(d) {
+  const n = d.overdue.length;
+  say(n ? `${n} thing${n > 1 ? "s are" : " is"} overdue. ${d.overdue.map(i => `the ${i.nickname}, ${i.task}`).join("; ")}.`
+        : "Nothing is overdue right now.");
+  card("Around the house", [
+    ...d.overdue.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span><span class="pill top">${i.days_overdue} days overdue</span></span></div>`),
+    ...d.upcoming.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span>in ${i.days_until} days</span></div>`)
+  ].join("") || `<div class="row"><span>All clear</span><span></span></div>`);
+}
+
+function renderLog(d) {
+  if (d.logged !== true) { renderAppliance(d); return; }
+  say(`Logged. ${d.task} on the ${d.nickname}, due again ${d.next_due}.`);
+  card("Service logged", `
+    <div class="row"><span>${d.nickname}</span><span>${d.task}</span></div>
+    <div class="row"><span>Date</span><span>${d.date}</span></div>
+    <div class="row"><span>Next due</span><span>${d.next_due || "—"}</span></div>`);
+}
+
+const RENDER = {
+  get_appliance: renderAppliance, diagnose_symptom: renderDiagnosis,
+  start_repair: renderStep, navigate_repair: renderStep,
+  get_maintenance_due: renderDue, log_service: renderLog
+};
+
+async function send(text) {
+  if (!text.trim()) return;
+  $("heard").innerHTML = `You said: <b>${escapeHtml(text)}</b>`;
+  const plan = route(text);
+  if (!plan) {
+    say("I can look up an appliance, diagnose a problem, walk you through a repair, or tell you what's due.");
+    card("Try saying", CHIPS.map(c => `<div class="row"><span>${c}</span><span></span></div>`).join(""));
+    return;
+  }
+  $("orb").classList.add("thinking");
+  try {
+    const data = await callTool(plan.tool, plan.args);
+    RENDER[plan.tool](data);
+  } catch (err) {
+    say("Something went wrong reaching the server.");
+    card("Error", `<div class="row"><span>${escapeHtml(err.message)}</span><span></span></div>`);
+  } finally {
+    $("orb").classList.remove("thinking");
+  }
+}
+
+$("form").addEventListener("submit", e => { e.preventDefault(); const v = $("input").value; $("input").value = ""; send(v); });
+$("mute").addEventListener("click", () => {
+  speak = !speak;
+  $("mute").textContent = speak ? "🔊" : "🔇";
+  $("mute").setAttribute("aria-pressed", String(!speak));
+  if (!speak && window.speechSynthesis) speechSynthesis.cancel();
+});
+CHIPS.forEach(c => {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = c;
+  b.addEventListener("click", () => send(c));
+  $("chips").appendChild(b);
+});
+</script>
+</body>
+</html>

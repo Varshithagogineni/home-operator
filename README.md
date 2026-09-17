@@ -35,7 +35,29 @@ uv sync
 uv run home-operator
 ```
 
-The server listens at `http://127.0.0.1:8000/mcp` using Streamable HTTP in stateless mode with JSON responses. Set `PORT` or `HOST` to change the address.
+This serves two things:
+
+| URL | What it is |
+|---|---|
+| `http://127.0.0.1:8000/mcp` | The MCP endpoint, Streamable HTTP, stateless, JSON responses |
+| `http://127.0.0.1:8000/sim/` | A simulated Alexa+ experience for demos |
+
+Set `PORT` or `HOST` to change the address.
+
+## The simulator
+
+Open `http://127.0.0.1:8000/sim/` and talk to it by typing, or click the suggested phrases. It plays the part of Alexa+: it works out which tool your words call, speaks the reply aloud, and shows the matching screen. A live panel lists every MCP call with its latency, so you can see that the answers come from the real server.
+
+Try this sequence:
+
+1. "Why won't my dishwasher drain?"
+2. "Walk me through cleaning the filter"
+3. "Next", "Next"
+4. "Say that again" — it holds your place at step 3
+5. Keep going to the end; the service logs itself
+6. "Anything I should take care of?" — the dishwasher is gone from the overdue list
+
+The assistant side is scripted, not an LLM. The hackathon rules allow a simulated Alexa+ experience, and everything behind it is a real MCP server.
 
 ## Test it
 

@@ -27,6 +27,21 @@ def test_diagnose_ranks_causes_and_offers_a_fix(home):
     assert top["days_since_last_done"] == 219
 
 
+@pytest.mark.parametrize("spoken", [
+    "Why won't my dishwasher drain?",
+    "it wont drain!",
+    "There's standing water in the bottom.",
+])
+def test_diagnose_handles_punctuation_and_apostrophes(home, spoken):
+    result = store.diagnose_symptom(home, "dishwasher", spoken, TODAY)
+    assert result["found"] is True
+    assert result["causes"][0]["procedure_id"] == "dw-clean-filter"
+
+
+def test_find_appliance_ignores_punctuation(home):
+    assert [a["id"] for a in store.find_appliances(home, "the fridge!")] == ["fridge-1"]
+
+
 def test_diagnose_unknown_symptom_lists_what_is_known(home):
     result = store.diagnose_symptom(home, "dishwasher", "it is playing music", TODAY)
     assert result["found"] is False

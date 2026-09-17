@@ -1,12 +1,17 @@
 import os
 from datetime import date
+from pathlib import Path
 from typing import Annotated
 
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 from pydantic import Field
+from starlette.routing import Mount
+from starlette.staticfiles import StaticFiles
 
 from home_operator import store
+
+WEB_DIR = Path(__file__).parent / "web"
 
 HOME = store.load_home()
 
@@ -129,14 +134,23 @@ def log_service(
     return store.log_service(HOME, appliance, task, date.today(), notes)
 
 
-def main() -> None:
-    mcp.run(
-        transport="streamable-http",
-        host=os.environ.get("HOST", "127.0.0.1"),
-        port=int(os.environ.get("PORT", "8000")),
-        stateless_http=True,
-        json_response=True,
+def build_app():
+    """The MCP endpoint at /mcp, plus the simulated Alexa+ front end at /sim."""
+    app = mcp.streamable_http_app(stateless_http=True, json_response=True)
+    app.router.routes.append(
+        Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")
     )
+    return app
+
+
+def main() -> None:
+    import uvicorn
+
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8000"))
+    print(f"MCP endpoint  http://{host}:{port}/mcp")
+    print(f"Simulator     http://{host}:{port}/sim/")
+    uvicorn.run(build_app(), host=host, port=port, log_level="info")
 
 
 if __name__ == "__main__":

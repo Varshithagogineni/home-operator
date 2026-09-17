@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, timedelta
 from importlib import resources
 
@@ -11,8 +12,9 @@ def load_home() -> dict:
 
 
 def _normalize(text: str) -> str:
-    words = text.lower().replace("-", " ").split()
-    return " ".join(w for w in words if w not in FILLER_WORDS)
+    # Drop punctuation so spoken text matches keywords: "won't drain?" -> "wont drain"
+    cleaned = re.sub(r"[^a-z0-9\s]", "", text.lower().replace("-", " "))
+    return " ".join(w for w in cleaned.split() if w not in FILLER_WORDS)
 
 
 def _names(appliance: dict) -> set[str]:
