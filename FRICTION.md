@@ -42,3 +42,14 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** High.
 - **Workaround:** Validated tool schemas and calls with MCP Inspector, and built a self-hosted simulator that speaks replies and renders the cards.
 - **Suggestion:** Mark clearly which testing paths need preview access and which don't. MCP Inspector works well for everyone and deserves a first-class place in the docs, ideally with an Alexa-specific checklist of what a good add-on response looks like.
+
+### The Alexa+ track's "Agent Skills" resource points at developer tooling, not a submittable artifact
+- **Date:** 2026-09-18
+- **Tool / API:** Hackathon Resources page, Alexa+ track
+- **Task attempted:** Work out what an "Agent Skill" is, since the rules offer it as an alternative to building an MCP server.
+- **Steps taken:** Followed the only two Alexa+ track resources. "Build with Agent Skills" links to `apps.extensions.modelcontextprotocol.io/api/#build-with-agent-skills`.
+- **Expected:** A definition of an Agent Skill as something you build and submit for the Alexa+ track, with its structure and how Alexa+ loads it.
+- **Actual:** That page describes Agent Skills as helpers *for AI coding assistants* — tools that scaffold or migrate MCP Apps during development, installed through a plugin marketplace. It never explains an Agent Skill as a runtime capability Alexa+ would call. The Alexa+ add-on docs mention "the add-on Agent Skill (agentic onboarding experience)" without defining it either.
+- **Severity:** Medium. It cost an hour, and anyone choosing the Agent Skill path over MCP has no specification to follow.
+- **Workaround:** Built a self-hosted MCP server, which is unambiguous and well specified.
+- **Suggestion:** Either define an Agent Skill for the Alexa+ track properly — file structure, how it is registered, how Alexa+ invokes it, with one worked example — or drop it from the rules and point people to MCP. Two links is also thin for a track worth $44,000; the Fire TV track gets seven sample repos and an e-book, while Alexa+ gets a protocol spec and a page about coding-assistant plugins.
