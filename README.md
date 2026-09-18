@@ -21,6 +21,10 @@ Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonapp
 
 Finishing the final step of a repair logs the service automatically, which is what clears it from the overdue list.
 
+**Safety gates.** Steps that involve power will not advance on "next". The dishwasher and furnace repairs both open with a gate: the walkthrough waits until the person says "done", "it's off" or "unplugged" before moving on. Nobody gets talked into reaching inside a live appliance because they said "next" out of habit.
+
+**Where your place is kept.** Repair progress is stored per home (`home_id`, currently `"default"`), in memory. In production this is a DynamoDB item keyed by the Alexa+ customer id, so each household keeps its own place. Restarting the server clears it.
+
 Both tools are read-only and return in milliseconds. Tool calls never call an LLM; Alexa+ does the reasoning, and this server supplies facts and state.
 
 ## Requirements
@@ -52,10 +56,11 @@ Try this sequence:
 
 1. "Why won't my dishwasher drain?"
 2. "Walk me through cleaning the filter"
-3. "Next", "Next"
-4. "Say that again" — it holds your place at step 3
-5. Keep going to the end; the service logs itself
-6. "Anything I should take care of?" — the dishwasher is gone from the overdue list
+3. "Next" — refused, because step 1 is a safety gate
+4. "Done" — the gate clears and it moves to step 2
+5. "Next", then "Say that again" — it holds your place at step 3
+6. Keep going to the end; the service logs itself
+7. "Anything I should take care of?" — the dishwasher is gone from the overdue list
 
 The assistant side is scripted, not an LLM. The hackathon rules allow a simulated Alexa+ experience, and everything behind it is a real MCP server.
 

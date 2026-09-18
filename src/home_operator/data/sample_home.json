@@ -145,7 +145,9 @@
         "Wipe out the opening underneath, checking for glass, seeds or bits of label.",
         "Put the filter back and twist it clockwise until it seats firmly. A loose filter is the most common mistake.",
         "Slide the rack back in and run a short rinse cycle to check that the water drains."
-      ]
+      ],
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the dishwasher is off."
     },
     {
       "id": "fn-replace-filter",
@@ -164,7 +166,9 @@
         "Slide the old filter out.",
         "Slide the new filter in with its arrow pointing the same way, toward the blower.",
         "Close the panel and turn the furnace back on."
-      ]
+      ],
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the power is off at the switch or breaker."
     },
     {
       "id": "fr-replace-water-filter",
@@ -184,7 +188,9 @@
         "Take the cap off the new filter and push it in, then turn it clockwise until it stops.",
         "Run about two gallons of water through the dispenser into a jug to clear air and carbon dust.",
         "Hold the filter reset button for three seconds to clear the indicator light."
-      ]
+      ],
+      "gate_step": null,
+      "gate_prompt": null
     },
     {
       "id": "wm-cleaning-cycle",
@@ -203,7 +209,9 @@
         "Put a cleaning tablet in the empty drum, or two cups of white vinegar in the detergent drawer.",
         "Run the Tub Clean or Clean Washer cycle, or the hottest normal cycle if there is no clean setting.",
         "When it finishes, wipe the drum dry and leave the door open so it can air out."
-      ]
+      ],
+      "gate_step": null,
+      "gate_prompt": null
     }
   ],
   "symptoms": [

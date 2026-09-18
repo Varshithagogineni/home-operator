@@ -54,6 +54,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--san
 .dot.done{background:var(--accent)}
 .meta{font:500 12px/1 var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .safety{font-size:14px;color:var(--warn);background:rgba(240,180,75,.1);border-radius:9px;padding:9px 12px}
+.gate{font-size:16px;color:var(--bad);background:rgba(242,121,91,.12);border:1px solid rgba(242,121,91,.35);
+  border-radius:9px;padding:11px 13px;display:flex;align-items:center;gap:10px}
+.gate b{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
 
 /* controls */
 .controls{width:100%;max-width:768px;display:flex;flex-direction:column;gap:12px}
@@ -112,6 +115,7 @@ let rpcId = 0, lastAppliance = null, speak = true;
 const CHIPS = [
   "Why won't my dishwasher drain?",
   "Walk me through cleaning the filter",
+  "Done",
   "Next",
   "Say that again",
   "What filter does the furnace take?",
@@ -164,7 +168,9 @@ function route(text) {
   const appliance = applianceIn(t) || lastAppliance;
   if (applianceIn(t)) lastAppliance = applianceIn(t);
 
-  if (/^(next|continue|done|ok next|got it)\b/.test(t)) return { tool: "navigate_repair", args: { action: "next" } };
+  if (/^(done|it'?s off|its off|unplugged|power is off|confirmed|yes)\b/.test(t))
+    return { tool: "navigate_repair", args: { action: "done" } };
+  if (/^(next|continue|ok next|got it)\b/.test(t)) return { tool: "navigate_repair", args: { action: "next" } };
   if (/(go back|previous|back a step|^back)/.test(t)) return { tool: "navigate_repair", args: { action: "back" } };
   if (/(say that again|repeat|again please|what was that|one more time)/.test(t))
     return { tool: "navigate_repair", args: { action: "repeat" } };
@@ -252,13 +258,20 @@ function renderStep(d) {
   }
   const dots = Array.from({ length: d.total_steps }, (_, i) =>
     `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
-  say(d.step_number === 1
-    ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()}`
-    : `Step ${d.step_number}. ${d.step}`);
+  if (d.awaiting_confirmation) {
+    say(d.step_number === 1 && d.tools_needed
+      ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()} ${d.confirm_prompt}`
+      : `${d.step} ${d.confirm_prompt}`);
+  } else {
+    say(d.step_number === 1
+      ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()}`
+      : `Step ${d.step_number}. ${d.step}`);
+  }
   card(d.procedure, `<div class="stepwrap">
       <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
       <div class="dots">${dots}</div>
       <div class="steptext">${d.step}</div>
+      ${d.awaiting_confirmation ? `<div class="gate"><b>Waiting</b><span>${d.confirm_prompt}</span></div>` : ""}
       ${d.step_number === 1 && d.safety_note ? `<div class="safety">${d.safety_note}</div>` : ""}
     </div>`);
 }

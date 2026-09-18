@@ -53,12 +53,38 @@ def test_start_repair_returns_first_step_with_safety(home, sessions):
     assert result["started"] is True
     assert result["step_number"] == 1 and result["total_steps"] == 7
     assert result["tools_needed"] and result["safety_note"]
-    assert sessions["current"]["step_index"] == 0
+    assert sessions["default"]["step_index"] == 0
+
+
+def test_gate_step_blocks_until_confirmed(home, sessions):
+    started = store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    assert started["awaiting_confirmation"] is True
+    assert "off" in started["confirm_prompt"]
+
+    blocked = store.navigate_repair(home, sessions, "next", TODAY)
+    assert blocked["step_number"] == 1
+    assert blocked["awaiting_confirmation"] is True
+
+
+def test_confirming_the_gate_advances_and_stays_cleared(home, sessions):
+    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    after = store.navigate_repair(home, sessions, "done", TODAY)
+    assert after["step_number"] == 2
+    assert after["awaiting_confirmation"] is False
+
+    back = store.navigate_repair(home, sessions, "back", TODAY)
+    assert back["step_number"] == 1 and back["awaiting_confirmation"] is False
+    assert store.navigate_repair(home, sessions, "next", TODAY)["step_number"] == 2
+
+
+def test_procedure_without_a_gate_advances_normally(home, sessions):
+    store.start_repair(home, sessions, "washer", "run a cleaning cycle", TODAY)
+    assert store.navigate_repair(home, sessions, "next", TODAY)["step_number"] == 2
 
 
 def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place(home, sessions):
     store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
-    store.navigate_repair(home, sessions, "next", TODAY)
+    store.navigate_repair(home, sessions, "done", TODAY)
     store.navigate_repair(home, sessions, "next", TODAY)
     assert store.navigate_repair(home, sessions, "repeat", TODAY)["step_number"] == 3
     assert store.navigate_repair(home, sessions, "repeat", TODAY)["step_number"] == 3
@@ -66,7 +92,7 @@ def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place
 
 def test_back_stops_at_the_first_step(home, sessions):
     store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
-    store.navigate_repair(home, sessions, "next", TODAY)
+    store.navigate_repair(home, sessions, "done", TODAY)
     assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
     assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
 
@@ -74,7 +100,8 @@ def test_back_stops_at_the_first_step(home, sessions):
 def test_finishing_the_last_step_logs_the_service(home, sessions):
     before = len(home["service_log"])
     store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
-    for _ in range(6):
+    store.navigate_repair(home, sessions, "done", TODAY)
+    for _ in range(5):
         store.navigate_repair(home, sessions, "next", TODAY)
     result = store.navigate_repair(home, sessions, "next", TODAY)
 
@@ -82,13 +109,23 @@ def test_finishing_the_last_step_logs_the_service(home, sessions):
     assert result["logged"]["task"] == "clean the filter"
     assert result["logged"]["next_due"] == "2026-12-16"
     assert len(home["service_log"]) == before + 1
-    assert "current" not in sessions
+    assert "default" not in sessions
 
 
 def test_navigating_with_no_repair_in_progress_explains_instead_of_failing(home, sessions):
     result = store.navigate_repair(home, sessions, "next", TODAY)
     assert result["active"] is False
     assert result["available_repairs"]
+
+
+def test_two_homes_keep_separate_places(home, sessions):
+    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY, home_id="home-a")
+    store.start_repair(home, sessions, "washer", "run a cleaning cycle", TODAY, home_id="home-b")
+    store.navigate_repair(home, sessions, "done", TODAY, home_id="home-a")
+    store.navigate_repair(home, sessions, "next", TODAY, home_id="home-a")
+
+    assert store.navigate_repair(home, sessions, "repeat", TODAY, home_id="home-a")["step_number"] == 3
+    assert store.navigate_repair(home, sessions, "repeat", TODAY, home_id="home-b")["step_number"] == 1
 
 
 def test_unknown_action_keeps_the_current_step(home, sessions):

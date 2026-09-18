@@ -164,7 +164,7 @@ def diagnose_symptom(home: dict, query: str, symptom: str, today: date) -> dict:
     return {"found": True, **_brief(a), "symptom": best["symptom"], "causes": causes}
 
 
-def start_repair(home: dict, sessions: dict, query: str, task: str, today: date) -> dict:
+def start_repair(home: dict, sessions: dict, query: str, task: str, today: date, home_id: str = "default") -> dict:
     matches = find_appliances(home, query)
     if len(matches) != 1:
         return describe_appliance(home, query, today)
@@ -183,7 +183,7 @@ def start_repair(home: dict, sessions: dict, query: str, task: str, today: date)
             "available_repairs": [p["title"] for p in procs],
         }
 
-    sessions["current"] = {"procedure_id": proc["id"], "step_index": 0}
+    sessions[home_id] = {"procedure_id": proc["id"], "step_index": 0, "confirmed": False}
     return {
         "started": True,
         **_brief(a),
@@ -194,11 +194,22 @@ def start_repair(home: dict, sessions: dict, query: str, task: str, today: date)
         "step_number": 1,
         "total_steps": len(proc["steps"]),
         "step": proc["steps"][0],
+        **_gate_fields(proc, 0, confirmed=False),
     }
 
 
-def navigate_repair(home: dict, sessions: dict, action: str, today: date) -> dict:
-    session = sessions.get("current")
+def _gate_fields(proc: dict, step_index: int, confirmed: bool) -> dict:
+    """A gate step will not advance until the person confirms it is safe."""
+    if proc.get("gate_step") != step_index or confirmed:
+        return {"awaiting_confirmation": False}
+    return {"awaiting_confirmation": True, "confirm_prompt": proc["gate_prompt"]}
+
+
+CONFIRM_WORDS = {"confirm", "confirmed", "done", "yes", "its off", "it is off", "unplugged", "off"}
+
+
+def navigate_repair(home: dict, sessions: dict, action: str, today: date, home_id: str = "default") -> dict:
+    session = sessions.get(home_id)
     if session is None:
         return {
             "active": False,
@@ -209,11 +220,30 @@ def navigate_repair(home: dict, sessions: dict, action: str, today: date) -> dic
     proc = _procedure(home, session["procedure_id"])
     a = _appliance(home, proc["appliance_id"])
     total = len(proc["steps"])
-    action = (action or "next").strip().lower()
+    action = _normalize(action or "next") or "next"
+    at_gate = proc.get("gate_step") == session["step_index"] and not session["confirmed"]
+
+    if action in CONFIRM_WORDS and at_gate:
+        session["confirmed"] = True
+        action = "next"
+    elif action == "next" and at_gate:
+        return {
+            "active": True,
+            "finished": False,
+            **_brief(a),
+            "procedure": proc["title"],
+            "step_number": session["step_index"] + 1,
+            "total_steps": total,
+            "step": proc["steps"][session["step_index"]],
+            "awaiting_confirmation": True,
+            "confirm_prompt": proc["gate_prompt"],
+        }
+    elif action in CONFIRM_WORDS:
+        action = "next"
 
     if action == "next":
         if session["step_index"] + 1 >= total:
-            sessions.pop("current", None)
+            sessions.pop(home_id, None)
             logged = log_service(home, a["nickname"], proc["task"], today)
             return {
                 "active": False,
@@ -244,6 +274,7 @@ def navigate_repair(home: dict, sessions: dict, action: str, today: date) -> dic
         "step_number": session["step_index"] + 1,
         "total_steps": total,
         "step": proc["steps"][session["step_index"]],
+        **_gate_fields(proc, session["step_index"], session["confirmed"]),
     }
 
 
