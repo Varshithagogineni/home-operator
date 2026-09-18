@@ -71,6 +71,9 @@ button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{padding:8px 12px;font-size:13.5px;border-radius:999px;color:var(--muted)}
 .chips button:hover{color:var(--ink)}
+.voicepick{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.voicepick select{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:7px 9px;font:400 13px var(--sans);max-width:260px}
 
 /* tool log */
 .log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
@@ -103,6 +106,7 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
     <button class="primary" type="submit">Send</button>
     <button type="button" id="mute" aria-pressed="false" title="Toggle speech">🔊</button>
   </form>
+  <label class="voicepick">Voice <select id="voice" aria-label="Choose a voice"></select></label>
   <div class="chips" id="chips"></div>
 </div>
 
@@ -192,13 +196,85 @@ function route(text) {
   return null;
 }
 
+// Voice picking. Quality varies a lot by machine, so prefer the good ones by name.
+const VOICE_HINTS = ["premium", "enhanced", "natural", "siri", "samantha", "ava", "allison", "zoe", "google us english", "karen"];
+let voices = [], chosenVoice = null;
+
+function scoreVoice(v) {
+  const n = v.name.toLowerCase();
+  let s = VOICE_HINTS.findIndex(hint => n.includes(hint));
+  s = s === -1 ? 50 : s;
+  if (!v.lang.startsWith("en")) s += 100;
+  if (!v.lang.toLowerCase().startsWith("en-us")) s += 10;
+  return s;
+}
+
+// macOS ships joke voices in the same list; nobody wants Zarvox reading repair steps.
+const NOVELTY = new Set(["albert", "bad news", "bahh", "bells", "boing", "bubbles", "cellos", "deranged",
+  "good news", "hysterical", "jester", "junior", "kathy", "organ", "pipe organ", "princess", "ralph",
+  "superstar", "trinoids", "whisper", "wobble", "zarvox", "fred"]);
+
+function loadVoices() {
+  voices = (window.speechSynthesis ? speechSynthesis.getVoices() : [])
+    .filter(v => v.lang && v.lang.startsWith("en"))
+    .filter(v => !NOVELTY.has(v.name.toLowerCase().replace(/\s*\(.*\)\s*/, "").trim()))
+    .sort((a, b) => scoreVoice(a) - scoreVoice(b));
+  if (!voices.length) return;
+
+  const saved = (() => { try { return localStorage.getItem("ho:voice"); } catch { return null; } })();
+  chosenVoice = voices.find(v => v.name === saved) || voices[0];
+
+  const sel = $("voice");
+  sel.innerHTML = "";
+  voices.forEach(v => {
+    const o = document.createElement("option");
+    o.value = v.name;
+    o.textContent = `${v.name} (${v.lang})`;
+    o.selected = v.name === chosenVoice.name;
+    sel.appendChild(o);
+  });
+}
+
+// Speak sentence by sentence: the small gap between utterances reads as breathing.
 function say(line) {
   $("spoken").textContent = line;
   if (!speak || !window.speechSynthesis) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(line);
-  u.rate = 1.02; u.pitch = 1.0;
-  speechSynthesis.speak(u);
+  line.split(/(?<=[.!?])\s+/).filter(Boolean).forEach(sentence => {
+    const u = new SpeechSynthesisUtterance(sentence);
+    if (chosenVoice) u.voice = chosenVoice;
+    u.rate = 0.97;
+    u.pitch = 1.0;
+    speechSynthesis.speak(u);
+  });
+}
+
+const ORDINALS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const spokenNumber = n => ORDINALS[n] || String(n);
+const sentenceCase = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+// "219 days ago" is how a database talks. People say "about seven months ago".
+function agoPhrase(days) {
+  if (days == null) return "";
+  if (days <= 1) return "yesterday";
+  if (days < 14) return `${spokenNumber(days)} days ago`;
+  if (days < 45) return `about ${spokenNumber(Math.round(days / 7))} weeks ago`;
+  if (days < 365) return `about ${spokenNumber(Math.round(days / 30))} months ago`;
+  return "over a year ago";
+}
+
+function inPhrase(days) {
+  if (days <= 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days < 14) return `in ${spokenNumber(days)} days`;
+  if (days < 45) return `in about ${spokenNumber(Math.round(days / 7))} weeks`;
+  return `in about ${spokenNumber(Math.round(days / 30))} months`;
+}
+
+function overduePhrase(days) {
+  if (days < 14) return `${spokenNumber(days)} days overdue`;
+  if (days < 60) return `about ${spokenNumber(Math.round(days / 7))} weeks overdue`;
+  return `about ${spokenNumber(Math.round(days / 30))} months overdue`;
 }
 
 const list = (arr, last = "and") =>
@@ -209,14 +285,16 @@ function card(title, inner) { $("card").innerHTML = `<h3>${title}</h3>${inner}`;
 function renderAppliance(d) {
   if (d.found === false) {
     const names = (d.known_appliances || d.candidates || []).map(a => a.nickname);
-    say(d.candidates ? `Which one, the ${list(names, "or")}?` : `I don't have that one. I know your ${list(names)}.`);
+    say(d.candidates
+    ? `Which one did you mean, the ${list(names.map(n => n.toLowerCase()), "or")}?`
+    : `I don't have that one yet. I know about your ${list(names.map(n => n.toLowerCase()))}.`);
     card("Registered appliances", names.map(n => `<div class="row"><span>${n}</span><span></span></div>`).join(""));
     return;
   }
   const part = d.consumables[0];
   say(part
-    ? `Your ${d.nickname} takes ${part.size || part.name}${part.part_number ? `, part number ${part.part_number}` : ""}. Last serviced ${d.last_service ? d.last_service.days_ago + " days ago" : "never"}.`
-    : `Your ${d.nickname} is a ${d.brand} ${d.model_number}.`);
+    ? `Your ${d.nickname.toLowerCase()} takes ${part.size || part.name}. ${d.last_service ? `You last had it serviced ${agoPhrase(d.last_service.days_ago)}.` : "There's no service logged for it yet."}`
+    : `Your ${d.nickname.toLowerCase()} is a ${d.brand} ${d.model_number}.`);
   card(d.nickname, `
     <div class="row"><span>Model</span><span>${d.brand} ${d.model_number}</span></div>
     ${d.consumables.map(c => `<div class="row"><span>${c.name}</span><span>${[c.size, c.part_number].filter(Boolean).join(" · ") || "—"}</span></div>`).join("")}
@@ -233,8 +311,8 @@ function renderDiagnosis(d) {
   }
   if (d.found === false) { renderAppliance(d); return; }
   const top = d.causes[0];
-  say(`Most likely, ${top.cause.toLowerCase().replace(/\.$/, "")}${top.days_since_last_done != null
-      ? `. You last did that ${top.days_since_last_done} days ago` : ""}. Want me to walk you through it?`);
+  say(`Most likely ${top.cause.toLowerCase().replace(/\.$/, "")}. ${top.days_since_last_done != null
+      ? `You last did that ${agoPhrase(top.days_since_last_done)}. ` : ""}Want me to walk you through it?`);
   card(`${d.nickname} · ${d.symptom}`, d.causes.map(c => `
     <div class="cause">
       <span class="pill ${c.likelihood === "most likely" ? "top" : c.likelihood === "possible" ? "mid" : "low"}">${c.likelihood}</span>
@@ -249,7 +327,7 @@ function renderStep(d) {
     return;
   }
   if (d.finished) {
-    say(`${d.message} I've logged it. Next one is due ${d.logged.next_due}.`);
+    say(`That's the last step, so you're done. I've logged it, and you're due again in about three months.`);
     card("Repair complete", `
       <div class="row"><span>${d.procedure}</span><span><span class="pill ok">done</span></span></div>
       <div class="row"><span>Logged</span><span>${d.logged.task}, ${d.logged.date}</span></div>
@@ -258,15 +336,10 @@ function renderStep(d) {
   }
   const dots = Array.from({ length: d.total_steps }, (_, i) =>
     `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
-  if (d.awaiting_confirmation) {
-    say(d.step_number === 1 && d.tools_needed
-      ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()} ${d.confirm_prompt}`
-      : `${d.step} ${d.confirm_prompt}`);
-  } else {
-    say(d.step_number === 1
-      ? `${d.procedure}, ${d.total_steps} steps. You'll need ${list(d.tools_needed)}. First, ${d.step.toLowerCase()}`
-      : `Step ${d.step_number}. ${d.step}`);
-  }
+  const opener = d.step_number === 1
+    ? `Okay. This takes ${spokenNumber(d.total_steps)} steps, and you'll want ${list(d.tools_needed)}. First up. ${d.step}`
+    : `${["", "", "Next.", "Then.", "After that.", "Now.", "Next up.", "Then."][d.step_number] || "Next."} ${d.step}`;
+  say(d.awaiting_confirmation ? `${opener} ${d.confirm_prompt}` : opener);
   card(d.procedure, `<div class="stepwrap">
       <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
       <div class="dots">${dots}</div>
@@ -278,8 +351,13 @@ function renderStep(d) {
 
 function renderDue(d) {
   const n = d.overdue.length;
-  say(n ? `${n} thing${n > 1 ? "s are" : " is"} overdue. ${d.overdue.map(i => `the ${i.nickname}, ${i.task}`).join("; ")}.`
-        : "Nothing is overdue right now.");
+  const overdueLine = d.overdue
+    .map(i => `the ${i.nickname.toLowerCase()} needs its ${i.task.replace(/^(clean|replace|run)\s+(a|the)\s+/, "")}, ${overduePhrase(i.days_overdue)}`)
+    .join(", and ");
+  const nextUp = d.upcoming[0];
+  say(n
+    ? `${n === 1 ? "One thing's" : sentenceCase(spokenNumber(n)) + " things are"} overdue: ${overdueLine}.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is coming up ${inPhrase(nextUp.days_until)}.` : ""}`
+    : `Nothing's overdue.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`);
   card("Around the house", [
     ...d.overdue.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span><span class="pill top">${i.days_overdue} days overdue</span></span></div>`),
     ...d.upcoming.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span>in ${i.days_until} days</span></div>`)
@@ -288,7 +366,7 @@ function renderDue(d) {
 
 function renderLog(d) {
   if (d.logged !== true) { renderAppliance(d); return; }
-  say(`Logged. ${d.task} on the ${d.nickname}, due again ${d.next_due}.`);
+  say(`Got it, logged. That's the ${d.nickname.toLowerCase()} done for now.`);
   card("Service logged", `
     <div class="row"><span>${d.nickname}</span><span>${d.task}</span></div>
     <div class="row"><span>Date</span><span>${d.date}</span></div>
@@ -329,6 +407,14 @@ $("mute").addEventListener("click", () => {
   $("mute").setAttribute("aria-pressed", String(!speak));
   if (!speak && window.speechSynthesis) speechSynthesis.cancel();
 });
+loadVoices();
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
+$("voice").addEventListener("change", e => {
+  chosenVoice = voices.find(v => v.name === e.target.value) || null;
+  try { localStorage.setItem("ho:voice", e.target.value); } catch {}
+  if (chosenVoice) say("Okay, I'll use this voice from now on.");
+});
+
 CHIPS.forEach(c => {
   const b = document.createElement("button");
   b.type = "button"; b.textContent = c;

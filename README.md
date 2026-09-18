@@ -62,6 +62,8 @@ Try this sequence:
 6. Keep going to the end; the service logs itself
 7. "Anything I should take care of?" — the dishwasher is gone from the overdue list
 
+**Voice.** The simulator speaks through the browser's speech synthesis. Pick a voice from the dropdown under the input — quality varies a lot between machines, and the joke voices macOS ships are filtered out. Replies are written to be spoken rather than read: dates become "about seven months ago" instead of "219 days ago", counts are spelled out, and each sentence is spoken separately so there is a natural pause between them. For the final demo video, Amazon Polly generative voices (`Ruth`, `Danielle`, `Matthew`) sound markedly better; a three-minute script is about 2,500 characters, well inside the free tier.
+
 The assistant side is scripted, not an LLM. The hackathon rules allow a simulated Alexa+ experience, and everything behind it is a real MCP server.
 
 ## Test it
