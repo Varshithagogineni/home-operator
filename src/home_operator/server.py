@@ -134,6 +134,41 @@ def log_service(
     return store.log_service(HOME, appliance, task, date.today(), notes)
 
 
+@mcp.tool(
+    title="Add an appliance",
+    description=(
+        "Register an appliance the person owns, from its type, brand and model number, e.g. "
+        "\"I just got a Bosch dishwasher, model SHE33T52UC\". Gives it a standard maintenance "
+        "schedule and queues a safety recall check. Returns the existing one if the model is already registered."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+)
+def add_appliance(
+    kind: Annotated[str, Field(description='What it is, e.g. "dishwasher", "fridge" or "washer".')],
+    brand: Annotated[str, Field(description='The brand on the label, e.g. "Bosch".')],
+    model_number: Annotated[str, Field(description="The model number from the data plate.")],
+    room: Annotated[str | None, Field(description='Where it is, e.g. "kitchen".')] = None,
+    nickname: Annotated[str | None, Field(description='What the person calls it, e.g. "upstairs washer".')] = None,
+) -> dict:
+    return store.add_appliance(HOME, kind, brand, model_number, date.today(), room, nickname)
+
+
+@mcp.tool(
+    title="Brief a repair professional",
+    description=(
+        "Prepare a short summary to hand to a repair professional: the model, its age and warranty, "
+        "the problem, what was already tried today, and recent service. Flags open safety recalls, "
+        "since the manufacturer repairs recalled products for free."
+    ),
+    annotations=READ_ONLY,
+)
+def prepare_pro_brief(
+    appliance: Annotated[str, Field(description='Which appliance, e.g. "dishwasher".')],
+    symptom: Annotated[str | None, Field(description='The problem in the person\'s words, e.g. "still won\'t drain".')] = None,
+) -> dict:
+    return store.prepare_pro_brief(HOME, appliance, date.today(), symptom)
+
+
 def build_app():
     """The MCP endpoint at /mcp, plus the simulated Alexa+ front end at /sim."""
     app = mcp.streamable_http_app(stateless_http=True, json_response=True)

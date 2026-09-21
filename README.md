@@ -6,7 +6,7 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
-> **Status: Week 1–3.** A local MCP server with six working tools on **sample data**. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
+> **Status:** A local MCP server with all eight tools working on **sample data**. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
 
 ## Tools
 
@@ -18,6 +18,8 @@ Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonapp
 | `start_repair` | "Walk me through cleaning the filter." | Step 1, the tools needed, a safety note, and the total number of steps |
 | `navigate_repair` | "Next." "Go back." "Say that again." | The next, previous or current step, holding your place between questions |
 | `log_service` | "I replaced the fridge water filter." | Records it with today's date and returns when it is next due |
+| `add_appliance` | "I just got a Bosch dryer, model DLE3400W." | Registers it with a standard maintenance schedule for its type and queues a recall check. Ignores a model already registered |
+| `prepare_pro_brief` | "It still won't drain, I need someone." | A summary for a repair professional: model, age, warranty, the problem and what was already tried today. If the model is recalled, it says to call the manufacturer first, because recall repairs are free |
 
 Finishing the final step of a repair logs the service automatically, which is what clears it from the overdue list.
 
@@ -61,8 +63,11 @@ Try this sequence:
 3. "Next" — refused, because step 1 is a safety gate
 4. "Done" — the gate clears and it moves to step 2
 5. "Next", then "Say that again" — it holds your place at step 3
-6. Keep going to the end; the service logs itself
-7. "Anything I should take care of?" — the dishwasher is gone from the overdue list
+6. Ask something off-script mid-repair — it says it is still holding your place
+7. Keep going to the end; the service logs itself
+8. "It still won't drain, I need someone" — a brief for a repair pro, including what you already tried
+9. "Anything I should take care of?" — the dishwasher is gone from the overdue list
+10. "I just got a Bosch dryer, model DLE3400W" — added, with a maintenance schedule
 
 **Voice.** The simulator speaks through the browser's speech synthesis. Pick a voice from the dropdown under the input — quality varies a lot between machines, and the joke voices macOS ships are filtered out. Replies are written to be spoken rather than read: dates become "about seven months ago" instead of "219 days ago", counts are spelled out, and each sentence is spoken separately so there is a natural pause between them. For the final demo video, Amazon Polly generative voices (`Ruth`, `Danielle`, `Matthew`) sound markedly better; a three-minute script is about 2,500 characters, well inside the free tier.
 
@@ -108,11 +113,12 @@ curl -s -X POST http://127.0.0.1:8000/mcp -H 'Content-Type: application/json' -H
 
 ```
 src/home_operator/
-  server.py              MCP server and the six tool definitions
-  store.py               lookup, maintenance math, diagnosis and repair steps
+  server.py              MCP server and the eight tool definitions
+  store.py               lookup, maintenance math, diagnosis, repair steps, briefs
+  recalls.py             CPSC recall check (runs ahead of time, not per request)
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
-tests/                   test_store.py, test_repair.py
+tests/                   47 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 

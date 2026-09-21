@@ -320,3 +320,114 @@ def log_service(home: dict, query: str, task: str, today: date, notes: str | Non
         next_due = (today + timedelta(days=interval)).isoformat()
 
     return {"logged": True, **_brief(a), "task": recorded_task, "date": today.isoformat(), "next_due": next_due}
+
+
+# Standard schedules by appliance type, used until a manual is processed.
+MAINTENANCE_TEMPLATES = {
+    "dishwasher": [{"task": "clean the filter", "interval_days": 90}],
+    "furnace": [{"task": "replace the air filter", "interval_days": 90},
+                {"task": "professional tune-up", "interval_days": 365}],
+    "refrigerator": [{"task": "replace the water filter", "interval_days": 180}],
+    "washing machine": [{"task": "run a cleaning cycle", "interval_days": 30}],
+    "dryer": [{"task": "clean the vent duct", "interval_days": 365}],
+    "water heater": [{"task": "flush the tank", "interval_days": 365}],
+}
+
+CATEGORY_WORDS = {
+    "dishwasher": "dishwasher",
+    "furnace": "furnace",
+    "fridge": "refrigerator",
+    "refrigerator": "refrigerator",
+    "washer": "washing machine",
+    "washing machine": "washing machine",
+    "dryer": "dryer",
+    "water heater": "water heater",
+}
+
+
+def _category(text: str) -> str:
+    t = _normalize(text)
+    for word in sorted(CATEGORY_WORDS, key=len, reverse=True):
+        if word in t:
+            return CATEGORY_WORDS[word]
+    return t
+
+
+def add_appliance(home: dict, kind: str, brand: str, model_number: str, today: date,
+                  room: str | None = None, nickname: str | None = None) -> dict:
+    model_key = re.sub(r"[^A-Z0-9]", "", model_number.upper())
+    for a in home["appliances"]:
+        if re.sub(r"[^A-Z0-9]", "", a["model_number"].upper()) == model_key:
+            return {"added": False, **_brief(a), "message": f'That {a["nickname"].lower()} is already registered.'}
+
+    category = _category(kind)
+    schedule = MAINTENANCE_TEMPLATES.get(category, [])
+    appliance = {
+        "id": f"{category.replace(' ', '-')}-{len(home['appliances']) + 1}",
+        "nickname": nickname or category.title(),
+        "room": room or "home",
+        "category": category,
+        "brand": brand.strip(),
+        "model_number": model_number.strip().upper(),
+        "purchase_date": today.isoformat(),
+        "warranty_until": (today + timedelta(days=365)).isoformat(),
+        "consumables": [],
+        "maintenance": [dict(m) for m in schedule],
+    }
+    home["appliances"].append(appliance)
+    return {
+        "added": True,
+        **_brief(appliance),
+        "brand": appliance["brand"],
+        "model_number": appliance["model_number"],
+        "maintenance_schedule": [m["task"] for m in schedule],
+        "warranty_assumed_until": appliance["warranty_until"],
+        "recall_check": "queued",
+        "note": None if schedule else "No standard schedule for this type yet; add one from the manual.",
+    }
+
+
+def prepare_pro_brief(home: dict, query: str, today: date, symptom: str | None = None) -> dict:
+    matches = find_appliances(home, query)
+    if len(matches) != 1:
+        return describe_appliance(home, query, today)
+
+    a = matches[0]
+    purchased = date.fromisoformat(a["purchase_date"])
+    age_years = round((today - purchased).days / 365, 1)
+    under_warranty = date.fromisoformat(a["warranty_until"]) >= today
+    tried_today = list(dict.fromkeys(
+        e["task"] for e in home["service_log"]
+        if e["appliance_id"] == a["id"] and e["date"] == today.isoformat()
+    ))
+    history = sorted((e for e in home["service_log"] if e["appliance_id"] == a["id"]),
+                     key=lambda e: e["date"], reverse=True)[:3]
+    recalls = _open_recalls(home, a["id"])
+
+    lines = [
+        f'{a["brand"]} {a["nickname"].lower()}, model {a["model_number"]}, about {age_years:g} years old.',
+        f'Warranty: {"active until " + a["warranty_until"] if under_warranty else "expired " + a["warranty_until"]}.',
+    ]
+    if symptom:
+        lines.append(f"Problem: {symptom.strip().rstrip('.')}.")
+    if tried_today:
+        lines.append(f'Already tried today: {", ".join(tried_today)}. It did not fix the problem.')
+    if history:
+        lines.append("Recent service: " + "; ".join(f'{e["task"]} on {e["date"]}' for e in history) + ".")
+
+    advice = None
+    if recalls:
+        advice = ("This model is under a safety recall. Contact the manufacturer before paying for a repair: "
+                  "recall repairs are free. " + (recalls[0]["url"] or ""))
+    elif under_warranty:
+        advice = "Still under warranty. Contact the manufacturer before booking a paid repair."
+
+    return {
+        "found": True,
+        **_brief(a),
+        "brief": " ".join(lines),
+        "brief_lines": lines,
+        "open_recalls": recalls,
+        "under_warranty": under_warranty,
+        "advice": advice,
+    }

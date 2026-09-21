@@ -117,7 +117,7 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
 
 <script>
 const $ = id => document.getElementById(id);
-let rpcId = 0, lastAppliance = null, speak = true;
+let rpcId = 0, lastAppliance = null, speak = true, activeRepair = null;
 
 const CHIPS = [
   "Why won't my dishwasher drain?",
@@ -126,7 +126,9 @@ const CHIPS = [
   "Next",
   "Say that again",
   "What filter does the furnace take?",
-  "Anything I should take care of?"
+  "Anything I should take care of?",
+  "It still won't drain, I need someone",
+  "I just got a Bosch dryer, model DLE3400W"
 ];
 
 async function callTool(name, args) {
@@ -170,6 +172,14 @@ function applianceIn(text) {
   return null;
 }
 
+// "It still won't drain, I need someone" -> "still won't drain": the ask for help isn't the symptom.
+function symptomOnly(text) {
+  return text
+    .replace(/[,.;]?\s*(and\s+)?(i need|can you|could you|please|get me|book|call)\b.*$/i, "")
+    .replace(/^\s*(it|the \w+)\s+/i, "")
+    .trim() || text;
+}
+
 function route(text) {
   const t = text.toLowerCase().trim();
   const appliance = applianceIn(t) || lastAppliance;
@@ -187,6 +197,17 @@ function route(text) {
 
   if (/(i (just )?(replaced|changed|cleaned|did)|finished)/.test(t))
     return { tool: "log_service", args: { appliance: appliance || "fridge", task: t } };
+
+  if (/\b(i (just )?(got|bought|installed)|add (a|my|the))\b/.test(t)) {
+    const kind = applianceIn(t) || (t.match(/\b(dryer|water heater|espresso machine|microwave|oven)\b/) || [])[1] || "appliance";
+    const model = (text.match(/model\s+([A-Za-z0-9-]{4,})/i) || text.match(/\b(?=[A-Za-z0-9-]*\d)(?=[A-Za-z0-9-]*[A-Za-z])[A-Za-z0-9-]{5,}\b/) || [])[1] || "";
+    const brand = (text.match(/\b(?:got|bought|installed|add)\s+(?:a|an|my|the)?\s*(?:new\s+)?([A-Z][A-Za-z-]+)/) || [])[1] || "Unknown";
+    lastAppliance = kind;
+    return { tool: "add_appliance", args: { kind, brand, model_number: model || "UNKNOWN" } };
+  }
+
+  if (/(need (someone|a pro|a repair|help)|call (someone|a pro)|book (someone|a repair)|still (won'?t|not|isn'?t)|didn'?t (work|fix))/.test(t))
+    return { tool: "prepare_pro_brief", args: { appliance: appliance || "dishwasher", symptom: symptomOnly(text) } };
 
   if (/(anything|what).*(due|overdue|take care|need|maintenance)/.test(t) || /what needs doing/.test(t))
     return { tool: "get_maintenance_due", args: {} };
@@ -274,6 +295,12 @@ function inPhrase(days) {
   return `in about ${spokenNumber(Math.round(days / 30))} months`;
 }
 
+function everyPhrase(days) {
+  if (days % 365 === 0) return days === 365 ? "once a year" : `every ${spokenNumber(days / 365)} years`;
+  if (days >= 28 && days % 30 === 0) return days === 30 ? "once a month" : `every ${spokenNumber(days / 30)} months`;
+  return `every ${spokenNumber(days)} days`;
+}
+
 function overduePhrase(days) {
   if (days < 14) return `${spokenNumber(days)} days overdue`;
   if (days < 60) return `about ${spokenNumber(Math.round(days / 7))} weeks overdue`;
@@ -328,6 +355,7 @@ function renderDiagnosis(d) {
 }
 
 function renderStep(d) {
+  activeRepair = d.active && !d.finished ? d : null;
   if (d.started === false || d.active === false && !d.finished) {
     say(d.message);
     card("Available repairs", (d.available_repairs || []).map(r => `<div class="row"><span>${r}</span><span></span></div>`).join(""));
@@ -385,7 +413,34 @@ function renderLog(d) {
     <div class="row"><span>Next due</span><span>${d.next_due || "—"}</span></div>`);
 }
 
+function renderAdd(d) {
+  if (!d.added) {
+    say(d.message || "I couldn't add that one.");
+    card("Already registered", `<div class="row"><span>${d.nickname}</span><span>${d.room}</span></div>`);
+    return;
+  }
+  const tasks = d.maintenance_schedule || [];
+  say(`Got it, I've added your ${d.brand} ${d.nickname.toLowerCase()}.${tasks.length
+      ? ` I'll keep track of when to ${tasks[0]}.` : ""} I'm also checking it against safety recalls.`);
+  card("Appliance added", `
+    <div class="row"><span>${d.nickname}</span><span>${d.brand} ${d.model_number}</span></div>
+    ${tasks.map(t => `<div class="row"><span>Maintenance</span><span>${t}</span></div>`).join("")}
+    <div class="row"><span>Safety recall check</span><span><span class="pill mid">queued</span></span></div>
+    ${d.note ? `<div class="row"><span>${d.note}</span><span></span></div>` : ""}`);
+}
+
+function renderBrief(d) {
+  if (d.found === false) { renderAppliance(d); return; }
+  const advice = d.advice ? `Before you book anyone: ${d.advice.split(" http")[0]} ` : "";
+  const spoken = d.brief_lines.filter(l => !l.startsWith("Warranty:") && !l.startsWith("Recent service:"));
+  say(`${advice}Here's what I'll pass along to them. ${spoken.join(" ")}`);
+  card(`Brief for a repair pro · ${d.nickname}`, `
+    ${d.advice ? `<div class="gate"><b>${d.open_recalls.length ? "Recall" : "Warranty"}</b><span>${escapeHtml(d.advice)}</span></div>` : ""}
+    ${d.brief_lines.map(l => `<div class="row"><span>${escapeHtml(l)}</span><span></span></div>`).join("")}`);
+}
+
 const RENDER = {
+  add_appliance: renderAdd, prepare_pro_brief: renderBrief,
   get_appliance: renderAppliance, diagnose_symptom: renderDiagnosis,
   start_repair: renderStep, navigate_repair: renderStep,
   get_maintenance_due: renderDue, log_service: renderLog
@@ -395,6 +450,10 @@ async function send(text) {
   if (!text.trim()) return;
   $("heard").innerHTML = `You said: <b>${escapeHtml(text)}</b>`;
   const plan = route(text);
+  if (!plan && activeRepair) {
+    say(`I'm still with you on step ${spokenNumber(activeRepair.step_number)}. Say next when you're ready, or say that again to hear it.`);
+    return;
+  }
   if (!plan) {
     say("I can look up an appliance, diagnose a problem, walk you through a repair, or tell you what's due.");
     card("Try saying", CHIPS.map(c => `<div class="row"><span>${c}</span><span></span></div>`).join(""));
