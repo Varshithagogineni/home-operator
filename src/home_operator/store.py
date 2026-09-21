@@ -7,8 +7,18 @@ FILLER_WORDS = {"the", "my", "our", "a", "an"}
 
 
 def load_home() -> dict:
-    text = resources.files("home_operator").joinpath("data/sample_home.json").read_text()
-    return json.loads(text)
+    data = resources.files("home_operator").joinpath("data")
+    home = json.loads(data.joinpath("sample_home.json").read_text())
+    recalls = json.loads(data.joinpath("recalls.json").read_text())
+    home["recalls"] = recalls.get("by_appliance", {})
+    return home
+
+
+def _open_recalls(home: dict, appliance_id: str) -> list[dict]:
+    return [
+        {"title": r["title"], "hazard": r["hazard"], "remedy": r["remedy"], "url": r["url"], "date": r["date"]}
+        for r in home.get("recalls", {}).get(appliance_id, [])
+    ]
 
 
 def _normalize(text: str) -> str:
@@ -80,6 +90,7 @@ def describe_appliance(home: dict, query: str, today: date) -> dict:
             "until": a["warranty_until"],
         },
         "consumables": a["consumables"],
+        "open_recalls": _open_recalls(home, a["id"]),
         "last_service": None if last is None else {
             "task": last["task"],
             "date": last["date"],
@@ -110,9 +121,15 @@ def maintenance_due(home: dict, today: date, within_days: int = 30) -> dict:
 
     overdue.sort(key=lambda i: -i["days_overdue"])
     upcoming.sort(key=lambda i: i["days_until"])
+    recalls = [
+        {**_brief(a), **r}
+        for a in home["appliances"]
+        for r in _open_recalls(home, a["id"])
+    ]
     return {
         "as_of": today.isoformat(),
         "window_days": within_days,
+        "open_recalls": recalls,
         "overdue": overdue,
         "upcoming": upcoming,
     }

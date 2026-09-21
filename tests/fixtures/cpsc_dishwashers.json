@@ -1,0 +1,79 @@
+[
+  {
+    "RecallNumber": "21151",
+    "RecallDate": "2021-06-16T00:00:00",
+    "Title": "Cove Appliance Recalls Dishwashers Due to Fire Hazard",
+    "Description": "This recall involves Cove Appliance 24-inch built-in residential dishwashers model numbers DW2450 and DW2450WS. The recalled dishwashers have serial numbers 20000100 through 20044445. The model number, serial number and date code are printed on the product rating plate located inside the dishwasher. \"Cove\" is printed on the outside of the door and on the far right side of the control panel, located on the top of the unit's door.",
+    "URL": "https://www.cpsc.gov/Recalls/2021/Cove-Appliance-Recalls-Dishwashers-Due-to-Fire-Hazard",
+    "Products": [
+      {
+        "Name": "Cove Appliance 24-inch built-in dishwashers"
+      }
+    ],
+    "Manufacturers": [
+      {
+        "Name": "Cove Appliance Inc., of Madison, Wis."
+      }
+    ],
+    "Hazards": [
+      {
+        "Name": "The heating element in the dishwasher can fail to properly shut off and can overheat, posing a fire hazard."
+      }
+    ],
+    "Remedies": [
+      {
+        "Name": "Consumers should immediately stop using the recalled dishwashers, unplug them from their power source, and contact Cove Appliance to schedule a free repair. Cove Appliance will install a second thermal protection device and replace the dishwasher's heating element."
+      }
+    ]
+  },
+  {
+    "RecallNumber": "18013",
+    "RecallDate": "2017-10-20T00:00:00",
+    "Title": "BSH Home Appliances Expands Recall of Dishwashers Due to Fire Hazard",
+    "Description": "This recall expansion involves Bosch, Gaggenau, Jenn-Air and Thermador brand dishwashers sold in stainless steel, black, white and custom panel. The model and serial numbers are printed inside the dishwasher either on the top of the dishwasher inner door panel or on the side of the dishwasher panel. Brand Model number beginning with Serial number range *indicates models that were included in the previous recall on October 1, 2015. The date range was expanded for these models. Bosch SHE33T SHE53T SHE65T SHE68T SHE7PT SHE8PT SHP53T SHP65T SHP7PT SHV53T SHV68T SHV7PT SHV8PT SHX53T SHX65T SHX68T SHX7PT SHX8PT FD 9209 - 9403 SGE53U SGE63E* SGE68U SGV63E* SGX68U SHE9PT* SHV9PT* SHX5ER* SHX7ER* SHX9PT* SPE5ES* SPE53U SPE68U SPV5ES* SPX5ES* SPX68U FD 9401 - 9501 Gaggenau DF2417* DF2607* DF2617* FD 9401 - 9501 Jenn-Air JDB9600CWS JDB9600CWP JDB9600CWX FD 9404 - 9501 Thermador DWHD44 FD 9209 - 9403 DWHD64* DWHD65* FD 9401 - 9501",
+    "URL": "https://www.cpsc.gov/Recalls/2018/BSH-Home-Appliances-Expands-Recall-of-Dishwashers",
+    "Products": [
+      {
+        "Name": "Bosch, Gaggenau, Jenn-Air and Thermador brand dishwashers"
+      }
+    ],
+    "Manufacturers": [],
+    "Hazards": [
+      {
+        "Name": "The dishwasher power cord can overheat and catch fire."
+      }
+    ],
+    "Remedies": [
+      {
+        "Name": "Consumers should immediately stop using the recalled dishwashers and contact BSH Home Appliances for a free inspection and repair."
+      }
+    ]
+  },
+  {
+    "RecallNumber": "12244",
+    "RecallDate": "2012-08-09T00:00:00",
+    "Title": "GE Recalls Dishwashers Due to Fire Hazard",
+    "Description": "This recall involves GE, GE Adora, GE Eterna, GE Profile and Hotpoint brand dishwashers. They were sold in black, white, bisque, stainless steel and CleanSteel\u2122 exterior colors and finishes. The model and serial numbers can be found on a metallic plate located on the left tub wall visible when the door is opened. Model and serial numbers will start with one of the following sequences: Brand Model Number Begins With: Serial Number Begins With: GE GE Adora GE Eterna GE Profile GLC4, GLD4, GLD5, GLD6, GSD61, GSD62, GSD63, GSD66, GSD67, GSD69, GLDL, PDW7, PDWF7, EDW4, EDW5, EDW6, GHD4, GHD5, GHD6, GHDA4, GHDA6 FL, GL, HL, LL, ML, VL, ZL, AM, DM, FM, GM, HM, LM, MM, RM, SM, TM, VM, ZM, AR, DR, FR, GR Hotpoint HLD4",
+    "URL": "https://www.cpsc.gov/Recalls/2012/GE-Recalls-Dishwashers-Due-to-Fire-Hazard",
+    "Products": [
+      {
+        "Name": "GE, GE Adora\u2122, GE Eterna\u2122, GE Profile\u2122 and Hotpoint\u00ae, Dishwashers"
+      }
+    ],
+    "Manufacturers": [
+      {
+        "Name": "GE Appliances, of Louisville, Ky."
+      }
+    ],
+    "Hazards": [
+      {
+        "Name": "An electrical failure in the dishwasher's heating element can pose a fire hazard."
+      }
+    ],
+    "Remedies": [
+      {
+        "Name": "Consumers should immediately stop using the recalled dishwashers, disconnect the electric supply by shutting off the fuse or circuit breaker controlling it and inform all users of the dishwasher about the risk of fire. For all dishwashers, contact GE for a free in-home repair or to receive a GE rebate of $75 towards the purchase of a new GE front-control plastic tub dishwasher, or a rebate of $100 towards the purchase of a new GE front-control stainless tub dishwasher or GE Profile top control dishwasher. Consumers should not return the recalled dishwashers to the retailer where they purchased as retailers are not prepared to take the units back."
+      }
+    ]
+  }
+]

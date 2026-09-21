@@ -38,12 +38,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--san
 .card h3{margin:0 0 12px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);font-weight:500}
 .row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:17px}
 .row:last-child{border-bottom:0}
-.row span:last-child{color:var(--muted);text-align:right}
+/* Direct child only, so status pills inside the cell keep their own colours. */
+.row > span:last-child{color:var(--muted);text-align:right}
 .pill{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;border-radius:999px;white-space:nowrap}
 .pill.top{background:rgba(242,121,91,.16);color:var(--bad)}
 .pill.mid{background:rgba(240,180,75,.16);color:var(--warn)}
 .pill.low{background:rgba(140,163,179,.16);color:var(--muted)}
 .pill.ok{background:rgba(84,214,160,.16);color:var(--ok)}
+.pill.recall{background:var(--bad);color:#1A0905}
+.recallrow{border-left:3px solid var(--bad);padding-left:10px}
 .cause{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:17px}
 .cause:last-child{border-bottom:0}
 .cause small{display:block;color:var(--muted);font-size:14px;margin-top:3px}
@@ -299,7 +302,11 @@ function renderAppliance(d) {
     <div class="row"><span>Model</span><span>${d.brand} ${d.model_number}</span></div>
     ${d.consumables.map(c => `<div class="row"><span>${c.name}</span><span>${[c.size, c.part_number].filter(Boolean).join(" · ") || "—"}</span></div>`).join("")}
     <div class="row"><span>Warranty</span><span><span class="pill ${d.warranty.status === "active" ? "ok" : "low"}">${d.warranty.status}</span> until ${d.warranty.until}</span></div>
-    ${d.last_service ? `<div class="row"><span>Last service</span><span>${d.last_service.task}, ${d.last_service.days_ago} days ago</span></div>` : ""}`);
+    ${d.last_service ? `<div class="row"><span>Last service</span><span>${d.last_service.task}, ${d.last_service.days_ago} days ago</span></div>` : ""}
+    ${(d.open_recalls || []).map(r => `<div class="row recallrow"><span>${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`).join("")}`);
+  if ((d.open_recalls || []).length) {
+    say(`Before anything else, this ${d.nickname.toLowerCase()} is part of a safety recall. ${d.open_recalls[0].remedy || ""}`);
+  }
 }
 
 function renderDiagnosis(d) {
@@ -355,10 +362,15 @@ function renderDue(d) {
     .map(i => `the ${i.nickname.toLowerCase()} needs its ${i.task.replace(/^(clean|replace|run)\s+(a|the)\s+/, "")}, ${overduePhrase(i.days_overdue)}`)
     .join(", and ");
   const nextUp = d.upcoming[0];
-  say(n
+  const recalls = d.open_recalls || [];
+  const recallLine = recalls.length
+    ? `First, something important: your ${recalls[0].nickname.toLowerCase()} is part of a safety recall. ${recalls[0].hazard || ""} `
+    : "";
+  say(recallLine + (n
     ? `${n === 1 ? "One thing's" : sentenceCase(spokenNumber(n)) + " things are"} overdue: ${overdueLine}.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is coming up ${inPhrase(nextUp.days_until)}.` : ""}`
-    : `Nothing's overdue.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`);
+    : `Nothing's overdue.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`));
   card("Around the house", [
+    ...recalls.map(r => `<div class="row recallrow"><span>${r.nickname} · ${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`),
     ...d.overdue.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span><span class="pill top">${i.days_overdue} days overdue</span></span></div>`),
     ...d.upcoming.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span>in ${i.days_until} days</span></div>`)
   ].join("") || `<div class="row"><span>All clear</span><span></span></div>`);

@@ -23,6 +23,8 @@ Finishing the final step of a repair logs the service automatically, which is wh
 
 **Safety gates.** Steps that involve power will not advance on "next". The dishwasher and furnace repairs both open with a gate: the walkthrough waits until the person says "done", "it's off" or "unplugged" before moving on. Nobody gets talked into reaching inside a live appliance because they said "next" out of habit.
 
+**Safety recalls.** `uv run home-operator-check-recalls` checks every appliance against the US Consumer Product Safety Commission's public recall data (free, no key needed) and saves matches to `data/recalls.json`. Recall notices list models as "model number beginning with", so a recall naming `SHE33T` matches a dishwasher whose full model is `SHE33T52UC`. The brand must also appear in the notice. Short brands like "GE" match only as whole words. The check runs ahead of time, not during a tool call, because it takes seconds and tools must answer in under 500 ms. Open recalls then appear in `get_appliance` and are spoken first in `get_maintenance_due`, ahead of routine maintenance.
+
 **Where your place is kept.** Repair progress is stored per home (`home_id`, currently `"default"`), in memory. In production this is a DynamoDB item keyed by the Alexa+ customer id, so each household keeps its own place. Restarting the server clears it.
 
 Both tools are read-only and return in milliseconds. Tool calls never call an LLM; Alexa+ does the reasoning, and this server supplies facts and state.
