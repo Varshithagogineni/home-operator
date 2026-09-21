@@ -110,13 +110,14 @@ def start_repair(
     title="Move through a repair",
     description=(
         "Move through the repair already in progress. Use next to advance, back to return to the "
-        "previous step, and repeat to hear the current step again. Finishing the last step records "
-        "the service automatically."
+        "previous step, and repeat to hear the current step again. Some steps are safety gates "
+        "(awaiting_confirmation is true): they won't advance on next, so send done once the person "
+        "confirms it is safe, e.g. they say it's unplugged. Finishing the last step records the service."
     ),
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
 def navigate_repair(
-    action: Annotated[str, Field(description='One of "next", "back" or "repeat".')] = "next",
+    action: Annotated[str, Field(description='One of "next", "back", "repeat", or "done" to confirm a safety gate.')] = "next",
 ) -> dict:
     return store.navigate_repair(HOME, SESSIONS, action, date.today())
 

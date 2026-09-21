@@ -178,7 +178,15 @@ def diagnose_symptom(home: dict, query: str, symptom: str, today: date) -> dict:
             }
         causes.append(entry)
 
-    return {"found": True, **_brief(a), "symptom": best["symptom"], "causes": causes}
+    return {
+        "found": True,
+        **_brief(a),
+        "brand": a["brand"],
+        "symptom": best["symptom"],
+        "meaning": best.get("meaning"),
+        "source_page": best.get("source_page"),
+        "causes": causes,
+    }
 
 
 def start_repair(home: dict, sessions: dict, query: str, task: str, today: date, home_id: str = "default") -> dict:
@@ -211,8 +219,16 @@ def start_repair(home: dict, sessions: dict, query: str, task: str, today: date,
         "step_number": 1,
         "total_steps": len(proc["steps"]),
         "step": proc["steps"][0],
+        "source": _source(home, a, proc),
         **_gate_fields(proc, 0, confirmed=False),
     }
+
+
+def _source(home: dict, appliance: dict, proc: dict) -> str | None:
+    """Where a procedure's steps come from, e.g. "LG owner's manual, page 40"."""
+    if not proc.get("source_page"):
+        return None
+    return f"{appliance['brand']} owner's manual, page {proc['source_page']}"
 
 
 def _gate_fields(proc: dict, step_index: int, confirmed: bool) -> dict:
@@ -291,8 +307,31 @@ def navigate_repair(home: dict, sessions: dict, action: str, today: date, home_i
         "step_number": session["step_index"] + 1,
         "total_steps": total,
         "step": proc["steps"][session["step_index"]],
+        "source": _source(home, a, proc),
         **_gate_fields(proc, session["step_index"], session["confirmed"]),
     }
+
+
+def _stem(word: str) -> str:
+    """Crude stemming so "replaced" matches "replace" and "hoses" matches "hose"."""
+    for suffix in ("ing", "ed", "es", "s"):
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            word = word[: -len(suffix)]
+            break
+    return word[:-1] if word.endswith("e") and len(word) > 3 else word
+
+
+def _match_task(said: str, known_tasks: list[str]) -> str | None:
+    """The scheduled task this refers to, or None. Most of the task's words must appear:
+    sharing one word ("clean") isn't enough, or cleaning one part would log another."""
+    words = {_stem(w) for w in _normalize(said).split()}
+    best, best_share = None, 0.0
+    for known in known_tasks:
+        task_words = {_stem(w) for w in _normalize(known).split()}
+        share = len(words & task_words) / len(task_words)
+        if share > best_share:
+            best, best_share = known, share
+    return best if best_share >= 0.6 else None
 
 
 def log_service(home: dict, query: str, task: str, today: date, notes: str | None = None) -> dict:
@@ -301,11 +340,7 @@ def log_service(home: dict, query: str, task: str, today: date, notes: str | Non
         return describe_appliance(home, query, today)
 
     a = matches[0]
-    known_tasks = [m["task"] for m in a["maintenance"]]
-    words = set(_normalize(task).split())
-    scored = [(len(words & set(_normalize(t).split())), t) for t in known_tasks]
-    best_score, matched = max(scored, key=lambda pair: pair[0], default=(0, None))
-    recorded_task = matched if matched and best_score else task
+    recorded_task = _match_task(task, [m["task"] for m in a["maintenance"]]) or task.strip()
 
     home["service_log"].append({
         "appliance_id": a["id"],

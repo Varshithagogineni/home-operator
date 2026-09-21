@@ -28,6 +28,8 @@ Return ONLY a JSON object, with no markdown and no commentary, in exactly this s
   "maintenance": [{{"task": "short verb phrase, e.g. clean the drain pump filter", "interval_days": 30}}],
   "symptoms": [{{
     "symptom": "short description, e.g. will not drain",
+    "meaning": "for an error code, what the manual says it means in plain words, e.g. water can't drain; otherwise null",
+    "source_page": 44,
     "keywords": ["lowercase words a person might say"],
     "causes": [{{
       "cause": "one sentence",
@@ -38,10 +40,11 @@ Return ONLY a JSON object, with no markdown and no commentary, in exactly this s
   }}],
   "procedures": [{{
     "id": "kebab-case-id",
+    "source_page": 40,
     "title": "e.g. Clean the drain pump filter",
     "task": "same verb phrase as the matching maintenance task, if any",
     "minutes": 10,
-    "tools_needed": ["..."],
+    "tools_needed": ["only items the manual names, such as a bucket; otherwise empty"],
     "safety_note": "one sentence from the manual's warnings",
     "gate_prompt": "if step 1 is about power, water or heat: a question asking the person to confirm it is safe, e.g. Tell me when the washer is unplugged. Otherwise null",
     "steps": ["one action per step, written to be spoken aloud, under 25 words"]
@@ -51,7 +54,9 @@ Return ONLY a JSON object, with no markdown and no commentary, in exactly this s
 Rules:
 - For every error code in the manual, add a symptom such as "shows error code OE", and put the code in lowercase in its keywords (e.g. "oe"), plus words like "error", "code", "display".
 - Order causes from most to least likely.
-- Only give interval_days when the manual states or clearly implies a frequency.
+- Only add a maintenance task when the manual states a specific frequency ("monthly" = 30, "once a week" = 7, "every five years" = 1825).
+  If it says only "periodically", "regularly" or "as needed", leave that task OUT of maintenance entirely. Never guess a number.
+- source_page is the page number printed on the manual page where the information appears.
 - Include every maintenance or troubleshooting procedure that has numbered or step-by-step instructions."""
 
 
@@ -75,12 +80,15 @@ class Cause(BaseModel):
 
 class Symptom(BaseModel):
     symptom: str
+    meaning: str | None = None
+    source_page: int | None = None
     keywords: list[str]
     causes: list[Cause] = Field(min_length=1)
 
 
 class Procedure(BaseModel):
     id: str
+    source_page: int | None = None
     title: str
     task: str
     minutes: int = Field(gt=0)
@@ -152,7 +160,7 @@ def main() -> None:
 
     extraction, usage = extract(args.pdf, args.brand, args.model, args.category)
     EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
-    out = EXTRACTED_DIR / f"{args.model.upper()}.json"
+    out = EXTRACTED_DIR / f"{args.model.upper()}.raw.json"
     out.write_text(json.dumps({
         "source": {"manual": args.pdf.name, "model_id": MODEL_ID, "extracted_on": date.today().isoformat(), **usage},
         "brand": args.brand, "model_number": args.model.upper(), "category": args.category,
@@ -163,7 +171,7 @@ def main() -> None:
     print(f"  {len(extraction.consumables)} parts, {len(extraction.maintenance)} maintenance tasks, "
           f"{len(extraction.symptoms)} symptoms/error codes, {len(extraction.procedures)} procedures")
     print(f"  tokens in/out: {usage['input_tokens']} / {usage['output_tokens']}")
-    print("Review it before merging into the home data.")
+    print(f"Review it against the manual, then save the corrected version as {args.model.upper()}.json.")
 
 
 if __name__ == "__main__":

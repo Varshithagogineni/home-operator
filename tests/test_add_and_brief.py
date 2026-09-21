@@ -81,7 +81,7 @@ def test_pro_brief_flags_a_recall_as_free_manufacturer_repair(home):
 
 
 def test_pro_brief_points_to_warranty_when_still_covered(home):
-    brief = store.prepare_pro_brief(home, "washer", TODAY)
+    brief = store.prepare_pro_brief(home, "furnace", TODAY)
     assert brief["under_warranty"] is True
     assert "warranty" in brief["advice"]
 

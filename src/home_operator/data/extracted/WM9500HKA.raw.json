@@ -1,0 +1,810 @@
+{
+  "source": {
+    "manual": "WM_EUS_MFL68005552_13_260116_00_OM_WEB_EN.pdf",
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "extracted_on": "2026-09-21",
+    "input_tokens": 13629,
+    "output_tokens": 4834
+  },
+  "brand": "LG",
+  "model_number": "WM9500HKA",
+  "category": "washing machine",
+  "consumables": [
+    {
+      "name": "drum cleaner",
+      "part_number": null,
+      "size": null
+    },
+    {
+      "name": "lime scale remover",
+      "part_number": null,
+      "size": null
+    },
+    {
+      "name": "liquid chlorine bleach",
+      "part_number": null,
+      "size": null
+    },
+    {
+      "name": "powdered cleaner",
+      "part_number": null,
+      "size": null
+    },
+    {
+      "name": "cleaning tablets",
+      "part_number": null,
+      "size": null
+    }
+  ],
+  "maintenance": [
+    {
+      "task": "clean the door seal",
+      "interval_days": 30
+    },
+    {
+      "task": "clean the water inlet filters",
+      "interval_days": 30
+    },
+    {
+      "task": "clean the drain pump filter",
+      "interval_days": 30
+    }
+  ],
+  "symptoms": [
+    {
+      "symptom": "shows error code IE",
+      "meaning": "inlet error",
+      "source_page": 44,
+      "keywords": [
+        "ie",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "water supply faucets are not fully open",
+          "short": "faucets not open",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "water inlet hoses are kinked, pinched, or crushed",
+          "short": "kinked hoses",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "water inlet filters are clogged",
+          "short": "clogged filters",
+          "likelihood": "possible",
+          "procedure_id": "clean-the-water-inlet-filters"
+        },
+        {
+          "cause": "water supply pressure to faucet or house is too low",
+          "short": "low pressure",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "water supply connected with leak-limiting hoses",
+          "short": "leak-limiting hoses",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code UE",
+      "meaning": "unbalance error",
+      "source_page": 44,
+      "keywords": [
+        "ue",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "the load is too small",
+          "short": "small load",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "heavy articles are mixed with lighter items",
+          "short": "mixed weights",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "the load is out of balance",
+          "short": "out of balance",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code DE",
+      "meaning": "door open error",
+      "source_page": 44,
+      "keywords": [
+        "de",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "the door is not secured",
+          "short": "door not secured",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code OE",
+      "meaning": "water outlet error",
+      "source_page": 44,
+      "keywords": [
+        "oe",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "drain hose is kinked, pinched, or clogged",
+          "short": "kinked drain hose",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "the end of the drain hose is more than 96 inches above the bottom of the washer",
+          "short": "high drain hose",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code LE",
+      "meaning": "motor locked error",
+      "source_page": 44,
+      "keywords": [
+        "le",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "a motor error has occurred",
+          "short": "motor error",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code 5ud",
+      "meaning": "oversudsing detection",
+      "source_page": 44,
+      "keywords": [
+        "5ud",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "oversudsing of detergent",
+          "short": "too much detergent",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code PF",
+      "meaning": "power failure",
+      "source_page": 44,
+      "keywords": [
+        "pf",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "power failure or inadequate electrical service may have occurred during operation",
+          "short": "power failure",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code FF",
+      "meaning": "frozen error",
+      "source_page": 44,
+      "keywords": [
+        "ff",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "inlet hose, drain hose or drain pump is frozen",
+          "short": "frozen hose",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code CL",
+      "meaning": "child lock function",
+      "source_page": 44,
+      "keywords": [
+        "cl",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "the Child Lock function is on to prevent anyone from changing cycles or operating the washer",
+          "short": "child lock on",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code tcl",
+      "meaning": "tub clean alarm",
+      "source_page": 44,
+      "keywords": [
+        "tcl",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "it is time to run the Tub Clean cycle",
+          "short": "needs cleaning",
+          "likelihood": "most likely",
+          "procedure_id": "clean-the-drum"
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code u5",
+      "meaning": "vibration sensor error",
+      "source_page": 45,
+      "keywords": [
+        "u5",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "vibration sensor malfunctions",
+          "short": "malfunctioning sensor",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "banging noise when the washer is filling with water",
+      "meaning": null,
+      "source_page": 43,
+      "keywords": [
+        "banging",
+        "noise",
+        "filling",
+        "water"
+      ],
+      "causes": [
+        {
+          "cause": "plumbing in the home moves or flexes when the water valve in the washer shuts off",
+          "short": "water hammer",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "water leaking",
+      "meaning": null,
+      "source_page": 46,
+      "keywords": [
+        "leaking",
+        "water"
+      ],
+      "causes": [
+        {
+          "cause": "hoses are not connected correctly",
+          "short": "incorrect hoses",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "house drain pipes are clogged",
+          "short": "clogged drain",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "drain hose has come out of the drain connector or is not inserted far enough",
+          "short": "loose drain hose",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "oversudsing of detergent",
+          "short": "too much detergent",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "washer will not turn on",
+      "meaning": null,
+      "source_page": 47,
+      "keywords": [
+        "won't",
+        "turn",
+        "on"
+      ],
+      "causes": [
+        {
+          "cause": "power cord is not properly plugged in",
+          "short": "unplugged cord",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "house fuse is blown, circuit breaker has tripped, or power outage has occurred",
+          "short": "power issue",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "wash cycle time is longer than usual",
+      "meaning": null,
+      "source_page": 47,
+      "keywords": [
+        "long",
+        "cycle",
+        "time"
+      ],
+      "causes": [
+        {
+          "cause": "the washer automatically adjusts the wash time for the amount of laundry, water pressure and other operating conditions",
+          "short": "auto adjustment",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "incomplete or no dispensing of detergent",
+      "meaning": null,
+      "source_page": 47,
+      "keywords": [
+        "detergent",
+        "not",
+        "dispensing"
+      ],
+      "causes": [
+        {
+          "cause": "detergent compartments clogged from incorrect filling",
+          "short": "clogged compartments",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "too much detergent used",
+          "short": "too much detergent",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "washer will not operate",
+      "meaning": null,
+      "source_page": 47,
+      "keywords": [
+        "won't",
+        "operate"
+      ],
+      "causes": [
+        {
+          "cause": "control panel has powered off due to inactivity",
+          "short": "inactive panel",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "washer is unplugged",
+          "short": "unplugged",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "water supply is turned off",
+          "short": "no water",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "controls are not set properly",
+          "short": "wrong settings",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "door is open",
+          "short": "open door",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "circuit breaker/fuse is tripped/blown",
+          "short": "tripped breaker",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Start/Pause button was not pressed after the cycle was set",
+          "short": "not started",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "extremely low water pressure",
+          "short": "low pressure",
+          "likelihood": "less likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "washer is too cold",
+          "short": "cold washer",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "washer stops for a few minutes and then restarts",
+      "meaning": null,
+      "source_page": 48,
+      "keywords": [
+        "stops",
+        "restarts"
+      ],
+      "causes": [
+        {
+          "cause": "a motor protection device has been activated to prevent overheating of the motor",
+          "short": "motor protection",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "washer is not filling properly",
+      "meaning": null,
+      "source_page": 48,
+      "keywords": [
+        "not",
+        "filling",
+        "properly"
+      ],
+      "causes": [
+        {
+          "cause": "filter is clogged",
+          "short": "clogged filter",
+          "likelihood": "most likely",
+          "procedure_id": "clean-the-water-inlet-filters"
+        },
+        {
+          "cause": "inlet hoses may be kinked",
+          "short": "kinked hoses",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "water in the washer does not drain or drains slowly",
+      "meaning": null,
+      "source_page": 48,
+      "keywords": [
+        "drain",
+        "slow",
+        "water"
+      ],
+      "causes": [
+        {
+          "cause": "drain hose is kinked, pinched, or clogged",
+          "short": "kinked drain",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "the end of the drain hose is more than 96 inches above the bottom of the washer",
+          "short": "high drain hose",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "bleach does not dispense",
+      "meaning": null,
+      "source_page": 48,
+      "keywords": [
+        "bleach",
+        "not",
+        "dispense"
+      ],
+      "causes": [
+        {
+          "cause": "bleach dispenser cover is not properly installed (on some models)",
+          "short": "wrong cover",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "bleach dispenser is dirty or clogged",
+          "short": "dirty dispenser",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "premature dispensing of bleach",
+      "meaning": null,
+      "source_page": 48,
+      "keywords": [
+        "premature",
+        "dispensing",
+        "bleach"
+      ],
+      "causes": [
+        {
+          "cause": "bleach dispenser filled for future load",
+          "short": "pre-filled",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "overfilling the bleach dispenser",
+          "short": "overfilled",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "wrinkling",
+      "meaning": null,
+      "source_page": 49,
+      "keywords": [
+        "wrinkling"
+      ],
+      "causes": [
+        {
+          "cause": "washer is overloaded",
+          "short": "overloaded",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "hot and cold water inlet hoses are reversed",
+          "short": "reversed hoses",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "staining",
+      "meaning": null,
+      "source_page": 49,
+      "keywords": [
+        "staining"
+      ],
+      "causes": [
+        {
+          "cause": "bleach or softener dispensed too soon",
+          "short": "early dispense",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "bleach or softener was added directly to the wash load in the drum",
+          "short": "direct add",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "washer was not unloaded promptly",
+          "short": "not unloaded",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "clothes were not properly sorted",
+          "short": "unsorted",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "poor stain removal",
+      "meaning": null,
+      "source_page": 49,
+      "keywords": [
+        "stain",
+        "removal",
+        "poor"
+      ],
+      "causes": [
+        {
+          "cause": "proper options are not selected",
+          "short": "wrong options",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "previously set stains",
+          "short": "set stains",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "musty or mildewy odor in the washer",
+      "meaning": null,
+      "source_page": 49,
+      "keywords": [
+        "musty",
+        "mildewy",
+        "odor"
+      ],
+      "causes": [
+        {
+          "cause": "incorrect or too much detergent has been used",
+          "short": "wrong detergent",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "inside of the drum was not cleaned properly",
+          "short": "uncleaned drum",
+          "likelihood": "possible",
+          "procedure_id": "clean-the-drum"
+        }
+      ]
+    },
+    {
+      "symptom": "odor",
+      "meaning": null,
+      "source_page": 50,
+      "keywords": [
+        "odor"
+      ],
+      "causes": [
+        {
+          "cause": "using the dry function, odors can occur from lint and other laundry matter sticking to the heater",
+          "short": "dry function",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "a particular odor can occur from drying wet clothes with hot air",
+          "short": "hot air drying",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "id": "clean-the-drum",
+      "source_page": 37,
+      "title": "Clean the drum",
+      "task": "clean the drum",
+      "minutes": 30,
+      "tools_needed": [],
+      "safety_note": "Make sure children and pets do not climb into the drum.",
+      "gate_prompt": "Tell me when the drum is empty.",
+      "steps": [
+        "Remove any clothing from the drum.",
+        "Add cleaning agents.",
+        "Close the door and press the Power button.",
+        "Select the Tub Clean cycle and press the Start/Pause button to begin the cycle.",
+        "After the cycle ends, open the door and allow the drum interior to dry completely."
+      ]
+    },
+    {
+      "id": "clean-the-door-seal",
+      "source_page": 39,
+      "title": "Clean the door seal",
+      "task": "clean the door seal",
+      "minutes": 10,
+      "tools_needed": [
+        "rubber gloves",
+        "protective goggles"
+      ],
+      "safety_note": "Cleaning the door seal with undiluted bleach may cause malfunction of the door seal and washer parts.",
+      "gate_prompt": null,
+      "steps": [
+        "Wear rubber gloves and protective goggles.",
+        "Dilute 3/4 cup (177 mL) of liquid chlorine bleach in 1 gallon (3.8 L) of water.",
+        "Wipe around the door seal.",
+        "Wipe up any moisture with a dry towel or cloth after cleaning.",
+        "Leave the door open to allow the door seal to dry completely."
+      ]
+    },
+    {
+      "id": "clean-the-water-inlet-filters",
+      "source_page": 39,
+      "title": "Clean the water inlet filters",
+      "task": "clean the water inlet filters",
+      "minutes": 15,
+      "tools_needed": [
+        "pliers"
+      ],
+      "safety_note": "Do not use the washer without the inlet filters.",
+      "gate_prompt": "Tell me when the water faucets are turned off.",
+      "steps": [
+        "Turn off the washer, and unplug the power cord.",
+        "Turn off hot and cold water faucets.",
+        "Unscrew the hot and cold water hoses from the back of the washer.",
+        "Remove the filters from the water valves carefully.",
+        "Remove foreign objects and soak the filters in white vinegar or a lime scale remover.",
+        "Rinse filters thoroughly and press them back into place.",
+        "Flush then reattach the water hoses."
+      ]
+    },
+    {
+      "id": "clean-the-drain-pump-filter",
+      "source_page": 40,
+      "title": "Clean the drain pump filter",
+      "task": "clean the drain pump filter",
+      "minutes": 10,
+      "tools_needed": [],
+      "safety_note": "Opening the drain filter will result in water overflowing if there is water in the drum.",
+      "gate_prompt": "Tell me when the drum is completely drained.",
+      "steps": [
+        "Turn off the washer, and unplug the power cord.",
+        "Open the drain pump filter cover.",
+        "Drain any remaining water.",
+        "Remove the pump filter.",
+        "Clean the pump filter and opening.",
+        "Reassemble the plug onto the drain hose and reclip the drain hose.",
+        "Insert the drain pump filter and twist it clockwise.",
+        "Close the drain pump filter cover."
+      ]
+    }
+  ]
+}

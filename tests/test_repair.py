@@ -78,7 +78,7 @@ def test_confirming_the_gate_advances_and_stays_cleared(home, sessions):
 
 
 def test_procedure_without_a_gate_advances_normally(home, sessions):
-    store.start_repair(home, sessions, "washer", "run a cleaning cycle", TODAY)
+    store.start_repair(home, sessions, "washer", "clean the door seal", TODAY)
     assert store.navigate_repair(home, sessions, "next", TODAY)["step_number"] == 2
 
 
@@ -120,7 +120,7 @@ def test_navigating_with_no_repair_in_progress_explains_instead_of_failing(home,
 
 def test_two_homes_keep_separate_places(home, sessions):
     store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY, home_id="home-a")
-    store.start_repair(home, sessions, "washer", "run a cleaning cycle", TODAY, home_id="home-b")
+    store.start_repair(home, sessions, "washer", "clean the door seal", TODAY, home_id="home-b")
     store.navigate_repair(home, sessions, "done", TODAY, home_id="home-a")
     store.navigate_repair(home, sessions, "next", TODAY, home_id="home-a")
 

@@ -6,7 +6,7 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
-> **Status:** A local MCP server with all eight tools working on **sample data**. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
+> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. The LG WM9500HKA washer is fully real — its repair steps, error codes and maintenance intervals come from LG's owner's manual via Amazon Bedrock, checked by a person. The other appliances are still placeholders (brand "Sample") until their manuals are processed. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
 
 ## Tools
 
@@ -56,7 +56,16 @@ Set `PORT` or `HOST` to change the address.
 
 Open `http://127.0.0.1:8000/sim/` and talk to it by typing, or click the suggested phrases. It plays the part of Alexa+: it works out which tool your words call, speaks the reply aloud, and shows the matching screen. A live panel lists every MCP call with its latency, so you can see that the answers come from the real server.
 
-Try this sequence:
+Try the washer, whose data comes from LG's real manual:
+
+1. "My washer is showing OE" — explains the error code, names LG's first check (the drain hose), then offers the drain pump filter fix
+2. "Yes, walk me through it" — eight steps from LG's manual, page 40, with the source shown on screen
+3. "Next" — refused: step 1 is a safety gate
+4. "It's unplugged" — the gate clears
+5. "Hold on, someone's at the door" — it holds your place
+6. "Anything I should take care of?" — includes LG's five-year hose replacement, from page 12
+
+Or the original sample dishwasher:
 
 1. "Why won't my dishwasher drain?"
 2. "Walk me through cleaning the filter"
@@ -111,6 +120,23 @@ Alexa+ connects using an older protocol version (`2025-03-26`). To check that ha
 curl -s -X POST http://127.0.0.1:8000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
 ```
 
+## How a manual becomes data
+
+Amazon Bedrock reads the PDF; a person checks the result against the manual before any of it is used. Both versions are kept in `src/home_operator/data/extracted/`:
+
+| File | What it is |
+|---|---|
+| `WM9500HKA.raw.json` | Exactly what Amazon Nova 2 Lite returned from LG's 56-page manual |
+| `WM9500HKA.json` | The reviewed version, with every correction logged under `source.review.changes`, each citing the manual page and quoting it |
+
+```bash
+uv run home-operator-extract manuals/<manual>.pdf --brand LG --model WM9500HKA --category "washing machine"
+# review WM9500HKA.raw.json against the manual, save the corrected copy as WM9500HKA.json, then:
+uv run python -m home_operator.merge
+```
+
+What review found on the LG manual: the model copied all four procedures and the error-code table accurately, but where the manual was vague it **invented maintenance intervals** ("every 30 days" where LG says "periodically"), even when told not to, and on one run it **dropped two sub-steps** that a later step depends on. Ten corrections were made, each tied to a page. Manufacturer PDFs are not in this repository; download them from the manufacturer's support site.
+
 ## AWS services used
 
 | Service | What it does here | How |
@@ -136,9 +162,12 @@ src/home_operator/
   store.py               lookup, maintenance math, diagnosis, repair steps, briefs
   recalls.py             CPSC recall check (runs ahead of time, not per request)
   voice.py               Amazon Polly speech with an on-disk cache
+  extract.py             Amazon Bedrock: PDF manual -> validated repair data
+  merge.py               puts a reviewed extraction into the home data
+  data/extracted/        raw and reviewed extractions, with the review log
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
-tests/                   52 tests, with real CPSC recall records as fixtures
+tests/                   70 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 

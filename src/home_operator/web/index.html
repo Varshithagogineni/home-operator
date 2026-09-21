@@ -117,15 +117,15 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
 
 <script>
 const $ = id => document.getElementById(id);
-let rpcId = 0, lastAppliance = null, speak = true, activeRepair = null;
+let rpcId = 0, lastAppliance = null, speak = true, activeRepair = null, offeredFix = null, lastNav = null;
 
 const CHIPS = [
-  "Why won't my dishwasher drain?",
-  "Walk me through cleaning the filter",
+  "My washer is showing OE",
+  "Yes, walk me through it",
   "Done",
   "Next",
   "Say that again",
-  "What filter does the furnace take?",
+  "Why won't my dishwasher drain?",
   "Anything I should take care of?",
   "It still won't drain, I need someone",
   "I just got a Bosch dryer, model DLE3400W"
@@ -195,7 +195,14 @@ function route(text) {
   const appliance = named || unknownApplianceIn(t) || lastAppliance;
   if (named) lastAppliance = named;
 
-  if (/^(done|it'?s off|its off|unplugged|power is off|confirmed|yes)\b/.test(t))
+  const affirm = /^(yes|yeah|yep|sure|ok|okay|please|let'?s do it)\b/.test(t);
+  if (offeredFix && !activeRepair && (affirm || /walk me through (it|that)\b/.test(t))) {
+    const fix = offeredFix;
+    offeredFix = null;
+    return { tool: "start_repair", args: { appliance: fix.appliance, task: fix.title } };
+  }
+  const confirms = /^(ok(ay)? )?(done|it'?s (off|unplugged|empty|drained|done)|(the )?(power|water|washer|dishwasher|furnace)( is)? (off|unplugged)|unplugged|turned off|all set|confirmed)\b/;
+  if (confirms.test(t) || (affirm && activeRepair))
     return { tool: "navigate_repair", args: { action: "done" } };
   if (/^(next|continue|ok next|got it)\b/.test(t)) return { tool: "navigate_repair", args: { action: "next" } };
   if (/(go back|previous|back a step|^back)/.test(t)) return { tool: "navigate_repair", args: { action: "back" } };
@@ -222,7 +229,7 @@ function route(text) {
   if (/(anything|what).*(due|overdue|take care|need|maintenance)/.test(t) || /what needs doing/.test(t))
     return { tool: "get_maintenance_due", args: {} };
 
-  if (appliance && /(won'?t|wont|not |isn'?t|problem|broken|smell|taste|weird|noise|drain|airflow|slow)/.test(t))
+  if (appliance && /(won'?t|wont|not |isn'?t|problem|broken|smell|taste|weird|noise|drain|airflow|slow|error|code|showing|shows|flashing|blinking)/.test(t))
     return { tool: "diagnose_symptom", args: { appliance, symptom: text } };
 
   if (named || unknownApplianceIn(t)) return { tool: "get_appliance", args: { appliance } };
@@ -376,6 +383,8 @@ function everyPhrase(days) {
 }
 
 function overduePhrase(days) {
+  if (days >= 730) return `over ${spokenNumber(Math.floor(days / 365))} years overdue`;
+  if (days >= 365) return "over a year overdue";
   if (days < 14) return `${spokenNumber(days)} days overdue`;
   if (days < 60) return `about ${spokenNumber(Math.round(days / 7))} weeks overdue`;
   return `about ${spokenNumber(Math.round(days / 30))} months overdue`;
@@ -431,13 +440,26 @@ function renderDiagnosis(d) {
   }
   if (d.found === false) { renderAppliance(d); return; }
   const top = d.causes[0];
-  const since = top.days_since_last_done;
-  const reason = since == null ? ""
-    : since > 60 ? ` It's been ${agoPhrase(since).replace(/ ago$/, "")} since you last did that, so that fits.`
-    : ` You did that ${agoPhrase(since)}, so it might be something else, but it's the place to start.`;
-  say(`${acknowledge(d.symptom)} That's almost always ${top.short}.${reason} ${top.fix_available
-    ? `Want me to walk you through it? It only takes about ${spokenNumber(top.minutes)} minutes.`
-    : "Want me to get someone to take a look?"}`);
+  const fix = d.causes.find(c => c.fix_available);
+  offeredFix = fix ? { appliance: d.nickname, title: fix.fix } : null;
+  const offer = fix ? `Want me to walk you through it? It only takes about ${spokenNumber(fix.minutes)} minutes.`
+                    : "Want me to get someone to take a look?";
+  const code = (d.symptom.match(/error code (\w+)/i) || [])[1];
+  const opening = code
+    ? `${code.toUpperCase()}, got it. On your ${d.brand}, that's a ${d.meaning}.`
+    : acknowledge(d.symptom);
+
+  if (top.fix_available) {
+    const since = top.days_since_last_done;
+    const reason = since == null ? ""
+      : since > 60 ? ` It's been ${agoPhrase(since).replace(/ ago$/, "")} since you last did that, so that fits.`
+      : ` You did that ${agoPhrase(since)}, so it might be something else, but it's the place to start.`;
+    say(`${opening} That's almost always ${top.short}.${reason} ${offer}`);
+  } else if (fix) {
+    say(`${opening} ${d.brand} says to check for ${top.short} first. If that's fine, it's probably ${fix.short}. ${offer}`);
+  } else {
+    say(`${opening} The usual cause is ${top.short}. ${offer}`);
+  }
   card(`${d.nickname} · ${d.symptom}`, d.causes.map(c => `
     <div class="cause">
       <span class="pill ${c.likelihood === "most likely" ? "top" : c.likelihood === "possible" ? "mid" : "low"}">${c.likelihood}</span>
@@ -446,26 +468,33 @@ function renderDiagnosis(d) {
 }
 
 function renderStep(d) {
-  activeRepair = d.active && !d.finished ? d : null;
+  activeRepair = (d.active || d.started) && !d.finished ? d : null;
   if (d.started === false || d.active === false && !d.finished) {
     say(d.message);
     card("Available repairs", (d.available_repairs || []).map(r => `<div class="row"><span>${r}</span><span></span></div>`).join(""));
     return;
   }
   if (d.finished) {
-    const untilNext = Math.round((new Date(d.logged.next_due) - new Date()) / 864e5);
-    say(`${pick(["And that's it, you're done!", "All done!", "And you're finished!"])} Nice work. I've logged it, and I'll remind you ${inPhrase(untilNext)}.`);
+    const reminder = d.logged.next_due
+      ? `, and I'll remind you ${inPhrase(Math.round((new Date(d.logged.next_due) - new Date()) / 864e5))}` : "";
+    say(`${pick(["And that's it, you're done!", "All done!", "And you're finished!"])} Nice work. I've logged it${reminder}.`);
     card("Repair complete", `
       <div class="row"><span>${d.procedure}</span><span><span class="pill ok">done</span></span></div>
       <div class="row"><span>Logged</span><span>${d.logged.task}, ${d.logged.date}</span></div>
-      <div class="row"><span>Next due</span><span>${d.logged.next_due}</span></div>`);
+      <div class="row"><span>Next due</span><span>${d.logged.next_due || "Not on a schedule"}</span></div>`);
     return;
   }
   const dots = Array.from({ length: d.total_steps }, (_, i) =>
     `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
   const isLast = d.step_number === d.total_steps;
+  const nav = lastNav;
+  lastNav = null;
   let line;
-  if (d.awaiting_confirmation && !d.started) {
+  if (nav === "repeat") {
+    line = `Sure. Step ${spokenNumber(d.step_number)}. ${d.step}`;
+  } else if (nav === "back") {
+    line = `Going back. Step ${spokenNumber(d.step_number)}. ${d.step}`;
+  } else if (d.awaiting_confirmation && !d.started) {
     line = `Hold on, safety first. ${d.confirm_prompt}`;
   } else if (d.step_number === 1 && d.tools_needed) {
     line = `${pick(["Okay, let's do it.", "Alright, let's fix it.", "Great, let's get started."])} There are ${spokenNumber(d.total_steps)} steps, and you'll want ${list(d.tools_needed)}. First, ${lowerFirst(d.step)}`;
@@ -474,11 +503,12 @@ function renderStep(d) {
   } else {
     line = `${pick(["Nice.", "Great.", "Perfect.", "Okay."])} ${pick(["Next,", "Now,", "Then,"])} ${lowerFirst(d.step)}`;
   }
-  say(d.awaiting_confirmation && d.started ? `${line} ${d.confirm_prompt}` : line);
+  say(d.awaiting_confirmation && (d.started || nav === "repeat" || nav === "back") ? `${line} ${d.confirm_prompt}` : line);
   card(d.procedure, `<div class="stepwrap">
       <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
       <div class="dots">${dots}</div>
       <div class="steptext">${d.step}</div>
+      ${d.source ? `<div class="meta">From the ${escapeHtml(d.source)}</div>` : ""}
       ${d.awaiting_confirmation ? `<div class="gate"><b>Waiting</b><span>${d.confirm_prompt}</span></div>` : ""}
       ${d.step_number === 1 && d.safety_note ? `<div class="safety">${d.safety_note}</div>` : ""}
     </div>`);
@@ -486,16 +516,18 @@ function renderStep(d) {
 
 function renderDue(d) {
   const n = d.overdue.length;
-  const overdueLine = d.overdue
-    .map(i => `the ${i.nickname.toLowerCase()}'s ${taskNoun(i.task)} is ${overduePhrase(i.days_overdue)}`)
-    .join(", and ");
+  const verb = noun => /[^s]s$/.test(noun) ? "are" : "is";
+  const overdueLine = list(d.overdue.map(i => {
+    const noun = taskNoun(i.task);
+    return `the ${i.nickname.toLowerCase()}'s ${noun} ${verb(noun)} ${overduePhrase(i.days_overdue)}`;
+  }));
   const nextUp = d.upcoming[0];
   const recalls = d.open_recalls || [];
   const recallLine = recalls.length
     ? `Before anything else, heads up. Your ${recalls[0].nickname.toLowerCase()}'s model is named in a safety recall, so it may be affected. ${recalls[0].hazard || ""} Check the serial number against the notice. `
     : "";
   say(recallLine + (n
-    ? `${n === 1 ? "One thing needs" : sentenceCase(spokenNumber(n)) + " things need"} your attention. ${sentenceCase(overdueLine)}.${nextUp ? ` After that, the ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`
+    ? `${n === 1 ? "One thing needs" : sentenceCase(spokenNumber(n)) + " things need"} your attention. ${sentenceCase(overdueLine)}.${nextUp ? ` After that, the ${nextUp.nickname.toLowerCase()}'s ${taskNoun(nextUp.task)} ${verb(taskNoun(nextUp.task))} due ${inPhrase(nextUp.days_until)}.` : ""}`
     : `Good news, nothing's overdue.${nextUp ? ` Next up is the ${nextUp.nickname.toLowerCase()}, ${inPhrase(nextUp.days_until)}.` : ""}`));
   card("Around the house", [
     ...recalls.map(r => `<div class="row recallrow"><span>${r.nickname} · ${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`),
@@ -559,6 +591,7 @@ async function send(text) {
     card("Try saying", CHIPS.map(c => `<div class="row"><span>${c}</span><span></span></div>`).join(""));
     return;
   }
+  if (plan.tool === "navigate_repair") lastNav = plan.args.action;
   $("orb").classList.add("thinking");
   try {
     const data = await callTool(plan.tool, plan.args);
