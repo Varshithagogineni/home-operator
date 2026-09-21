@@ -232,22 +232,26 @@
         {
           "cause": "The filter is clogged with food debris.",
           "likelihood": "most likely",
-          "procedure_id": "dw-clean-filter"
+          "procedure_id": "dw-clean-filter",
+          "short": "the filter"
         },
         {
           "cause": "The drain hose is kinked or blocked.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "a kinked drain hose"
         },
         {
           "cause": "A new garbage disposal still has its knockout plug in place.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "the disposal's knockout plug"
         },
         {
           "cause": "The drain pump has failed.",
           "likelihood": "less likely",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "the drain pump"
         }
       ]
     },
@@ -268,17 +272,20 @@
         {
           "cause": "The air filter is dirty and restricting airflow.",
           "likelihood": "most likely",
-          "procedure_id": "fn-replace-filter"
+          "procedure_id": "fn-replace-filter",
+          "short": "a dirty air filter"
         },
         {
           "cause": "Supply vents are closed or blocked by furniture.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "blocked vents"
         },
         {
           "cause": "The blower motor or capacitor is failing.",
           "likelihood": "less likely",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "the blower motor"
         }
       ]
     },
@@ -299,17 +306,20 @@
         {
           "cause": "The water filter is past its service life.",
           "likelihood": "most likely",
-          "procedure_id": "fr-replace-water-filter"
+          "procedure_id": "fr-replace-water-filter",
+          "short": "an old water filter"
         },
         {
           "cause": "Air is trapped in the water line after a recent filter change.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "air in the water line"
         },
         {
           "cause": "The supply line is partly kinked behind the fridge.",
           "likelihood": "less likely",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "a kinked supply line"
         }
       ]
     },
@@ -329,17 +339,20 @@
         {
           "cause": "Residue has built up in the drum and door seal.",
           "likelihood": "most likely",
-          "procedure_id": "wm-cleaning-cycle"
+          "procedure_id": "wm-cleaning-cycle",
+          "short": "residue in the drum and door seal"
         },
         {
           "cause": "The door is kept closed between washes, trapping moisture.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "trapped moisture"
         },
         {
           "cause": "The drain pump filter is holding stagnant water.",
           "likelihood": "possible",
-          "procedure_id": null
+          "procedure_id": null,
+          "short": "the drain pump filter"
         }
       ]
     }

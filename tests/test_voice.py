@@ -21,7 +21,14 @@ class FakePolly:
 def test_uses_ruth_generative_mp3(tmp_path):
     polly = FakePolly()
     assert voice.synthesize("Hello there.", client=polly, cache_dir=tmp_path) == b"ID3-fake-mp3"
-    assert polly.calls[0] == {"Engine": "generative", "VoiceId": "Ruth", "OutputFormat": "mp3", "Text": "Hello there."}
+    assert polly.calls[0] == {"Engine": "generative", "VoiceId": "Ruth", "OutputFormat": "mp3",
+                              "TextType": "ssml", "Text": "<speak>Hello there.</speak>"}
+
+
+def test_sentences_get_a_pause_and_markup_is_escaped():
+    ssml = voice.to_ssml("Ah, standing water. That's the filter & the pump? Maybe <not>!")
+    assert ssml == ('<speak>Ah, standing water.<break time="300ms"/> '
+                    'That\'s the filter &amp; the pump?<break time="300ms"/> Maybe &lt;not&gt;!</speak>')
 
 
 def test_repeat_lines_come_from_the_cache_without_another_call(tmp_path):

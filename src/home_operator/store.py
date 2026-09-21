@@ -164,7 +164,7 @@ def diagnose_symptom(home: dict, query: str, symptom: str, today: date) -> dict:
 
     causes = []
     for c in best["causes"]:
-        entry = {"cause": c["cause"], "likelihood": c["likelihood"], "fix_available": False}
+        entry = {"cause": c["cause"], "short": c.get("short", c["cause"]), "likelihood": c["likelihood"], "fix_available": False}
         proc = _procedure(home, c["procedure_id"]) if c["procedure_id"] else None
         if proc:
             last = _last_service(home, a["id"], proc["task"])

@@ -180,10 +180,20 @@ function symptomOnly(text) {
     .trim() || text;
 }
 
+// Words that follow "the"/"my" but aren't appliances: parts, and things said mid-repair.
+const NOT_APPLIANCES = new Set(["filter", "water", "door", "rack", "power", "vent", "drum", "seal", "hose",
+  "pump", "tub", "light", "cycle", "breaker", "switch", "panel", "arrow", "step", "last", "next", "same", "one"]);
+
+function unknownApplianceIn(t) {
+  const m = t.match(/\b(?:my|the|our)\s+([a-z]+)/);
+  return m && !NOT_APPLIANCES.has(m[1]) ? m[1] : null;
+}
+
 function route(text) {
   const t = text.toLowerCase().trim();
-  const appliance = applianceIn(t) || lastAppliance;
-  if (applianceIn(t)) lastAppliance = applianceIn(t);
+  const named = applianceIn(t);
+  const appliance = named || unknownApplianceIn(t) || lastAppliance;
+  if (named) lastAppliance = named;
 
   if (/^(done|it'?s off|its off|unplugged|power is off|confirmed|yes)\b/.test(t))
     return { tool: "navigate_repair", args: { action: "done" } };
@@ -215,7 +225,7 @@ function route(text) {
   if (appliance && /(won'?t|wont|not |isn'?t|problem|broken|smell|taste|weird|noise|drain|airflow|slow)/.test(t))
     return { tool: "diagnose_symptom", args: { appliance, symptom: text } };
 
-  if (appliance) return { tool: "get_appliance", args: { appliance } };
+  if (named || unknownApplianceIn(t)) return { tool: "get_appliance", args: { appliance } };
 
   return null;
 }
@@ -317,6 +327,29 @@ async function say(line) {
 const ORDINALS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 const spokenNumber = n => ORDINALS[n] || String(n);
 const sentenceCase = s => s.charAt(0).toUpperCase() + s.slice(1);
+const lowerFirst = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+// Vary the wording, and never pick the same option twice in a row.
+const lastPick = {};
+function pick(options) {
+  const key = options.join("|");
+  let choice;
+  do { choice = options[Math.floor(Math.random() * options.length)]; }
+  while (options.length > 1 && choice === lastPick[key]);
+  lastPick[key] = choice;
+  return choice;
+}
+
+function acknowledge(symptom) {
+  const s = (symptom || "").toLowerCase();
+  if (/drain|standing water/.test(s)) return "Ah, standing water.";
+  if (/smell|musty|mildew/.test(s)) return "Ugh, that smell.";
+  if (/airflow|air\b/.test(s)) return "Weak airflow, got it.";
+  if (/taste|dispenser/.test(s)) return "Funny-tasting water, okay.";
+  return pick(["Okay, let's figure this out.", "Got it."]);
+}
+
+const taskNoun = task => task.replace(/^(clean|replace|run|flush)\s+(a|the)\s+/, "");
 
 // "219 days ago" is how a database talks. People say "about seven months ago".
 function agoPhrase(days) {
@@ -357,15 +390,25 @@ function renderAppliance(d) {
   if (d.found === false) {
     const names = (d.known_appliances || d.candidates || []).map(a => a.nickname);
     say(d.candidates
-    ? `Which one did you mean, the ${list(names.map(n => n.toLowerCase()), "or")}?`
-    : `I don't have that one yet. I know about your ${list(names.map(n => n.toLowerCase()))}.`);
+    ? `Which one do you mean? The ${list(names.map(n => n.toLowerCase()), "or")}?`
+    : `Hmm, I don't know that one yet. I've got your ${list(names.map(n => n.toLowerCase()))}.`);
     card("Registered appliances", names.map(n => `<div class="row"><span>${n}</span><span></span></div>`).join(""));
     return;
   }
   const part = d.consumables[0];
+  let takes = null;
+  if (part) {
+    const [size, ...extra] = (part.size || "").split(", ");
+    const phrase = !part.size ? part.name
+      : part.size.toLowerCase().includes(part.name.toLowerCase()) ? part.size
+      : `${size} ${part.name}${extra.length ? ", " + extra.join(", ") : ""}`;
+    const article = /^(any|a|an|the)\b/i.test(phrase) ? "" : /^[aeiou]/i.test(phrase) ? "an " : "a ";
+    takes = article + phrase + (!part.size && part.part_number ? `, part number ${part.part_number}` : "");
+  }
   say(part
-    ? `Your ${d.nickname.toLowerCase()} takes ${part.size || part.name}. ${d.last_service ? `You last had it serviced ${agoPhrase(d.last_service.days_ago)}.` : "There's no service logged for it yet."}`
-    : `Your ${d.nickname.toLowerCase()} is a ${d.brand} ${d.model_number}.`);
+    ? `${pick(["Sure.", "Got it.", "Okay."])} Your ${d.nickname.toLowerCase()} takes ${takes}. ${d.last_service
+        ? `It was last serviced ${agoPhrase(d.last_service.days_ago)}.` : "I don't have any service logged for it yet."}`
+    : `That's your ${d.brand} ${d.nickname.toLowerCase()}, model ${d.model_number}.`);
   card(d.nickname, `
     <div class="row"><span>Model</span><span>${d.brand} ${d.model_number}</span></div>
     ${d.consumables.map(c => `<div class="row"><span>${c.name}</span><span>${[c.size, c.part_number].filter(Boolean).join(" · ") || "—"}</span></div>`).join("")}
@@ -373,21 +416,28 @@ function renderAppliance(d) {
     ${d.last_service ? `<div class="row"><span>Last service</span><span>${d.last_service.task}, ${d.last_service.days_ago} days ago</span></div>` : ""}
     ${(d.open_recalls || []).map(r => `<div class="row recallrow"><span>${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`).join("")}`);
   if ((d.open_recalls || []).length) {
-    say(`Before anything else, this ${d.nickname.toLowerCase()} is part of a safety recall. ${d.open_recalls[0].remedy || ""}`);
+    say(`Before anything else, heads up. This ${d.nickname.toLowerCase()} is part of a safety recall. ${d.open_recalls[0].remedy || ""}`);
   }
 }
 
 function renderDiagnosis(d) {
   if (d.found === false && d.known_symptoms) {
-    say(`I don't have that one for the ${d.nickname}. I can help with ${list(d.known_symptoms, "or")}.`);
+    say(d.known_symptoms.length
+      ? `Hmm, that's not one I know for the ${d.nickname.toLowerCase()} yet. I can help with things like: ${list(d.known_symptoms, "or")}.`
+      : `I don't have any common problems saved for the ${d.nickname.toLowerCase()} yet. Want me to get someone to take a look?`);
     card(`${d.nickname} · known problems`, d.known_symptoms.map(s =>
       `<div class="row"><span>${s}</span><span></span></div>`).join(""));
     return;
   }
   if (d.found === false) { renderAppliance(d); return; }
   const top = d.causes[0];
-  say(`Most likely ${top.cause.toLowerCase().replace(/\.$/, "")}. ${top.days_since_last_done != null
-      ? `You last did that ${agoPhrase(top.days_since_last_done)}. ` : ""}Want me to walk you through it?`);
+  const since = top.days_since_last_done;
+  const reason = since == null ? ""
+    : since > 60 ? ` It's been ${agoPhrase(since).replace(/ ago$/, "")} since you last did that, so that fits.`
+    : ` You did that ${agoPhrase(since)}, so it might be something else, but it's the place to start.`;
+  say(`${acknowledge(d.symptom)} That's almost always ${top.short}.${reason} ${top.fix_available
+    ? `Want me to walk you through it? It only takes about ${spokenNumber(top.minutes)} minutes.`
+    : "Want me to get someone to take a look?"}`);
   card(`${d.nickname} · ${d.symptom}`, d.causes.map(c => `
     <div class="cause">
       <span class="pill ${c.likelihood === "most likely" ? "top" : c.likelihood === "possible" ? "mid" : "low"}">${c.likelihood}</span>
@@ -403,7 +453,8 @@ function renderStep(d) {
     return;
   }
   if (d.finished) {
-    say(`That's the last step, so you're done. I've logged it, and you're due again in about three months.`);
+    const untilNext = Math.round((new Date(d.logged.next_due) - new Date()) / 864e5);
+    say(`${pick(["And that's it, you're done!", "All done!", "And you're finished!"])} Nice work. I've logged it, and I'll remind you ${inPhrase(untilNext)}.`);
     card("Repair complete", `
       <div class="row"><span>${d.procedure}</span><span><span class="pill ok">done</span></span></div>
       <div class="row"><span>Logged</span><span>${d.logged.task}, ${d.logged.date}</span></div>
@@ -412,10 +463,18 @@ function renderStep(d) {
   }
   const dots = Array.from({ length: d.total_steps }, (_, i) =>
     `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
-  const opener = d.step_number === 1
-    ? `Okay. This takes ${spokenNumber(d.total_steps)} steps, and you'll want ${list(d.tools_needed)}. First up. ${d.step}`
-    : `${["", "", "Next.", "Then.", "After that.", "Now.", "Next up.", "Then."][d.step_number] || "Next."} ${d.step}`;
-  say(d.awaiting_confirmation ? `${opener} ${d.confirm_prompt}` : opener);
+  const isLast = d.step_number === d.total_steps;
+  let line;
+  if (d.awaiting_confirmation && !d.started) {
+    line = `Hold on, safety first. ${d.confirm_prompt}`;
+  } else if (d.step_number === 1 && d.tools_needed) {
+    line = `${pick(["Okay, let's do it.", "Alright, let's fix it.", "Great, let's get started."])} There are ${spokenNumber(d.total_steps)} steps, and you'll want ${list(d.tools_needed)}. First, ${lowerFirst(d.step)}`;
+  } else if (isLast) {
+    line = `${pick(["Nice.", "Great."])} Last step. ${d.step}`;
+  } else {
+    line = `${pick(["Nice.", "Great.", "Perfect.", "Okay."])} ${pick(["Next,", "Now,", "Then,"])} ${lowerFirst(d.step)}`;
+  }
+  say(d.awaiting_confirmation && d.started ? `${line} ${d.confirm_prompt}` : line);
   card(d.procedure, `<div class="stepwrap">
       <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
       <div class="dots">${dots}</div>
@@ -428,16 +487,16 @@ function renderStep(d) {
 function renderDue(d) {
   const n = d.overdue.length;
   const overdueLine = d.overdue
-    .map(i => `the ${i.nickname.toLowerCase()} needs its ${i.task.replace(/^(clean|replace|run)\s+(a|the)\s+/, "")}, ${overduePhrase(i.days_overdue)}`)
+    .map(i => `the ${i.nickname.toLowerCase()}'s ${taskNoun(i.task)} is ${overduePhrase(i.days_overdue)}`)
     .join(", and ");
   const nextUp = d.upcoming[0];
   const recalls = d.open_recalls || [];
   const recallLine = recalls.length
-    ? `First, something important: your ${recalls[0].nickname.toLowerCase()} is part of a safety recall. ${recalls[0].hazard || ""} `
+    ? `Before anything else, heads up. Your ${recalls[0].nickname.toLowerCase()} is part of a safety recall. ${recalls[0].hazard || ""} `
     : "";
   say(recallLine + (n
-    ? `${n === 1 ? "One thing's" : sentenceCase(spokenNumber(n)) + " things are"} overdue: ${overdueLine}.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is coming up ${inPhrase(nextUp.days_until)}.` : ""}`
-    : `Nothing's overdue.${nextUp ? ` The ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`));
+    ? `${n === 1 ? "One thing needs" : sentenceCase(spokenNumber(n)) + " things need"} your attention. ${sentenceCase(overdueLine)}.${nextUp ? ` After that, the ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`
+    : `Good news, nothing's overdue.${nextUp ? ` Next up is the ${nextUp.nickname.toLowerCase()}, ${inPhrase(nextUp.days_until)}.` : ""}`));
   card("Around the house", [
     ...recalls.map(r => `<div class="row recallrow"><span>${r.nickname} · ${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`),
     ...d.overdue.map(i => `<div class="row"><span>${i.nickname} · ${i.task}</span><span><span class="pill top">${i.days_overdue} days overdue</span></span></div>`),
@@ -447,7 +506,7 @@ function renderDue(d) {
 
 function renderLog(d) {
   if (d.logged !== true) { renderAppliance(d); return; }
-  say(`Got it, logged. That's the ${d.nickname.toLowerCase()} done for now.`);
+  say(`${pick(["Got it,", "Done,", "Okay,"])} logged. I'll keep track of the ${d.nickname.toLowerCase()} from here.`);
   card("Service logged", `
     <div class="row"><span>${d.nickname}</span><span>${d.task}</span></div>
     <div class="row"><span>Date</span><span>${d.date}</span></div>
@@ -456,13 +515,13 @@ function renderLog(d) {
 
 function renderAdd(d) {
   if (!d.added) {
-    say(d.message || "I couldn't add that one.");
+    say(`Looks like I already have that ${(d.nickname || "one").toLowerCase()}.`);
     card("Already registered", `<div class="row"><span>${d.nickname}</span><span>${d.room}</span></div>`);
     return;
   }
   const tasks = d.maintenance_schedule || [];
-  say(`Got it, I've added your ${d.brand} ${d.nickname.toLowerCase()}.${tasks.length
-      ? ` I'll keep track of when to ${tasks[0]}.` : ""} I'm also checking it against safety recalls.`);
+  say(`${pick(["Nice,", "Great,"])} a new ${d.nickname.toLowerCase()}! I've added it${tasks.length
+      ? `, and I'll remind you when it's time to ${tasks[0]}` : ""}. I'm also checking it against safety recalls.`);
   card("Appliance added", `
     <div class="row"><span>${d.nickname}</span><span>${d.brand} ${d.model_number}</span></div>
     ${tasks.map(t => `<div class="row"><span>Maintenance</span><span>${t}</span></div>`).join("")}
@@ -472,9 +531,9 @@ function renderAdd(d) {
 
 function renderBrief(d) {
   if (d.found === false) { renderAppliance(d); return; }
-  const advice = d.advice ? `Before you book anyone: ${d.advice.split(" http")[0]} ` : "";
+  const advice = d.advice ? `Before you book anyone, one thing. ${d.advice.split(" http")[0]} ` : "";
   const spoken = d.brief_lines.filter(l => !l.startsWith("Warranty:") && !l.startsWith("Recent service:"));
-  say(`${advice}Here's what I'll pass along to them. ${spoken.join(" ")}`);
+  say(`${advice}Here's what I'll tell them. ${spoken.join(" ")}`);
   card(`Brief for a repair pro · ${d.nickname}`, `
     ${d.advice ? `<div class="gate"><b>${d.open_recalls.length ? "Recall" : "Warranty"}</b><span>${escapeHtml(d.advice)}</span></div>` : ""}
     ${d.brief_lines.map(l => `<div class="row"><span>${escapeHtml(l)}</span><span></span></div>`).join("")}`);
@@ -492,11 +551,11 @@ async function send(text) {
   $("heard").innerHTML = `You said: <b>${escapeHtml(text)}</b>`;
   const plan = route(text);
   if (!plan && activeRepair) {
-    say(`I'm still with you on step ${spokenNumber(activeRepair.step_number)}. Say next when you're ready, or say that again to hear it.`);
+    say(`No rush. I'm still on step ${spokenNumber(activeRepair.step_number)} whenever you're ready. Just say next.`);
     return;
   }
   if (!plan) {
-    say("I can look up an appliance, diagnose a problem, walk you through a repair, or tell you what's due.");
+    say("I can look up any of your appliances, figure out what's wrong, walk you through a fix, or tell you what's coming up. What do you need?");
     card("Try saying", CHIPS.map(c => `<div class="row"><span>${c}</span><span></span></div>`).join(""));
     return;
   }
@@ -505,7 +564,7 @@ async function send(text) {
     const data = await callTool(plan.tool, plan.args);
     RENDER[plan.tool](data);
   } catch (err) {
-    say("Something went wrong reaching the server.");
+    say("I couldn't reach the server just now. Try again in a moment.");
     card("Error", `<div class="row"><span>${escapeHtml(err.message)}</span><span></span></div>`);
   } finally {
     $("orb").classList.remove("thinking");
