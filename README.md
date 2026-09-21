@@ -69,7 +69,9 @@ Try this sequence:
 9. "Anything I should take care of?" — the dishwasher is gone from the overdue list
 10. "I just got a Bosch dryer, model DLE3400W" — added, with a maintenance schedule
 
-**Voice.** The simulator speaks through the browser's speech synthesis. Pick a voice from the dropdown under the input — quality varies a lot between machines, and the joke voices macOS ships are filtered out. Replies are written to be spoken rather than read: dates become "about seven months ago" instead of "219 days ago", counts are spelled out, and each sentence is spoken separately so there is a natural pause between them. For the final demo video, Amazon Polly generative voices (`Ruth`, `Danielle`, `Matthew`) sound markedly better; a three-minute script is about 2,500 characters, well inside the free tier.
+**Voice.** The simulator speaks as **Ruth, an Amazon Polly generative voice**, through the server's `/speak` endpoint. Each line is synthesised once and cached in `media/cache/`, so repeats play instantly (about 16 ms versus 1.2 s for a first request) and cost nothing. Requests are capped at 600 characters. If the server can't reach AWS, `/speak` returns 503 and the simulator falls back to the browser's speech synthesis — so the project runs fully for anyone without an AWS account. The fallback voice is chosen from the dropdown under the input, which prefers premium system voices.
+
+The simulator's earlier browser-only voice works as follows. Pick a voice from the dropdown under the input — quality varies a lot between machines, and the joke voices macOS ships are filtered out. Replies are written to be spoken rather than read: dates become "about seven months ago" instead of "219 days ago", counts are spelled out, and each sentence is spoken separately so there is a natural pause between them. For the final demo video, Amazon Polly generative voices (`Ruth`, `Danielle`, `Matthew`) sound markedly better; a three-minute script is about 2,500 characters, well inside the free tier.
 
 The assistant side is scripted, not an LLM. The hackathon rules allow a simulated Alexa+ experience, and everything behind it is a real MCP server.
 
@@ -109,6 +111,22 @@ Alexa+ connects using an older protocol version (`2025-03-26`). To check that ha
 curl -s -X POST http://127.0.0.1:8000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
 ```
 
+## AWS services used
+
+| Service | What it does here | How |
+|---|---|---|
+| **Amazon Polly** (generative engine, voice Ruth) | Speaks every reply in the simulator, and narrates the demo video | `src/home_operator/voice.py` calls `synthesize_speech` through boto3; `/speak` in `server.py` serves the MP3 |
+
+To use the AWS features locally:
+
+```bash
+aws login                              # short-lived credentials; no access keys stored
+aws configure set region us-east-1
+uv run home-operator
+```
+
+The Python SDK needs the `[crt]` extra (`boto3[crt]`, already in `pyproject.toml`) to read `aws login` credentials. Without AWS access everything still runs, using the browser voice.
+
 ## Project layout
 
 ```
@@ -116,9 +134,10 @@ src/home_operator/
   server.py              MCP server and the eight tool definitions
   store.py               lookup, maintenance math, diagnosis, repair steps, briefs
   recalls.py             CPSC recall check (runs ahead of time, not per request)
+  voice.py               Amazon Polly speech with an on-disk cache
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
-tests/                   47 tests, with real CPSC recall records as fixtures
+tests/                   52 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 

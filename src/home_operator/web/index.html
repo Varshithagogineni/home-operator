@@ -243,27 +243,39 @@ function loadVoices() {
     .filter(v => v.lang && v.lang.startsWith("en"))
     .filter(v => !NOVELTY.has(v.name.toLowerCase().replace(/\s*\(.*\)\s*/, "").trim()))
     .sort((a, b) => scoreVoice(a) - scoreVoice(b));
-  if (!voices.length) return;
-
   const saved = (() => { try { return localStorage.getItem("ho:voice"); } catch { return null; } })();
-  chosenVoice = voices.find(v => v.name === saved) || voices[0];
+  usePolly = pollyUp && (!saved || saved === POLLY);
+  chosenVoice = voices.find(v => v.name === saved) || voices[0] || null;
 
   const sel = $("voice");
   sel.innerHTML = "";
+  if (pollyUp) {
+    const o = document.createElement("option");
+    o.value = POLLY;
+    o.textContent = "Ruth · Amazon Polly";
+    o.selected = usePolly;
+    sel.appendChild(o);
+  }
   voices.forEach(v => {
     const o = document.createElement("option");
     o.value = v.name;
     o.textContent = `${v.name} (${v.lang})`;
-    o.selected = v.name === chosenVoice.name;
+    o.selected = !usePolly && chosenVoice && v.name === chosenVoice.name;
     sel.appendChild(o);
   });
 }
 
-// Speak sentence by sentence: the small gap between utterances reads as breathing.
-function say(line) {
-  $("spoken").textContent = line;
-  if (!speak || !window.speechSynthesis) return;
-  speechSynthesis.cancel();
+const POLLY = "polly:Ruth";
+let usePolly = true, pollyUp = true, currentAudio = null, sayToken = 0;
+
+function stopSpeaking() {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+
+// Browser fallback: speak sentence by sentence so the gaps read as breathing.
+function sayWithBrowser(line) {
+  if (!window.speechSynthesis) return;
   line.split(/(?<=[.!?])\s+/).filter(Boolean).forEach(sentence => {
     const u = new SpeechSynthesisUtterance(sentence);
     if (chosenVoice) u.voice = chosenVoice;
@@ -271,6 +283,35 @@ function say(line) {
     u.pitch = 1.0;
     speechSynthesis.speak(u);
   });
+}
+
+// Ruth from Amazon Polly when the server can reach AWS; the browser voice otherwise.
+async function say(line) {
+  $("spoken").textContent = line;
+  const token = ++sayToken;
+  stopSpeaking();
+  if (!speak) return;
+  if (usePolly && pollyUp) {
+    try {
+      const res = await fetch("/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: line })
+      });
+      if (!res.ok) throw new Error("Polly unavailable");
+      const url = URL.createObjectURL(await res.blob());
+      if (token !== sayToken) return;  // a newer reply started while this one loaded
+      currentAudio = new Audio(url);
+      currentAudio.onended = () => URL.revokeObjectURL(url);
+      await currentAudio.play();
+      return;
+    } catch (e) {
+      if (token !== sayToken) return;
+      pollyUp = false;
+      loadVoices();
+    }
+  }
+  sayWithBrowser(line);
 }
 
 const ORDINALS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
@@ -476,14 +517,15 @@ $("mute").addEventListener("click", () => {
   speak = !speak;
   $("mute").textContent = speak ? "🔊" : "🔇";
   $("mute").setAttribute("aria-pressed", String(!speak));
-  if (!speak && window.speechSynthesis) speechSynthesis.cancel();
+  if (!speak) stopSpeaking();
 });
 loadVoices();
 if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
 $("voice").addEventListener("change", e => {
-  chosenVoice = voices.find(v => v.name === e.target.value) || null;
+  usePolly = e.target.value === POLLY;
+  if (!usePolly) chosenVoice = voices.find(v => v.name === e.target.value) || null;
   try { localStorage.setItem("ho:voice", e.target.value); } catch {}
-  if (chosenVoice) say("Okay, I'll use this voice from now on.");
+  say("Okay, I'll use this voice from now on.");
 });
 
 CHIPS.forEach(c => {

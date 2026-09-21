@@ -54,3 +54,14 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Medium. It cost an hour, and anyone choosing the Agent Skill path over MCP has no specification to follow.
 - **Workaround:** Built a self-hosted MCP server, which is unambiguous and well specified.
 - **Suggestion:** Either define an Agent Skill for the Alexa+ track properly — file structure, how it is registered, how Alexa+ invokes it, with one worked example — or drop it from the rules and point people to MCP. Two links is also thin for a track worth $44,000; the Fire TV track gets seven sample repos and an e-book, while Alexa+ gets a protocol spec and a page about coding-assistant plugins.
+
+### `aws login` credentials need an undocumented extra in the Python SDK
+- **Date:** 2026-09-21
+- **Tool / API:** AWS CLI `aws login`, boto3 / botocore 1.43.99
+- **Task attempted:** Call Amazon Polly from the MCP server's Python code using the short-lived credentials created by `aws login`.
+- **Steps taken:** Signed in with `aws login` (worked in the CLI), then `pip install boto3` and created a client.
+- **Expected:** The SDK picks up the `aws login` session automatically. The launch announcement says the credentials "work across local development tools like the AWS CLI, AWS Tools for PowerShell and AWS SDKs."
+- **Actual:** `MissingDependencyException: Using the login credential provider requires an additional dependency. You will need to pip install "botocore[crt]"`.
+- **Severity:** Low. The error message is excellent — it names the exact fix.
+- **Workaround:** Installed `boto3[crt]` instead of `boto3`.
+- **Suggestion:** Mention the `[crt]` extra in the `aws login` announcement and the "Login for AWS local development" guide, under "Using with the SDKs". A beginner following the announcement will hit this on their first SDK call.

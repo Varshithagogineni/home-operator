@@ -6,10 +6,13 @@ from typing import Annotated
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 from pydantic import Field
-from starlette.routing import Mount
+import anyio
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from home_operator import store
+from home_operator import store, voice
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -169,9 +172,18 @@ def prepare_pro_brief(
     return store.prepare_pro_brief(HOME, appliance, date.today(), symptom)
 
 
+async def speak(request: Request) -> Response:
+    body = await request.json()
+    audio = await anyio.to_thread.run_sync(voice.synthesize, str(body.get("text", "")))
+    if audio is None:
+        return JSONResponse({"error": "Amazon Polly is unavailable; use the browser voice."}, status_code=503)
+    return Response(audio, media_type="audio/mpeg")
+
+
 def build_app():
-    """The MCP endpoint at /mcp, plus the simulated Alexa+ front end at /sim."""
+    """The MCP endpoint at /mcp, the Polly voice at /speak, and the simulator at /sim."""
     app = mcp.streamable_http_app(stateless_http=True, json_response=True)
+    app.router.routes.append(Route("/speak", speak, methods=["POST"]))
     app.router.routes.append(
         Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")
     )
