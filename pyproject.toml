@@ -13,6 +13,7 @@ dependencies = [
 [project.scripts]
 home-operator = "home_operator.server:main"
 home-operator-check-recalls = "home_operator.recalls:main"
+home-operator-extract = "home_operator.extract:main"
 
 [dependency-groups]
 dev = [

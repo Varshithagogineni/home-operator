@@ -65,3 +65,14 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Low. The error message is excellent — it names the exact fix.
 - **Workaround:** Installed `boto3[crt]` instead of `boto3`.
 - **Suggestion:** Mention the `[crt]` extra in the `aws login` announcement and the "Login for AWS local development" guide, under "Using with the SDKs". A beginner following the announcement will hit this on their first SDK call.
+
+### New AWS accounts can't call Bedrock for up to two hours
+- **Date:** 2026-09-21
+- **Tool / API:** Amazon Bedrock Converse API, Amazon Nova 2 Lite
+- **Task attempted:** First Bedrock call, a one-sentence text prompt, from an account created for this hackathon.
+- **Steps taken:** Created the account, redeemed the hackathon's $150 credits, signed in with `aws login`, called `converse` on `us.amazon.nova-2-lite-v1:0`. Amazon Polly calls from the same session worked immediately.
+- **Expected:** A response, since Amazon's own models don't need a model-access request.
+- **Actual:** `AccessDeniedException: Your account is currently being verified. Verification normally takes less than 2 hours.`
+- **Severity:** Medium for a hackathon: many entrants will create a fresh AWS account for the credits and hit this on their first AI call.
+- **Workaround:** Wrote and tested the extractor against a stand-in client while waiting.
+- **Suggestion:** Mention the new-account verification window on the hackathon's AWS credits page and in Bedrock's getting-started guide, and show verification status in the Bedrock console so developers don't assume their permissions are wrong.

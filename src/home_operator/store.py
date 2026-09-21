@@ -417,8 +417,8 @@ def prepare_pro_brief(home: dict, query: str, today: date, symptom: str | None =
 
     advice = None
     if recalls:
-        advice = ("This model is under a safety recall. Contact the manufacturer before paying for a repair: "
-                  "recall repairs are free. " + (recalls[0]["url"] or ""))
+        advice = ("This model is named in a safety recall. Check whether your serial number is included, and "
+                  "contact the manufacturer before paying for a repair: recall repairs are free. " + (recalls[0]["url"] or ""))
     elif under_warranty:
         advice = "Still under warranty. Contact the manufacturer before booking a paid repair."
 

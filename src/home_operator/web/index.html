@@ -416,7 +416,7 @@ function renderAppliance(d) {
     ${d.last_service ? `<div class="row"><span>Last service</span><span>${d.last_service.task}, ${d.last_service.days_ago} days ago</span></div>` : ""}
     ${(d.open_recalls || []).map(r => `<div class="row recallrow"><span>${escapeHtml(r.title)}</span><span><span class="pill recall">recall</span></span></div>`).join("")}`);
   if ((d.open_recalls || []).length) {
-    say(`Before anything else, heads up. This ${d.nickname.toLowerCase()} is part of a safety recall. ${d.open_recalls[0].remedy || ""}`);
+    say(`Before anything else, heads up. This ${d.nickname.toLowerCase()}'s model is named in a safety recall, so it may be affected. Check the serial number against the notice. If yours is included, the fix is free.`);
   }
 }
 
@@ -492,7 +492,7 @@ function renderDue(d) {
   const nextUp = d.upcoming[0];
   const recalls = d.open_recalls || [];
   const recallLine = recalls.length
-    ? `Before anything else, heads up. Your ${recalls[0].nickname.toLowerCase()} is part of a safety recall. ${recalls[0].hazard || ""} `
+    ? `Before anything else, heads up. Your ${recalls[0].nickname.toLowerCase()}'s model is named in a safety recall, so it may be affected. ${recalls[0].hazard || ""} Check the serial number against the notice. `
     : "";
   say(recallLine + (n
     ? `${n === 1 ? "One thing needs" : sentenceCase(spokenNumber(n)) + " things need"} your attention. ${sentenceCase(overdueLine)}.${nextUp ? ` After that, the ${nextUp.nickname.toLowerCase()} is due ${inPhrase(nextUp.days_until)}.` : ""}`
