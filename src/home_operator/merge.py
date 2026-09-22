@@ -58,6 +58,12 @@ APPLIANCES = [
      ]},
     {"file": "WSEP4727F.json", "appliance_id": "oven-1", "nickname": "Oven", "room": "kitchen",
      "purchase_date": "2023-07-15", "warranty_until": "2024-07-15", "service_log": []},
+    {"file": "GSS30C6EY.json", "appliance_id": "fridge-1", "nickname": "Fridge", "room": "kitchen",
+     "purchase_date": "2017-06-10", "warranty_until": "2018-06-10",
+     "service_log": [
+         {"task": "replace the water filter", "date": "2026-03-20", "notes": None},
+         {"task": "replace the air filter", "date": "2026-05-01", "notes": None},
+     ]},
 ]
 
 

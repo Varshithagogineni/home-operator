@@ -1,0 +1,153 @@
+{
+  "source": {
+    "manual": "1201143L.pdf",
+    "extracted_on": "2026-09-22",
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "source_uri": "s3://home-operator-manuals-258524844702/manuals/1201143L.pdf",
+    "input_tokens": 11009,
+    "output_tokens": 1233
+  },
+  "brand": "Whirlpool",
+  "model_number": "GSS30C6EY",
+  "category": "refrigerator",
+  "consumables": [
+    {
+      "name": "water filter",
+      "part_number": "W10295370_P4RFWB",
+      "size": null
+    },
+    {
+      "name": "air filter",
+      "part_number": "W10311524_",
+      "size": null
+    },
+    {
+      "name": "produce preserver",
+      "part_number": "W10346771_",
+      "size": null
+    }
+  ],
+  "maintenance": [
+    {
+      "task": "replace the water filter",
+      "interval_days": 180
+    },
+    {
+      "task": "replace the air filter",
+      "interval_days": 180
+    },
+    {
+      "task": "replace the produce preserver",
+      "interval_days": 180
+    }
+  ],
+  "symptoms": [],
+  "procedures": [
+    {
+      "id": "replace-water-filter",
+      "source_page": 37,
+      "title": "Replace the water filter",
+      "task": "replace the water filter",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Do not use with water that is microbiologically unsafe or of unknown quality without adequate disinfection before or after the system.",
+      "gate_prompt": null,
+      "steps": [
+        "Locate the water filter in the top-right corner of the refrigerator compartment.",
+        "Lift open the filter cover door.",
+        "When the door is completely open, pull the filter straight out.",
+        "Take the new filter out of its packaging and remove the covers from the O-rings.",
+        "With the arrow pointing up, align the new filter with the filter housing and slide it into place.",
+        "Close the filter cover door completely to snap the filter into place.",
+        "Flush the water system."
+      ]
+    },
+    {
+      "id": "replace-air-filter",
+      "source_page": 30,
+      "title": "Replace the air filter",
+      "task": "replace the air filter",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": null,
+      "gate_prompt": null,
+      "steps": [
+        "Remove the air filter from its packaging.",
+        "Lift open the vented door.",
+        "Snap the filter into place."
+      ]
+    },
+    {
+      "id": "install-produce-preserver",
+      "source_page": 31,
+      "title": "Install the produce preserver",
+      "task": "install the produce preserver",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "MAY IRRITATE EYES AND SKIN. DANGEROUS FUMES FORM WHEN MIXED WITH OTHER PRODUCTS.",
+      "gate_prompt": null,
+      "steps": [
+        "Remove the Produce Preserver pouches from their packaging.",
+        "Lift up on the housing in order to remove it from its mounting tab along the wall.",
+        "Open the housing by pulling up and out on the back of the top of the housing.",
+        "Place both pouches inside the housing, then snap the housing back together.",
+        "Place the housing back on the mounting tab along the wall."
+      ]
+    },
+    {
+      "id": "calibrate-measured-fill",
+      "source_page": 34,
+      "title": "Calibrate Measured Fill",
+      "task": "calibrate the measured fill",
+      "minutes": null,
+      "tools_needed": [
+        "measuring cup"
+      ],
+      "safety_note": null,
+      "gate_prompt": null,
+      "steps": [
+        "Place a sturdy measuring cup (1 cup size) on the dispenser tray, centered in front of the water dispenser pad.",
+        "Press and hold the OPTIONS and LOCK buttons at the same time for 3 seconds.",
+        "Using your hand (not the measuring cup), press and release the water dispenser pad in order to dispense water to the 1 cup fill line.",
+        "When 1 cup of water has been correctly dispensed into the measuring cup, press the MEASURED FILL button under the word \"Confirm\" to confirm the calibration."
+      ]
+    },
+    {
+      "id": "clean-refrigerator",
+      "source_page": 37,
+      "title": "Clean the refrigerator",
+      "task": "clean the refrigerator",
+      "minutes": null,
+      "tools_needed": [
+        "clean sponge or soft cloth",
+        "mild detergent",
+        "warm water"
+      ],
+      "safety_note": "Use nonflammable cleaner. Failure to do so can result in death, explosion, or fire.",
+      "gate_prompt": null,
+      "steps": [
+        "Unplug refrigerator or disconnect power.",
+        "Hand wash, rinse, and dry removable parts and interior surfaces thoroughly.",
+        "Wash stainless steel and painted metal exteriors with a clean sponge or soft cloth and a mild detergent in warm water.",
+        "Plug in refrigerator or reconnect power."
+      ]
+    },
+    {
+      "id": "replace-light-bulbs",
+      "source_page": 38,
+      "title": "Replace the light bulbs",
+      "task": "replace the light bulbs",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": null,
+      "gate_prompt": "Tell me when the refrigerator is unplugged.",
+      "steps": [
+        "Unplug refrigerator or disconnect power.",
+        "Remove light shield when applicable.",
+        "Remove light bulb and replace with one of the same size, shape and wattage.",
+        "Replace light shield when applicable.",
+        "Plug in refrigerator or reconnect power."
+      ]
+    }
+  ]
+}

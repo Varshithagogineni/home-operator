@@ -47,7 +47,7 @@ Return ONLY a JSON object, with no markdown and no commentary, in exactly this s
     "task": "same verb phrase as the matching maintenance task, if any",
     "minutes": 10,
     "tools_needed": ["only items the manual names, such as a bucket; otherwise empty"],
-    "safety_note": "one sentence from the manual's warnings",
+    "safety_note": "one sentence from the manual's warnings for this task, or null if it gives none",
     "gate_prompt": "if step 1 is about power, water or heat: a question asking the person to confirm it is safe, e.g. Tell me when the washer is unplugged. Otherwise null",
     "steps": ["one action per step, written to be spoken aloud, under 25 words"]
   }}]
@@ -59,6 +59,9 @@ Rules:
 - Only add a maintenance task when the manual states a specific frequency ("monthly" = 30, "once a week" = 7, "every five years" = 1825).
   If it says only "periodically", "regularly" or "as needed", leave that task OUT of maintenance entirely. Never guess a number.
 - source_page is the page number printed on the manual page where the information appears.
+- A procedure is a task with at least two sequential steps. If the manual's fix is a single action
+  ("replace the fuse", "call a plumber", "close the door firmly"), do NOT make it a procedure:
+  say it in the cause instead. Troubleshooting tables are mostly single actions; treat them as causes.
 - Be exhaustive about procedures. Work through the whole manual, especially its care and maintenance
   section, and include EVERY task written as numbered or step-by-step instructions: cleaning routines,
   self-cleaning cycles, removing and refitting parts, replacing filters or lamps, and descaling.
@@ -89,7 +92,7 @@ class Symptom(BaseModel):
     meaning: str | None = None
     source_page: int | None = None
     keywords: list[str]
-    causes: list[Cause] = Field(min_length=1)
+    causes: list[Cause]
 
 
 class Procedure(BaseModel):
@@ -99,9 +102,9 @@ class Procedure(BaseModel):
     task: str
     minutes: int | None = Field(default=None, gt=0)  # manuals often don't say how long a job takes
     tools_needed: list[str]
-    safety_note: str
+    safety_note: str | None = None  # plenty of procedures carry no warning
     gate_prompt: str | None = None
-    steps: list[str] = Field(min_length=2)
+    steps: list[str]  # entries with fewer than two are dropped below
 
 
 class Extraction(BaseModel):
@@ -116,7 +119,12 @@ class ExtractionError(Exception):
 
 
 def parse_response(text: str) -> Extraction:
-    """Validate the model's JSON. Models sometimes wrap it in ``` fences; strip those."""
+    """Validate the model's JSON, keeping the usable entries.
+
+    Models return the odd half-filled entry: a maintenance task with no interval, a symptom
+    with no causes, a procedure with no steps. Those are dropped rather than failing the run,
+    since the rest of a 50-page manual is still worth having. Malformed JSON still fails.
+    """
     body = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", text.strip())
     try:
         extraction = Extraction.model_validate(json.loads(body))
@@ -124,6 +132,8 @@ def parse_response(text: str) -> Extraction:
         raise ExtractionError(f"Bedrock returned data that doesn't match the expected format: {e}") from e
 
     extraction.maintenance = [m for m in extraction.maintenance if m.interval_days]
+    extraction.procedures = [p for p in extraction.procedures if len(p.steps) >= 2]
+    extraction.symptoms = [s for s in extraction.symptoms if s.causes]
     known = {p.id for p in extraction.procedures}
     for symptom in extraction.symptoms:
         for cause in symptom.causes:
@@ -132,14 +142,28 @@ def parse_response(text: str) -> Extraction:
     return extraction
 
 
+def upload_manual(pdf_path: Path, bucket: str, client=None) -> str:
+    """Put the manual in S3 and return its s3:// address."""
+    if client is None:
+        import boto3
+        client = boto3.client("s3", region_name=REGION)
+    key = f"manuals/{pdf_path.name}"
+    client.upload_file(str(pdf_path), bucket, key)
+    return f"s3://{bucket}/{key}"
+
+
 def extract(pdf_path: Path, brand: str, model: str, category: str, client=None,
-            model_id: str = MODEL_ID) -> tuple[Extraction, dict]:
-    pdf = pdf_path.read_bytes()
-    if len(pdf) > MAX_PDF_BYTES:
-        raise ExtractionError(
-            f"{pdf_path.name} is {len(pdf) / 1e6:.1f} MB; Bedrock accepts up to 4.5 MB inline. "
-            "Larger manuals need to go through Amazon S3."
-        )
+            model_id: str = MODEL_ID, s3_uri: str | None = None) -> tuple[Extraction, dict]:
+    if s3_uri:
+        source = {"s3Location": {"uri": s3_uri}}
+    else:
+        pdf = pdf_path.read_bytes()
+        if len(pdf) > MAX_PDF_BYTES:
+            raise ExtractionError(
+                f"{pdf_path.name} is {len(pdf) / 1e6:.1f} MB; Bedrock accepts up to 4.5 MB inline. "
+                "Pass --s3-bucket to send it through Amazon S3 instead."
+            )
+        source = {"bytes": pdf}
     if client is None:
         import boto3
         client = boto3.client("bedrock-runtime", region_name=REGION)
@@ -148,15 +172,24 @@ def extract(pdf_path: Path, brand: str, model: str, category: str, client=None,
         modelId=model_id,
         messages=[{"role": "user", "content": [
             # A neutral name: Bedrock warns the document name can act as a prompt injection.
-            {"document": {"format": "pdf", "name": "manual", "source": {"bytes": pdf}}},
+            {"document": {"format": "pdf", "name": "manual", "source": source}},
             {"text": PROMPT.format(brand=brand, category=category, model=model)},
         ]}],
-        inferenceConfig={"maxTokens": 8000, "temperature": 0},
+        # Manuals with long troubleshooting tables need room; a truncated reply is unusable JSON.
+        inferenceConfig={"maxTokens": 20000, "temperature": 0},
     )
-    text = next(block["text"] for block in response["output"]["message"]["content"] if "text" in block)
+    text = next((block["text"] for block in response["output"]["message"]["content"] if "text" in block), "")
+    try:
+        parsed = parse_response(text)
+    except ExtractionError as e:
+        # Keep what came back, so the failure can be read rather than guessed at.
+        EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
+        failed = EXTRACTED_DIR / f"{model.upper()}.failed.txt"
+        failed.write_text(text or "<empty response>")
+        raise ExtractionError(f"{e} (reply saved at {failed})") from None
     usage = response.get("usage", {})
-    return parse_response(text), {"model_id": model_id, "input_tokens": usage.get("inputTokens"),
-                                  "output_tokens": usage.get("outputTokens")}
+    return parsed, {"model_id": model_id, "source_uri": s3_uri or pdf_path.name,
+                    "input_tokens": usage.get("inputTokens"), "output_tokens": usage.get("outputTokens")}
 
 
 def main() -> None:
@@ -165,12 +198,17 @@ def main() -> None:
     parser.add_argument("--brand", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--category", required=True, help='e.g. "washing machine"')
+    parser.add_argument("--s3-bucket", help="upload the manual here first; needed for manuals over 4.5 MB")
     parser.add_argument("--stronger", action="store_true",
                         help="use Amazon Nova Pro, for manuals Nova 2 Lite reads too thinly")
     args = parser.parse_args()
 
+    s3_uri = None
+    if args.s3_bucket:
+        s3_uri = upload_manual(args.pdf, args.s3_bucket)
+        print(f"Uploaded to {s3_uri}")
     extraction, usage = extract(args.pdf, args.brand, args.model, args.category,
-                                model_id=STRONGER_MODEL_ID if args.stronger else MODEL_ID)
+                                model_id=STRONGER_MODEL_ID if args.stronger else MODEL_ID, s3_uri=s3_uri)
     EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
     out = EXTRACTED_DIR / f"{args.model.upper()}.raw.json"
     out.write_text(json.dumps({

@@ -52,29 +52,6 @@
       ]
     },
     {
-      "id": "fridge-1",
-      "nickname": "Fridge",
-      "room": "kitchen",
-      "category": "refrigerator",
-      "brand": "Sample",
-      "model_number": "SAMPLE-RF-36",
-      "purchase_date": "2023-06-10",
-      "warranty_until": "2024-06-10",
-      "consumables": [
-        {
-          "name": "water filter",
-          "part_number": "SAMPLE-WF-100",
-          "size": null
-        }
-      ],
-      "maintenance": [
-        {
-          "task": "replace the water filter",
-          "interval_days": 180
-        }
-      ]
-    },
-    {
       "id": "washer-1",
       "nickname": "Washer",
       "room": "laundry room",
@@ -250,6 +227,88 @@
           ]
         }
       }
+    },
+    {
+      "id": "fridge-1",
+      "nickname": "Fridge",
+      "room": "kitchen",
+      "category": "refrigerator",
+      "brand": "Whirlpool",
+      "model_number": "GSS30C6EY",
+      "purchase_date": "2017-06-10",
+      "warranty_until": "2018-06-10",
+      "consumables": [
+        {
+          "name": "water filter",
+          "part_number": "W10295370_P4RFWB",
+          "size": null
+        },
+        {
+          "name": "air filter",
+          "part_number": "W10311524_",
+          "size": null
+        },
+        {
+          "name": "produce preserver",
+          "part_number": "W10346771_",
+          "size": null
+        }
+      ],
+      "maintenance": [
+        {
+          "task": "replace the water filter",
+          "interval_days": 180
+        },
+        {
+          "task": "replace the air filter",
+          "interval_days": 180
+        }
+      ],
+      "source": {
+        "manual": "1201143L.pdf",
+        "extracted_on": "2026-09-22",
+        "model_id": "us.amazon.nova-2-lite-v1:0",
+        "source_uri": "s3://home-operator-manuals-258524844702/manuals/1201143L.pdf",
+        "input_tokens": 11009,
+        "output_tokens": 1233,
+        "review": {
+          "reviewed_on": "2026-09-22",
+          "method": "The manual is scanned with no text layer, so pages were rendered as images and read. Every procedure, interval and page citation was checked against the English pages.",
+          "kept_verbatim": "The water filter, air filter, light bulb and cleaning steps, and the six-month water and air filter intervals.",
+          "changes": [
+            {
+              "change": "Re-cited every page to the English half; the model read the French second half (page 37 French = page 15 English)",
+              "page": 15,
+              "manual_says": "Changing the Water Filter ... 1. Locate the water filter in the top-right corner of the refrigerator compartment."
+            },
+            {
+              "change": "Removed 'Calibrate Measured Fill': a dispenser setting, not maintenance or a repair",
+              "page": 12,
+              "manual_says": "n/a"
+            },
+            {
+              "change": "Added the towel the manual asks for when changing the water filter",
+              "page": 15,
+              "manual_says": "NOTE: There may be some water in the filter. Some spilling may occur. Use a towel to wipe up any spills."
+            },
+            {
+              "change": "Added the produce preserver's CAUTION: IRRITANT warning, which the model omitted entirely",
+              "page": 9,
+              "manual_says": "CAUTION: IRRITANT. MAY IRRITATE EYES AND SKIN. DANGEROUS FUMES FORM WHEN MIXED WITH OTHER PRODUCTS. ... Keep out of reach of children."
+            },
+            {
+              "change": "Restored the condenser guidance the model dropped from the cleaning steps",
+              "page": 15,
+              "manual_says": "There is no need for routine condenser cleaning in normal home operating environments. If the environment is particularly greasy or dusty, or there is significant pet traffic in the home, the condenser should be cleaned every 2 to 3 months."
+            },
+            {
+              "change": "Removed the produce preserver's 180-day interval: the manual states one for the air filter, not the pouches",
+              "page": 9,
+              "manual_says": "The disposable air filter should be replaced every 6 months, when the status indicator has completely changed from white to red."
+            }
+          ]
+        }
+      }
     }
   ],
   "service_log": [
@@ -272,12 +331,6 @@
       "notes": null
     },
     {
-      "appliance_id": "fridge-1",
-      "task": "replace the water filter",
-      "date": "2026-04-01",
-      "notes": null
-    },
-    {
       "appliance_id": "washer-1",
       "task": "clean the door seal",
       "date": "2026-08-01",
@@ -293,6 +346,18 @@
       "appliance_id": "washer-1",
       "task": "clean the detergent dispenser",
       "date": "2026-08-25",
+      "notes": null
+    },
+    {
+      "appliance_id": "fridge-1",
+      "task": "replace the water filter",
+      "date": "2026-03-20",
+      "notes": null
+    },
+    {
+      "appliance_id": "fridge-1",
+      "task": "replace the air filter",
+      "date": "2026-05-01",
       "notes": null
     }
   ],
@@ -341,28 +406,6 @@
       ],
       "gate_step": 0,
       "gate_prompt": "Tell me when the power is off at the switch or breaker."
-    },
-    {
-      "id": "fr-replace-water-filter",
-      "appliance_id": "fridge-1",
-      "title": "Replace the refrigerator water filter",
-      "task": "replace the water filter",
-      "minutes": 10,
-      "tools_needed": [
-        "a new water filter",
-        "a towel",
-        "a large jug"
-      ],
-      "safety_note": "Expect a small amount of water to spill when the old filter comes out.",
-      "steps": [
-        "Find the filter housing, usually inside the fridge at the top right or behind the bottom grille.",
-        "Put a towel underneath, then turn the old filter a quarter turn counter-clockwise and pull it straight out.",
-        "Take the cap off the new filter and push it in, then turn it clockwise until it stops.",
-        "Run about two gallons of water through the dispenser into a jug to clear air and carbon dust.",
-        "Hold the filter reset button for three seconds to clear the indicator light."
-      ],
-      "gate_step": null,
-      "gate_prompt": null
     },
     {
       "id": "wm9500hka-clean-the-drum",
@@ -535,6 +578,107 @@
       "appliance_id": "oven-1",
       "gate_step": null,
       "gate_prompt": null
+    },
+    {
+      "id": "gss30c6ey-replace-water-filter",
+      "source_page": 15,
+      "title": "Replace the water filter",
+      "task": "replace the water filter",
+      "minutes": null,
+      "tools_needed": [
+        "a towel"
+      ],
+      "safety_note": "Do not use with water that is microbiologically unsafe or of unknown quality without adequate disinfection before or after the system.",
+      "steps": [
+        "Locate the water filter in the top-right corner of the refrigerator compartment.",
+        "Lift open the filter cover door.",
+        "When the door is completely open, pull the filter straight out.",
+        "Take the new filter out of its packaging and remove the covers from the O-rings.",
+        "With the arrow pointing up, align the new filter with the filter housing and slide it into place.",
+        "Close the filter cover door completely to snap the filter into place.",
+        "Flush the water system."
+      ],
+      "appliance_id": "fridge-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "gss30c6ey-replace-air-filter",
+      "source_page": 9,
+      "title": "Replace the air filter",
+      "task": "replace the air filter",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": null,
+      "steps": [
+        "Remove the air filter from its packaging.",
+        "Lift open the vented door.",
+        "Snap the filter into place."
+      ],
+      "appliance_id": "fridge-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "gss30c6ey-install-produce-preserver",
+      "source_page": 9,
+      "title": "Install the produce preserver",
+      "task": "install the produce preserver",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Caution, irritant. It may irritate eyes and skin, and dangerous fumes form when mixed with other products. Do not mix it with cleaners containing ammonia or bleach, and keep it out of reach of children.",
+      "steps": [
+        "Remove the Produce Preserver pouches from their packaging.",
+        "Lift up on the housing in order to remove it from its mounting tab along the wall.",
+        "Open the housing by pulling up and out on the back of the top of the housing.",
+        "Place both pouches inside the housing, then snap the housing back together.",
+        "Place the housing back on the mounting tab along the wall."
+      ],
+      "appliance_id": "fridge-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "gss30c6ey-clean-refrigerator",
+      "source_page": 15,
+      "title": "Clean the refrigerator",
+      "task": "clean the refrigerator",
+      "minutes": null,
+      "tools_needed": [
+        "clean sponge or soft cloth",
+        "mild detergent",
+        "warm water"
+      ],
+      "safety_note": "Use nonflammable cleaner. Failure to do so can result in death, explosion, or fire.",
+      "steps": [
+        "Unplug refrigerator or disconnect power.",
+        "Hand wash, rinse, and dry removable parts and interior surfaces thoroughly.",
+        "Wash stainless steel and painted metal exteriors with a clean sponge or soft cloth and a mild detergent in warm water.",
+        "If your home is greasy or dusty, or you have pets, clean the condenser every two to three months: remove the base grille and vacuum the grille and the condenser area.",
+        "Plug in refrigerator or reconnect power."
+      ],
+      "appliance_id": "fridge-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "gss30c6ey-replace-light-bulbs",
+      "source_page": 16,
+      "title": "Replace the light bulbs",
+      "task": "replace the light bulbs",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": null,
+      "steps": [
+        "Unplug refrigerator or disconnect power.",
+        "Remove light shield when applicable.",
+        "Remove light bulb and replace with one of the same size, shape and wattage.",
+        "Replace light shield when applicable.",
+        "Plug in refrigerator or reconnect power."
+      ],
+      "appliance_id": "fridge-1",
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the refrigerator is unplugged."
     }
   ],
   "symptoms": [
@@ -609,40 +753,6 @@
           "likelihood": "less likely",
           "procedure_id": null,
           "short": "the blower motor"
-        }
-      ]
-    },
-    {
-      "appliance_id": "fridge-1",
-      "symptom": "dispenser water tastes bad or runs slowly",
-      "keywords": [
-        "water",
-        "taste",
-        "tastes",
-        "bad",
-        "slow",
-        "dispenser",
-        "ice",
-        "smell"
-      ],
-      "causes": [
-        {
-          "cause": "The water filter is past its service life.",
-          "likelihood": "most likely",
-          "procedure_id": "fr-replace-water-filter",
-          "short": "an old water filter"
-        },
-        {
-          "cause": "Air is trapped in the water line after a recent filter change.",
-          "likelihood": "possible",
-          "procedure_id": null,
-          "short": "air in the water line"
-        },
-        {
-          "cause": "The supply line is partly kinked behind the fridge.",
-          "likelihood": "less likely",
-          "procedure_id": null,
-          "short": "a kinked supply line"
         }
       ]
     },

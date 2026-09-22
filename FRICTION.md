@@ -76,3 +76,25 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Medium for a hackathon: many entrants will create a fresh AWS account for the credits and hit this on their first AI call.
 - **Workaround:** Wrote and tested the extractor against a stand-in client while waiting.
 - **Suggestion:** Mention the new-account verification window on the hackathon's AWS credits page and in Bedrock's getting-started guide, and show verification status in the Bedrock console so developers don't assume their permissions are wrong.
+
+### Bedrock's content filter blocked its own output while reading an appliance manual
+- **Date:** 2026-09-22
+- **Tool / API:** Amazon Bedrock Converse, Amazon Nova 2 Lite
+- **Task attempted:** Extract repair steps from a Whirlpool refrigerator manual (scanned, 44 pages, read from Amazon S3).
+- **Steps taken:** Same call that had already worked on two LG manuals.
+- **Expected:** Structured JSON, as before.
+- **Actual:** The reply was the single line `- The generated text has been blocked by our content filters.` An identical retry a minute later succeeded, so the block is not deterministic. Appliance manuals quote child-entrapment and suffocation warnings, which is the likeliest trigger.
+- **Severity:** Medium. A pipeline that trusted the reply would have stored that sentence as data.
+- **Workaround:** The extractor validates every reply against a schema, saves unusable replies for inspection, and the run is simply repeated.
+- **Suggestion:** Return a distinct error code for filtered output rather than plain text in the message body, so callers can retry programmatically instead of pattern-matching English. A `stopReason` of `content_filtered` on the response would be enough.
+
+### Nova cites pages from the wrong language half of a bilingual manual
+- **Date:** 2026-09-22
+- **Tool / API:** Amazon Bedrock Converse, Amazon Nova 2 Lite, document input
+- **Task attempted:** Ask for the page number where each procedure appears, in a manual that prints English then the same content in French.
+- **Steps taken:** Prompted for "the page number printed on the manual page".
+- **Expected:** Pages from the English half, since the request and output are English.
+- **Actual:** Every citation pointed at the French half (page 37 instead of 15). The extracted steps were correct English translations of the French text, so the content was right and only the citations were misleading.
+- **Severity:** Low, but it would have put wrong references on screen.
+- **Workaround:** Checked one procedure by rendering pages as images, found the fixed 22-page offset, and re-cited all of them.
+- **Suggestion:** Worth a note in the document-understanding guide: for multilingual documents, state the language section you want cited, since the model may ground itself in either.

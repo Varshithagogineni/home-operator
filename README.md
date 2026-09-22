@@ -6,7 +6,7 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
-> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. The LG WM9500HKA washer is fully real — its repair steps, error codes and maintenance intervals come from LG's owner's manual via Amazon Bedrock, checked by a person. The other appliances are still placeholders (brand "Sample") until their manuals are processed. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
+> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. Three appliances are real, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and checked by a person: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven and the **Whirlpool GSS30C6EY** refrigerator. The dishwasher and furnace are still placeholders (brand "Sample"). Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
 
 ## Tools
 
@@ -126,8 +126,15 @@ Amazon Bedrock reads the PDF; a person checks the result against the manual befo
 
 | File | What it is |
 |---|---|
-| `WM9500HKA.raw.json` | Exactly what Amazon Nova 2 Lite returned from LG's 56-page manual |
-| `WM9500HKA.json` | The reviewed version, with every correction logged under `source.review.changes`, each citing the manual page and quoting it |
+| `<MODEL>.raw.json` | Exactly what Amazon Nova returned from the manual |
+| `<MODEL>.json` | The reviewed version, with every correction logged under `source.review.changes`, each citing the manual page and quoting it |
+
+Manuals over 4.5 MB go through Amazon S3:
+
+```bash
+uv run home-operator-extract manuals/<manual>.pdf --brand Whirlpool --model GSS30C6EY \
+  --category refrigerator --s3-bucket <your-bucket>
+```
 
 ```bash
 uv run home-operator-extract manuals/<manual>.pdf --brand LG --model WM9500HKA --category "washing machine"
@@ -135,7 +142,7 @@ uv run home-operator-extract manuals/<manual>.pdf --brand LG --model WM9500HKA -
 uv run python -m home_operator.merge
 ```
 
-What review found on the LG manual: the model copied all four procedures and the error-code table accurately, but where the manual was vague it **invented maintenance intervals** ("every 30 days" where LG says "periodically"), even when told not to, and on one run it **dropped two sub-steps** that a later step depends on. Ten corrections were made, each tied to a page. Manufacturer PDFs are not in this repository; download them from the manufacturer's support site.
+What review found across three manuals: the model copied all four procedures and the error-code table accurately, but where the manual was vague it **invented maintenance intervals** ("every 30 days" where LG says "periodically"), even when told not to, and on one run it **dropped two sub-steps** that a later step depends on. On the Whirlpool manual — scanned, with no text layer, so pages had to be read as images — it **omitted a CAUTION: IRRITANT warning** entirely, and cited pages from the manual's French half rather than the English one. Twenty-one corrections in total, each tied to a page and a quotation. Manufacturer PDFs are not in this repository; download them from the manufacturer's support site.
 
 ## AWS services used
 
@@ -143,6 +150,7 @@ What review found on the LG manual: the model copied all four procedures and the
 |---|---|---|
 | **Amazon Polly** (generative engine, voice Ruth) | Speaks every reply in the simulator, and narrates the demo video | `src/home_operator/voice.py` calls `synthesize_speech` through boto3; `/speak` in `server.py` serves the MP3 |
 | **Amazon Bedrock** (Amazon Nova 2 Lite, Converse API) | Reads a manufacturer's PDF manual once, ahead of time, and extracts parts, maintenance intervals, error codes, symptoms and step-by-step repairs | `src/home_operator/extract.py`; run `uv run home-operator-extract manual.pdf --brand LG --model WM9500HKA --category "washing machine"`. Output is validated against a strict schema and reviewed by a person before use |
+| **Amazon S3** | Holds manuals too large to send inline (over 4.5 MB); Bedrock reads them straight from the bucket | `upload_manual()` in `extract.py`, then a `s3Location` document block. The bucket is private |
 
 To use the AWS features locally:
 
@@ -167,7 +175,7 @@ src/home_operator/
   data/extracted/        raw and reviewed extractions, with the review log
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
-tests/                   70 tests, with real CPSC recall records as fixtures
+tests/                   79 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 

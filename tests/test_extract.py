@@ -68,6 +68,25 @@ def test_tasks_without_a_stated_frequency_are_dropped_and_minutes_may_be_unknown
     assert extraction.procedures[0].minutes is None
 
 
+def test_procedures_without_real_steps_are_dropped_and_their_links_removed():
+    payload = {**GOOD, "procedures": [{**GOOD["procedures"][0], "steps": []},
+                                      {**GOOD["procedures"][0], "id": "other", "steps": ["one", "two"]}]}
+    extraction = extract.parse_response(json.dumps(payload))
+    assert [p.id for p in extraction.procedures] == ["other"]
+    assert all(c.procedure_id in {"other", None} for s in extraction.symptoms for c in s.causes)
+
+
+def test_symptoms_without_any_cause_are_dropped():
+    payload = {**GOOD, "symptoms": [{"symptom": "hums", "keywords": ["hum"], "causes": []}, *GOOD["symptoms"]]}
+    extraction = extract.parse_response(json.dumps(payload))
+    assert [s.symptom for s in extraction.symptoms] == ["shows error code OE"]
+
+
+def test_a_procedure_may_carry_no_safety_warning():
+    payload = {**GOOD, "procedures": [{**GOOD["procedures"][0], "safety_note": None}]}
+    assert extract.parse_response(json.dumps(payload)).procedures[0].safety_note is None
+
+
 def test_markdown_fences_around_the_json_are_tolerated():
     extraction = extract.parse_response("```json\n" + json.dumps(GOOD) + "\n```")
     assert extraction.symptoms[0].keywords[0] == "oe"
@@ -82,7 +101,6 @@ def test_causes_pointing_at_missing_procedures_are_unlinked():
 
 @pytest.mark.parametrize("bad", [
     "Sorry, I can't read that manual.",
-    json.dumps({**GOOD, "procedures": [{**GOOD["procedures"][0], "steps": ["only one step"]}]}),
     json.dumps({**GOOD, "maintenance": [{"task": "clean it", "interval_days": -5}]}),
 ])
 def test_malformed_output_stops_with_a_clear_error(bad):
@@ -90,10 +108,32 @@ def test_malformed_output_stops_with_a_clear_error(bad):
         extract.parse_response(bad)
 
 
+def test_large_manuals_go_through_s3_instead_of_inline_bytes(tmp_path):
+    big = tmp_path / "big.pdf"
+    big.write_bytes(b"0" * (extract.MAX_PDF_BYTES + 1))
+    bedrock = FakeBedrock(json.dumps(GOOD))
+    extract.extract(big, "Whirlpool", "GSS30C6EY", "refrigerator", client=bedrock,
+                    s3_uri="s3://a-bucket/manuals/big.pdf")
+    source = bedrock.calls[0]["messages"][0]["content"][0]["document"]["source"]
+    assert source == {"s3Location": {"uri": "s3://a-bucket/manuals/big.pdf"}}
+
+
+def test_upload_manual_returns_the_s3_address(tmp_path):
+    class FakeS3:
+        def __init__(self): self.uploads = []
+        def upload_file(self, path, bucket, key): self.uploads.append((path, bucket, key))
+
+    pdf = tmp_path / "manual.pdf"
+    pdf.write_bytes(b"%PDF")
+    s3 = FakeS3()
+    assert extract.upload_manual(pdf, "my-bucket", client=s3) == "s3://my-bucket/manuals/manual.pdf"
+    assert s3.uploads[0][1:] == ("my-bucket", "manuals/manual.pdf")
+
+
 def test_oversized_manual_is_refused_before_calling_aws(tmp_path):
     big = tmp_path / "big.pdf"
     big.write_bytes(b"0" * (extract.MAX_PDF_BYTES + 1))
     bedrock = FakeBedrock(json.dumps(GOOD))
-    with pytest.raises(extract.ExtractionError, match="S3"):
+    with pytest.raises(extract.ExtractionError, match="s3-bucket"):
         extract.extract(big, "LG", "X", "washer", client=bedrock)
     assert bedrock.calls == []
