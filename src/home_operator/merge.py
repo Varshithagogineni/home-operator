@@ -48,20 +48,28 @@ def merge(home: dict, extracted: dict, *, appliance_id: str, nickname: str, room
     return home
 
 
+APPLIANCES = [
+    {"file": "WM9500HKA.json", "appliance_id": "washer-1", "nickname": "Washer", "room": "laundry room",
+     "purchase_date": "2019-04-12", "warranty_until": "2020-04-12",
+     "service_log": [
+         {"task": "clean the door seal", "date": "2026-08-01", "notes": None},
+         {"task": "run the tub clean cycle", "date": "2026-09-05", "notes": None},
+         {"task": "clean the detergent dispenser", "date": "2026-08-25", "notes": None},
+     ]},
+    {"file": "WSEP4727F.json", "appliance_id": "oven-1", "nickname": "Oven", "room": "kitchen",
+     "purchase_date": "2023-07-15", "warranty_until": "2024-07-15", "service_log": []},
+]
+
+
 def main() -> None:
     home = json.loads(HOME_FILE.read_text())
-    washer = json.loads((EXTRACTED_DIR / "WM9500HKA.json").read_text())
-    merge(home, washer, appliance_id="washer-1", nickname="Washer", room="laundry room",
-          purchase_date="2019-04-12", warranty_until="2020-04-12",
-          service_log=[
-              {"task": "clean the door seal", "date": "2026-08-01", "notes": None},
-              {"task": "run the tub clean cycle", "date": "2026-09-05", "notes": None},
-              {"task": "clean the detergent dispenser", "date": "2026-08-25", "notes": None},
-          ])
+    for spec in APPLIANCES:
+        extracted = json.loads((EXTRACTED_DIR / spec["file"]).read_text())
+        merge(home, extracted, **{k: v for k, v in spec.items() if k != "file"})
+        print(f"Merged {extracted['brand']} {extracted['model_number']} as {spec['appliance_id']}.")
     home["_note"] = ("Demo household: real appliance models and their manufacturer manuals, with seeded "
                      "service history. Appliances marked brand 'Sample' are placeholders still to be replaced.")
     HOME_FILE.write_text(json.dumps(home, indent=2) + "\n")
-    print("Merged LG WM9500HKA into the demo home as washer-1.")
 
 
 if __name__ == "__main__":

@@ -192,6 +192,64 @@
           ]
         }
       }
+    },
+    {
+      "id": "oven-1",
+      "nickname": "Oven",
+      "room": "kitchen",
+      "category": "wall oven",
+      "brand": "LG",
+      "model_number": "WSEP4727F",
+      "purchase_date": "2023-07-15",
+      "warranty_until": "2024-07-15",
+      "consumables": [
+        {
+          "name": "oven light bulb",
+          "part_number": null,
+          "size": "25-watt halogen, for ovens"
+        }
+      ],
+      "maintenance": [],
+      "source": {
+        "manual": "OVEN_LGA_MFL51224549_06_260515_00_OM_WEB_EN.pdf",
+        "extracted_on": "2026-09-22",
+        "model_id": "us.amazon.nova-2-lite-v1:0",
+        "input_tokens": 13715,
+        "output_tokens": 1319,
+        "review": {
+          "reviewed_on": "2026-09-22",
+          "method": "Every procedure and error code checked by a person against the manual text.",
+          "kept_verbatim": "The oven light, descaling and drying steps, and the F-3, F-9, CLEAN and Loc codes with their meanings.",
+          "model_comparison": "Amazon Nova Pro was also tried on this manual: it used 99,803 input tokens against Nova 2 Lite's 13,715 and returned vaguer procedures plus an invented 30-day interval, so the Nova 2 Lite output was kept.",
+          "changes": [
+            {
+              "change": "Added the tools LG names for changing the oven light",
+              "page": 44,
+              "manual_says": "The oven light is a standard 25-watt halogen bulb for ovens. ... Wear gloves while changing the oven light."
+            },
+            {
+              "change": "Retitled: these steps fill and refit the tank, they don't clean it, and they come from page 31",
+              "page": 31,
+              "manual_says": "Using the Steam Feeder Tank ... 1 Gently push the front of the steam feeder tank to slide it out."
+            },
+            {
+              "change": "Error codes cited to page 49, the troubleshooting table, not page 41",
+              "page": 49,
+              "manual_says": "Oven control beeps and displays any F code error. ... [Case 1] - Code: F-3 - Cause: Key short error"
+            },
+            {
+              "change": "Recorded the bulb specification as a consumable",
+              "page": 44,
+              "manual_says": "The oven light is a standard 25-watt halogen bulb for ovens."
+            },
+            {
+              "change": "Added the 'oven light does not work' troubleshooting entry, linked to the lamp replacement steps",
+              "page": 49,
+              "manual_says": "Oven light does not work. It is time to replace the lamp or the lamp is loose. Replace or tighten lamp."
+            }
+          ]
+        }
+      }
     }
   ],
   "service_log": [
@@ -393,6 +451,90 @@
       "appliance_id": "washer-1",
       "gate_step": 0,
       "gate_prompt": "Tell me when the washer is off and unplugged."
+    },
+    {
+      "id": "wsep4727f-change-oven-light",
+      "source_page": 44,
+      "title": "Changing the Oven Light",
+      "task": "change the oven light",
+      "minutes": null,
+      "tools_needed": [
+        "a flat blade screwdriver",
+        "gloves",
+        "a 25-watt halogen oven bulb"
+      ],
+      "safety_note": "Make sure that the oven and bulb are cool. Disconnect the electrical power to the appliance at the main fuse or circuit breaker panel. Failure to do so can result in severe personal injury, death, or electrical shock.",
+      "steps": [
+        "Unplug the oven or disconnect power.",
+        "Remove the oven racks.",
+        "Slide a flat blade screwdriver between the housing and the glass light cover.",
+        "Support the glass light cover with two fingers to prevent the cover from falling to the bottom of the oven.",
+        "Gently twist the screwdriver blade to loosen the glass light cover.",
+        "Remove the bulb from the socket.",
+        "Replace the bulb, and reassemble the light cover by snapping it back into place.",
+        "Plug in the oven or reconnect power."
+      ],
+      "appliance_id": "oven-1",
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the oven is unplugged and the bulb is cool."
+    },
+    {
+      "id": "wsep4727f-clean-steam-feeder-tank",
+      "source_page": 31,
+      "title": "Fill and refit the steam feeder tank",
+      "task": "fill the steam feeder tank",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Use filtered, softened water if possible. Do not clean in a dishwasher.",
+      "steps": [
+        "Gently push the front of the steam feeder tank to slide it out.",
+        "Remove the tank and place it on a flat surface.",
+        "Remove the tank cover or flip open the fill lid at the front of the tank cover.",
+        "Fill the tank to the max line located at the front of the tank. Use softened, filtered water, if possible.",
+        "Assemble the cover or snap closed the fill lid.",
+        "Carefully insert the tank into the steam feeder slot, making sure to keep the tank level while carrying it.",
+        "Slide the tank into the slot until it clicks into place."
+      ],
+      "appliance_id": "oven-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "wsep4727f-descale-steam-feeder-tank",
+      "source_page": 43,
+      "title": "Descaling the Steam Feeder Tank",
+      "task": "descale the steam feeder tank",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Use a 50:1 mixture of water and citric acid. Do not fill the tank with hot water.",
+      "steps": [
+        "Fill the steam feeder tank with a 50:1 mixture of water and citric acid.",
+        "Insert the steam feeder tank into the slot over the upper oven cavity and push it in until it clicks into place.",
+        "Press More Modes and press 5. Press START.",
+        "After 1 hour 43 minutes of descaling, a popup will appear in the display. Drain the tank and fill it with clean water.",
+        "Insert the tank and start the Rinsing function.",
+        "Once the Rinsing function is complete, dry the inside of the oven with a soft cloth. Leave the oven door open and allow the oven to dry completely."
+      ],
+      "appliance_id": "oven-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "wsep4727f-dry-oven-interior",
+      "source_page": 44,
+      "title": "Drying the Oven Interior",
+      "task": "dry the oven interior",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Some surfaces may be hot after the EasyClean cycle. Wear rubber gloves while cleaning to prevent burns.",
+      "steps": [
+        "Make sure that the steam feeder tank is empty.",
+        "Press More Modes and press 6.",
+        "Press START to begin Drying. The remaining time appears in the display."
+      ],
+      "appliance_id": "oven-1",
+      "gate_step": null,
+      "gate_prompt": null
     }
   ],
   "symptoms": [
@@ -1214,6 +1356,108 @@
         }
       ],
       "appliance_id": "washer-1"
+    },
+    {
+      "symptom": "shows error code F-3",
+      "meaning": "Key short error",
+      "source_page": 49,
+      "keywords": [
+        "f3",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "A key on the control panel is malfunctioning or has a short circuit.",
+          "short": "key short",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "oven-1"
+    },
+    {
+      "symptom": "shows error code F-9",
+      "meaning": "Oven not heating",
+      "source_page": 49,
+      "keywords": [
+        "f9",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The oven's heating element or its connection is faulty.",
+          "short": "heating element",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "oven-1"
+    },
+    {
+      "symptom": "shows error code CLEAN",
+      "meaning": "The Self Clean cycle has been selected, but the door is not closed.",
+      "source_page": 49,
+      "keywords": [
+        "clean",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The oven door is not closed during the Self Clean cycle.",
+          "short": "door not closed",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "oven-1"
+    },
+    {
+      "symptom": "shows error code Loc",
+      "meaning": "The oven is locked because of the Control Lock feature.",
+      "source_page": 49,
+      "keywords": [
+        "loc",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The Control Lock feature is active.",
+          "short": "control lock active",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "oven-1"
+    },
+    {
+      "symptom": "the oven light does not work",
+      "meaning": null,
+      "source_page": 49,
+      "keywords": [
+        "light",
+        "lamp",
+        "bulb",
+        "dark",
+        "work",
+        "working"
+      ],
+      "causes": [
+        {
+          "cause": "It is time to replace the lamp, or the lamp is loose.",
+          "short": "the lamp",
+          "likelihood": "most likely",
+          "procedure_id": "wsep4727f-change-oven-light"
+        }
+      ],
+      "appliance_id": "oven-1"
     }
   ]
 }

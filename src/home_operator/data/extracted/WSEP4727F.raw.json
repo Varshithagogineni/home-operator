@@ -1,0 +1,172 @@
+{
+  "source": {
+    "manual": "OVEN_LGA_MFL51224549_06_260515_00_OM_WEB_EN.pdf",
+    "extracted_on": "2026-09-22",
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "input_tokens": 13715,
+    "output_tokens": 1319
+  },
+  "brand": "LG",
+  "model_number": "WSEP4727F",
+  "category": "wall oven",
+  "consumables": [
+    {
+      "name": "oven light",
+      "part_number": null,
+      "size": null
+    }
+  ],
+  "maintenance": [],
+  "symptoms": [
+    {
+      "symptom": "shows error code F-3",
+      "meaning": "Key short error",
+      "source_page": 49,
+      "keywords": [
+        "f3",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "A key on the control panel is malfunctioning or has a short circuit.",
+          "short": "key short",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code F-9",
+      "meaning": "Oven not heating",
+      "source_page": 49,
+      "keywords": [
+        "f9",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The oven's heating element or its connection is faulty.",
+          "short": "heating element",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code CLEAN",
+      "meaning": "The Self Clean cycle has been selected, but the door is not closed.",
+      "source_page": 49,
+      "keywords": [
+        "clean",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The oven door is not closed during the Self Clean cycle.",
+          "short": "door not closed",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "shows error code Loc",
+      "meaning": "The oven is locked because of the Control Lock feature.",
+      "source_page": 49,
+      "keywords": [
+        "loc",
+        "error",
+        "code",
+        "display"
+      ],
+      "causes": [
+        {
+          "cause": "The Control Lock feature is active.",
+          "short": "control lock active",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "id": "change-oven-light",
+      "source_page": 44,
+      "title": "Changing the Oven Light",
+      "task": "change the oven light",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Make sure that the oven and bulb are cool. Disconnect the electrical power to the appliance at the main fuse or circuit breaker panel. Failure to do so can result in severe personal injury, death, or electrical shock.",
+      "gate_prompt": "Tell me when the oven is unplugged and the bulb is cool.",
+      "steps": [
+        "Unplug the oven or disconnect power.",
+        "Remove the oven racks.",
+        "Slide a flat blade screwdriver between the housing and the glass light cover.",
+        "Support the glass light cover with two fingers to prevent the cover from falling to the bottom of the oven.",
+        "Gently twist the screwdriver blade to loosen the glass light cover.",
+        "Remove the bulb from the socket.",
+        "Replace the bulb, and reassemble the light cover by snapping it back into place.",
+        "Plug in the oven or reconnect power."
+      ]
+    },
+    {
+      "id": "clean-steam-feeder-tank",
+      "source_page": 43,
+      "title": "Cleaning the Steam Feeder Tank",
+      "task": "clean the steam feeder tank",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Use filtered, softened water if possible. Do not clean in a dishwasher.",
+      "gate_prompt": null,
+      "steps": [
+        "Gently push the front of the steam feeder tank to slide it out.",
+        "Remove the tank and place it on a flat surface.",
+        "Remove the tank cover or flip open the fill lid at the front of the tank cover.",
+        "Fill the tank to the max line located at the front of the tank. Use softened, filtered water, if possible.",
+        "Assemble the cover or snap closed the fill lid.",
+        "Carefully insert the tank into the steam feeder slot, making sure to keep the tank level while carrying it.",
+        "Slide the tank into the slot until it clicks into place."
+      ]
+    },
+    {
+      "id": "descale-steam-feeder-tank",
+      "source_page": 43,
+      "title": "Descaling the Steam Feeder Tank",
+      "task": "descale the steam feeder tank",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Use a 50:1 mixture of water and citric acid. Do not fill the tank with hot water.",
+      "gate_prompt": null,
+      "steps": [
+        "Fill the steam feeder tank with a 50:1 mixture of water and citric acid.",
+        "Insert the steam feeder tank into the slot over the upper oven cavity and push it in until it clicks into place.",
+        "Press More Modes and press 5. Press START.",
+        "After 1 hour 43 minutes of descaling, a popup will appear in the display. Drain the tank and fill it with clean water.",
+        "Insert the tank and start the Rinsing function.",
+        "Once the Rinsing function is complete, dry the inside of the oven with a soft cloth. Leave the oven door open and allow the oven to dry completely."
+      ]
+    },
+    {
+      "id": "dry-oven-interior",
+      "source_page": 44,
+      "title": "Drying the Oven Interior",
+      "task": "dry the oven interior",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Some surfaces may be hot after the EasyClean cycle. Wear rubber gloves while cleaning to prevent burns.",
+      "gate_prompt": null,
+      "steps": [
+        "Make sure that the steam feeder tank is empty.",
+        "Press More Modes and press 6.",
+        "Press START to begin Drying. The remaining time appears in the display."
+      ]
+    }
+  ]
+}

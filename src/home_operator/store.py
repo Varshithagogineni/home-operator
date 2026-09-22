@@ -135,6 +135,14 @@ def maintenance_due(home: dict, today: date, within_days: int = 30) -> dict:
     }
 
 
+def _tokens(text: str) -> set[str]:
+    """Words, plus error codes rejoined: "F-9" and "F 9" both become "f9", as stored."""
+    words = _normalize(text).split()
+    tokens = set(words)
+    tokens.update(a + b for a, b in zip(words, words[1:]) if a.isalpha() and len(a) <= 2 and b.isdigit())
+    return tokens
+
+
 def _procedure(home: dict, procedure_id: str) -> dict | None:
     return next((p for p in home["procedures"] if p["id"] == procedure_id), None)
 
@@ -150,8 +158,8 @@ def diagnose_symptom(home: dict, query: str, symptom: str, today: date) -> dict:
 
     a = matches[0]
     known = [s for s in home["symptoms"] if s["appliance_id"] == a["id"]]
-    words = set(_normalize(symptom).split())
-    scored = [(len(words & set(s["keywords"])), s) for s in known]
+    words = _tokens(symptom)
+    scored = [(len(words & _tokens(" ".join(s["keywords"]))), s) for s in known]
     best_score, best = max(scored, key=lambda pair: pair[0], default=(0, None))
 
     if best is None or best_score == 0:

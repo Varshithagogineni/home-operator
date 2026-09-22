@@ -442,8 +442,9 @@ function renderDiagnosis(d) {
   const top = d.causes[0];
   const fix = d.causes.find(c => c.fix_available);
   offeredFix = fix ? { appliance: d.nickname, title: fix.fix } : null;
-  const offer = fix ? `Want me to walk you through it? It only takes about ${spokenNumber(fix.minutes)} minutes.`
-                    : "Want me to get someone to take a look?";
+  const offer = !fix ? "Want me to get someone to take a look?"
+    : fix.minutes ? `Want me to walk you through it? It only takes about ${spokenNumber(fix.minutes)} minutes.`
+    : "Want me to walk you through it?";
   const code = (d.symptom.match(/error code (\w+)/i) || [])[1];
   const opening = code
     ? `${code.toUpperCase()}, got it. On your ${d.brand}, that's a ${d.meaning}.`
@@ -463,7 +464,7 @@ function renderDiagnosis(d) {
   card(`${d.nickname} · ${d.symptom}`, d.causes.map(c => `
     <div class="cause">
       <span class="pill ${c.likelihood === "most likely" ? "top" : c.likelihood === "possible" ? "mid" : "low"}">${c.likelihood}</span>
-      <div>${c.cause}${c.fix_available ? `<small>Fix: ${c.fix} · about ${c.minutes} min${c.days_since_last_done != null ? ` · last done ${c.days_since_last_done} days ago` : ""}</small>` : ""}</div>
+      <div>${c.cause}${c.fix_available ? `<small>Fix: ${c.fix}${c.minutes ? ` · about ${c.minutes} min` : ""}${c.days_since_last_done != null ? ` · last done ${c.days_since_last_done} days ago` : ""}</small>` : ""}</div>
     </div>`).join(""));
 }
 
@@ -497,7 +498,7 @@ function renderStep(d) {
   } else if (d.awaiting_confirmation && !d.started) {
     line = `Hold on, safety first. ${d.confirm_prompt}`;
   } else if (d.step_number === 1 && d.tools_needed) {
-    line = `${pick(["Okay, let's do it.", "Alright, let's fix it.", "Great, let's get started."])} There are ${spokenNumber(d.total_steps)} steps, and you'll want ${list(d.tools_needed)}. First, ${lowerFirst(d.step)}`;
+    line = `${pick(["Okay, let's do it.", "Alright, let's fix it.", "Great, let's get started."])} There are ${spokenNumber(d.total_steps)} steps${d.tools_needed.length ? `, and you'll want ${list(d.tools_needed)}` : ""}. First, ${lowerFirst(d.step)}`;
   } else if (isLast) {
     line = `${pick(["Nice.", "Great."])} Last step. ${d.step}`;
   } else {

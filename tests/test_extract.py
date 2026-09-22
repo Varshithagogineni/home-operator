@@ -54,8 +54,18 @@ def test_sends_the_pdf_to_nova_with_a_neutral_name(pdf):
     doc = call["messages"][0]["content"][0]["document"]
     assert doc["format"] == "pdf" and doc["name"] == "manual" and doc["source"]["bytes"].startswith(b"%PDF")
     assert "WM9500HKA" in call["messages"][0]["content"][1]["text"]
-    assert usage == {"input_tokens": 1200, "output_tokens": 300}
+    assert usage["input_tokens"] == 1200 and usage["output_tokens"] == 300
     assert extraction.procedures[0].gate_prompt
+
+
+def test_tasks_without_a_stated_frequency_are_dropped_and_minutes_may_be_unknown():
+    payload = {**GOOD,
+               "maintenance": [{"task": "clean the oven", "interval_days": None},
+                               {"task": "clean the drain pump filter", "interval_days": 30}],
+               "procedures": [{**GOOD["procedures"][0], "minutes": None}]}
+    extraction = extract.parse_response(json.dumps(payload))
+    assert [m.task for m in extraction.maintenance] == ["clean the drain pump filter"]
+    assert extraction.procedures[0].minutes is None
 
 
 def test_markdown_fences_around_the_json_are_tolerated():
@@ -73,7 +83,7 @@ def test_causes_pointing_at_missing_procedures_are_unlinked():
 @pytest.mark.parametrize("bad", [
     "Sorry, I can't read that manual.",
     json.dumps({**GOOD, "procedures": [{**GOOD["procedures"][0], "steps": ["only one step"]}]}),
-    json.dumps({**GOOD, "maintenance": [{"task": "clean it", "interval_days": 0}]}),
+    json.dumps({**GOOD, "maintenance": [{"task": "clean it", "interval_days": -5}]}),
 ])
 def test_malformed_output_stops_with_a_clear_error(bad):
     with pytest.raises(extract.ExtractionError, match="expected format"):

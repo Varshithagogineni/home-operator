@@ -13,6 +13,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, ValidationError
 
 MODEL_ID = "us.amazon.nova-2-lite-v1:0"
+STRONGER_MODEL_ID = "us.amazon.nova-pro-v1:0"  # for manuals Nova 2 Lite reads too thinly
 REGION = "us-east-1"
 # Bedrock's limit for a document sent inline; larger manuals need S3.
 MAX_PDF_BYTES = 4_500_000
@@ -26,6 +27,7 @@ Return ONLY a JSON object, with no markdown and no commentary, in exactly this s
 {{
   "consumables": [{{"name": "...", "part_number": "... or null", "size": "... or null"}}],
   "maintenance": [{{"task": "short verb phrase, e.g. clean the drain pump filter", "interval_days": 30}}],
+  "//": "leave a maintenance task out entirely if the manual gives no frequency; use null for minutes if no duration is stated",
   "symptoms": [{{
     "symptom": "short description, e.g. will not drain",
     "meaning": "for an error code, what the manual says it means in plain words, e.g. water can't drain; otherwise null",
@@ -57,7 +59,10 @@ Rules:
 - Only add a maintenance task when the manual states a specific frequency ("monthly" = 30, "once a week" = 7, "every five years" = 1825).
   If it says only "periodically", "regularly" or "as needed", leave that task OUT of maintenance entirely. Never guess a number.
 - source_page is the page number printed on the manual page where the information appears.
-- Include every maintenance or troubleshooting procedure that has numbered or step-by-step instructions."""
+- Be exhaustive about procedures. Work through the whole manual, especially its care and maintenance
+  section, and include EVERY task written as numbered or step-by-step instructions: cleaning routines,
+  self-cleaning cycles, removing and refitting parts, replacing filters or lamps, and descaling.
+  Most manuals contain between three and eight such procedures. Do not stop after the first one."""
 
 
 class Consumable(BaseModel):
@@ -68,7 +73,8 @@ class Consumable(BaseModel):
 
 class Maintenance(BaseModel):
     task: str
-    interval_days: int = Field(gt=0)
+    # null when the manual gives no frequency; those entries are dropped below.
+    interval_days: int | None = Field(default=None, gt=0)
 
 
 class Cause(BaseModel):
@@ -91,7 +97,7 @@ class Procedure(BaseModel):
     source_page: int | None = None
     title: str
     task: str
-    minutes: int = Field(gt=0)
+    minutes: int | None = Field(default=None, gt=0)  # manuals often don't say how long a job takes
     tools_needed: list[str]
     safety_note: str
     gate_prompt: str | None = None
@@ -117,6 +123,7 @@ def parse_response(text: str) -> Extraction:
     except (json.JSONDecodeError, ValidationError) as e:
         raise ExtractionError(f"Bedrock returned data that doesn't match the expected format: {e}") from e
 
+    extraction.maintenance = [m for m in extraction.maintenance if m.interval_days]
     known = {p.id for p in extraction.procedures}
     for symptom in extraction.symptoms:
         for cause in symptom.causes:
@@ -125,7 +132,8 @@ def parse_response(text: str) -> Extraction:
     return extraction
 
 
-def extract(pdf_path: Path, brand: str, model: str, category: str, client=None) -> tuple[Extraction, dict]:
+def extract(pdf_path: Path, brand: str, model: str, category: str, client=None,
+            model_id: str = MODEL_ID) -> tuple[Extraction, dict]:
     pdf = pdf_path.read_bytes()
     if len(pdf) > MAX_PDF_BYTES:
         raise ExtractionError(
@@ -137,7 +145,7 @@ def extract(pdf_path: Path, brand: str, model: str, category: str, client=None) 
         client = boto3.client("bedrock-runtime", region_name=REGION)
 
     response = client.converse(
-        modelId=MODEL_ID,
+        modelId=model_id,
         messages=[{"role": "user", "content": [
             # A neutral name: Bedrock warns the document name can act as a prompt injection.
             {"document": {"format": "pdf", "name": "manual", "source": {"bytes": pdf}}},
@@ -147,7 +155,8 @@ def extract(pdf_path: Path, brand: str, model: str, category: str, client=None) 
     )
     text = next(block["text"] for block in response["output"]["message"]["content"] if "text" in block)
     usage = response.get("usage", {})
-    return parse_response(text), {"input_tokens": usage.get("inputTokens"), "output_tokens": usage.get("outputTokens")}
+    return parse_response(text), {"model_id": model_id, "input_tokens": usage.get("inputTokens"),
+                                  "output_tokens": usage.get("outputTokens")}
 
 
 def main() -> None:
@@ -156,13 +165,16 @@ def main() -> None:
     parser.add_argument("--brand", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--category", required=True, help='e.g. "washing machine"')
+    parser.add_argument("--stronger", action="store_true",
+                        help="use Amazon Nova Pro, for manuals Nova 2 Lite reads too thinly")
     args = parser.parse_args()
 
-    extraction, usage = extract(args.pdf, args.brand, args.model, args.category)
+    extraction, usage = extract(args.pdf, args.brand, args.model, args.category,
+                                model_id=STRONGER_MODEL_ID if args.stronger else MODEL_ID)
     EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
     out = EXTRACTED_DIR / f"{args.model.upper()}.raw.json"
     out.write_text(json.dumps({
-        "source": {"manual": args.pdf.name, "model_id": MODEL_ID, "extracted_on": date.today().isoformat(), **usage},
+        "source": {"manual": args.pdf.name, "extracted_on": date.today().isoformat(), **usage},
         "brand": args.brand, "model_number": args.model.upper(), "category": args.category,
         **extraction.model_dump(),
     }, indent=2) + "\n")

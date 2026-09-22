@@ -80,3 +80,21 @@ def test_finishing_an_unscheduled_repair_logs_it_without_touching_other_tasks():
 def test_spoken_tasks_match_only_when_most_words_agree(said, expected):
     tasks = ["clean the door seal", "run the tub clean cycle", "clean the detergent dispenser", "replace the water hoses"]
     assert store._match_task(said, tasks) == expected
+
+
+@pytest.mark.parametrize("said", ["it's showing F-9", "the oven says F9", "error code f 9"])
+def test_oven_error_codes_match_however_they_are_spoken(said):
+    d = store.diagnose_symptom(store.load_home(), "oven", said, TODAY)
+    assert d["found"] is True
+    assert "F-9" in d["symptom"] or "f-9" in d["symptom"].lower()
+    assert "not heating" in d["meaning"].lower()
+    assert d["source_page"] == 49
+
+
+def test_oven_light_repair_carries_the_tools_lg_names():
+    r = store.start_repair(store.load_home(), {}, "oven", "change the oven light", TODAY)
+    assert r["started"] is True
+    assert "screwdriver" in " ".join(r["tools_needed"])
+    assert "25-watt halogen" in " ".join(r["tools_needed"])
+    assert r["source"] == "LG owner's manual, page 44"
+    assert r["awaiting_confirmation"] is True
