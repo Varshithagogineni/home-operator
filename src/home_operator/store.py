@@ -135,10 +135,23 @@ def maintenance_due(home: dict, today: date, within_days: int = 30) -> dict:
     }
 
 
+def _stem(word: str) -> str:
+    """Crude stemming so "replaced" matches "replace" and "hoses" matches "hose"."""
+    for suffix in ("ing", "ed", "es", "s"):
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            word = word[: -len(suffix)]
+            break
+    return word[:-1] if word.endswith("e") and len(word) > 3 else word
+
+
 def _tokens(text: str) -> set[str]:
-    """Words, plus error codes rejoined: "F-9" and "F 9" both become "f9", as stored."""
+    """Words and their stems, plus error codes rejoined: "F-9" and "F 9" both become "f9", as stored.
+
+    Stemming matters here because people and manuals conjugate differently: someone says the furnace
+    won't "blow", the manual says "blowing".
+    """
     words = _normalize(text).split()
-    tokens = set(words)
+    tokens = set(words) | {_stem(w) for w in words}
     tokens.update(a + b for a, b in zip(words, words[1:]) if a.isalpha() and len(a) <= 2 and b.isdigit())
     return tokens
 
@@ -318,15 +331,6 @@ def navigate_repair(home: dict, sessions: dict, action: str, today: date, home_i
         "source": _source(home, a, proc),
         **_gate_fields(proc, session["step_index"], session["confirmed"]),
     }
-
-
-def _stem(word: str) -> str:
-    """Crude stemming so "replaced" matches "replace" and "hoses" matches "hose"."""
-    for suffix in ("ing", "ed", "es", "s"):
-        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
-            word = word[: -len(suffix)]
-            break
-    return word[:-1] if word.endswith("e") and len(word) > 3 else word
 
 
 def _match_task(said: str, known_tasks: list[str]) -> str | None:

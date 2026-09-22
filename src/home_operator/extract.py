@@ -59,6 +59,8 @@ Rules:
 - Only add a maintenance task when the manual states a specific frequency ("monthly" = 30, "once a week" = 7, "every five years" = 1825).
   If it says only "periodically", "regularly" or "as needed", leave that task OUT of maintenance entirely. Never guess a number.
 - source_page is the page number printed on the manual page where the information appears.
+  Many manuals print the same content twice, in English and then in another language:
+  always read and cite the ENGLISH pages.
 - A procedure is a task with at least two sequential steps. If the manual's fix is a single action
   ("replace the fuse", "call a plumber", "close the door firmly"), do NOT make it a procedure:
   say it in the cause instead. Troubleshooting tables are mostly single actions; treat them as causes.
@@ -166,7 +168,9 @@ def extract(pdf_path: Path, brand: str, model: str, category: str, client=None,
         source = {"bytes": pdf}
     if client is None:
         import boto3
-        client = boto3.client("bedrock-runtime", region_name=REGION)
+        from botocore.config import Config
+        client = boto3.client("bedrock-runtime", region_name=REGION,
+                              config=Config(read_timeout=900, retries={"max_attempts": 2}))
 
     response = client.converse(
         modelId=model_id,

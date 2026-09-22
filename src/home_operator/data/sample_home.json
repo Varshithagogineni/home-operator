@@ -2,29 +2,6 @@
   "_note": "Demo household: real appliance models and their manufacturer manuals, with seeded service history. Appliances marked brand 'Sample' are placeholders still to be replaced.",
   "appliances": [
     {
-      "id": "dishwasher-1",
-      "nickname": "Dishwasher",
-      "room": "kitchen",
-      "category": "dishwasher",
-      "brand": "Sample",
-      "model_number": "SAMPLE-DW-01",
-      "purchase_date": "2024-03-15",
-      "warranty_until": "2025-03-15",
-      "consumables": [
-        {
-          "name": "rinse aid",
-          "part_number": null,
-          "size": "any standard rinse aid"
-        }
-      ],
-      "maintenance": [
-        {
-          "task": "clean the filter",
-          "interval_days": 90
-        }
-      ]
-    },
-    {
       "id": "furnace-1",
       "nickname": "Furnace",
       "room": "basement",
@@ -229,6 +206,69 @@
       }
     },
     {
+      "id": "dishwasher-1",
+      "nickname": "Dishwasher",
+      "room": "kitchen",
+      "category": "dishwasher",
+      "brand": "Bosch",
+      "model_number": "SHE53T55UC",
+      "purchase_date": "2014-05-18",
+      "warranty_until": "2015-05-18",
+      "consumables": [
+        {
+          "name": "detergent",
+          "part_number": null,
+          "size": null
+        },
+        {
+          "name": "rinse aid",
+          "part_number": null,
+          "size": null
+        }
+      ],
+      "maintenance": [],
+      "source": {
+        "manual": "bosch-she53t55uc.pdf",
+        "extracted_on": "2026-09-22",
+        "model_id": "us.amazon.nova-2-lite-v1:0",
+        "source_uri": "s3://home-operator-manuals-258524844702/manuals/bosch-she53t55uc.pdf",
+        "input_tokens": 22170,
+        "output_tokens": 2984,
+        "review": {
+          "reviewed_on": "2026-09-22",
+          "method": "Every procedure, interval and citation checked by a person against the manual's English pages.",
+          "kept_verbatim": "The filter system and spray arm steps, and all sixteen troubleshooting symptoms with their causes.",
+          "changes": [
+            {
+              "change": "Removed 'clean the filter system every 1825 days': the manual gives no interval, only conditions",
+              "page": 32,
+              "manual_says": "Your filter system may need to be cleaned when: You notice food soils remaining on the filter system or objects trapped in the Large Object Trap. A drop in cleaning performance or a gritty film forms on the dishware."
+            },
+            {
+              "change": "Spray arm steps cited to page 33 and given the same sharp-debris warning",
+              "page": 33,
+              "manual_says": "Spray arms: Check spray arms for grease and limescale deposits."
+            },
+            {
+              "change": "Filter steps cited to page 33, where they are printed, not 32",
+              "page": 33,
+              "manual_says": "To check or clean the filter system: 1. Unscrew the Large Object Trap as illustrated and remove the entire filter system."
+            },
+            {
+              "change": "Added the WARNING the model omitted",
+              "page": 32,
+              "manual_says": "WARNING: Use caution when removing parts for cleaning as some debris may be sharp."
+            },
+            {
+              "change": "Restored the manual's caution about abrasive brushes to the rinsing step",
+              "page": 33,
+              "manual_says": "Note: do not use abrasive brushes or steel wool, etc., as they may damage the filter."
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "fridge-1",
       "nickname": "Fridge",
       "room": "kitchen",
@@ -313,12 +353,6 @@
   ],
   "service_log": [
     {
-      "appliance_id": "dishwasher-1",
-      "task": "clean the filter",
-      "date": "2026-02-10",
-      "notes": null
-    },
-    {
       "appliance_id": "furnace-1",
       "task": "replace the air filter",
       "date": "2026-06-01",
@@ -349,6 +383,12 @@
       "notes": null
     },
     {
+      "appliance_id": "dishwasher-1",
+      "task": "clean the filter system",
+      "date": "2026-02-10",
+      "notes": null
+    },
+    {
       "appliance_id": "fridge-1",
       "task": "replace the water filter",
       "date": "2026-03-20",
@@ -362,30 +402,6 @@
     }
   ],
   "procedures": [
-    {
-      "id": "dw-clean-filter",
-      "appliance_id": "dishwasher-1",
-      "title": "Clean the dishwasher filter",
-      "task": "clean the filter",
-      "minutes": 10,
-      "tools_needed": [
-        "warm soapy water",
-        "a soft brush",
-        "rubber gloves"
-      ],
-      "safety_note": "Turn the dishwasher off first, and watch for broken glass or sharp debris in the sump.",
-      "steps": [
-        "Turn the dishwasher off and open the door.",
-        "Slide out the bottom rack so you can reach the floor of the tub.",
-        "Find the round filter in the floor of the tub and twist it counter-clockwise, then lift it out.",
-        "Rinse the filter under warm running water and brush away any food debris.",
-        "Wipe out the opening underneath, checking for glass, seeds or bits of label.",
-        "Put the filter back and twist it clockwise until it seats firmly. A loose filter is the most common mistake.",
-        "Slide the rack back in and run a short rinse cycle to check that the water drains."
-      ],
-      "gate_step": 0,
-      "gate_prompt": "Tell me when the dishwasher is off."
-    },
     {
       "id": "fn-replace-filter",
       "appliance_id": "furnace-1",
@@ -580,6 +596,41 @@
       "gate_prompt": null
     },
     {
+      "id": "she53t55uc-clean-spray-arms",
+      "source_page": 33,
+      "title": "Clean the spray arms",
+      "task": "clean the spray arms",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Take care when removing parts for cleaning, as some debris may be sharp.",
+      "steps": [
+        "Unscrew the upper spray arm and pull off the lower spray arm",
+        "Inspect for deposits",
+        "Clean the appliance with detergents/appliance cleaners which are particularly suitable for use with dishwashers",
+        "Fill detergent dispenser with detergent and start the appliance without utensils in the cycle with the highest rinsing temperature"
+      ],
+      "appliance_id": "dishwasher-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
+      "id": "she53t55uc-clean-filter-system",
+      "source_page": 33,
+      "title": "Clean the filter system",
+      "task": "clean the filter system",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Take care when removing parts for cleaning, as some debris may be sharp.",
+      "steps": [
+        "Unscrew the Large Object Trap and remove the entire filter system",
+        "Remove any residue and clean the filters by rinsing under running water. Don't use abrasive brushes or steel wool, as they can damage the filter.",
+        "Reinstall the filter system in reverse sequence and lock into place by screwing the Large Object Trap until the marking arrows align"
+      ],
+      "appliance_id": "dishwasher-1",
+      "gate_step": null,
+      "gate_prompt": null
+    },
+    {
       "id": "gss30c6ey-replace-water-filter",
       "source_page": 15,
       "title": "Replace the water filter",
@@ -682,46 +733,6 @@
     }
   ],
   "symptoms": [
-    {
-      "appliance_id": "dishwasher-1",
-      "symptom": "will not drain, standing water in the bottom",
-      "keywords": [
-        "drain",
-        "draining",
-        "standing",
-        "water",
-        "full",
-        "pooling",
-        "wont",
-        "empty"
-      ],
-      "causes": [
-        {
-          "cause": "The filter is clogged with food debris.",
-          "likelihood": "most likely",
-          "procedure_id": "dw-clean-filter",
-          "short": "the filter"
-        },
-        {
-          "cause": "The drain hose is kinked or blocked.",
-          "likelihood": "possible",
-          "procedure_id": null,
-          "short": "a kinked drain hose"
-        },
-        {
-          "cause": "A new garbage disposal still has its knockout plug in place.",
-          "likelihood": "possible",
-          "procedure_id": null,
-          "short": "the disposal's knockout plug"
-        },
-        {
-          "cause": "The drain pump has failed.",
-          "likelihood": "less likely",
-          "procedure_id": null,
-          "short": "the drain pump"
-        }
-      ]
-    },
     {
       "appliance_id": "furnace-1",
       "symptom": "weak airflow from the vents",
@@ -1568,6 +1579,466 @@
         }
       ],
       "appliance_id": "oven-1"
+    },
+    {
+      "symptom": "dishwasher does not start",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "start",
+        "not start"
+      ],
+      "causes": [
+        {
+          "cause": "Door may not be properly latched",
+          "short": "door latch",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher may not be turned on",
+          "short": "power switch",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher not reset or previous cycle not completed",
+          "short": "reset",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Delay start engaged",
+          "short": "delay start",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Interruption of electrical power supply to dishwasher or blown fuse",
+          "short": "power supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The door may have been closed without first selecting a cycle",
+          "short": "cycle selection",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Water supply may not be turned on",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "cycle does not resume after door is opened and closed during cycle",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "cycle",
+        "resume",
+        "door"
+      ],
+      "causes": [
+        {
+          "cause": "Door is opened longer than 4 seconds after a cycle has started",
+          "short": "door open time",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "display does not illuminate",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "display",
+        "illuminate"
+      ],
+      "causes": [
+        {
+          "cause": "A fuse may have been blown or circuit breaker tripped",
+          "short": "fuse/breaker",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Door not closed or latched",
+          "short": "door latch",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "dishwasher seems to run a long time",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "run",
+        "long time"
+      ],
+      "causes": [
+        {
+          "cause": "Incoming water is not warm enough",
+          "short": "water temperature",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Cycle time can vary due to soil and water conditions",
+          "short": "cycle time",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Rinse aid dispenser is empty, or rinse aid setting has been set to \"0\"",
+          "short": "rinse aid",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher connected to cold water supply",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "dishes are not getting clean enough",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "clean",
+        "not clean enough"
+      ],
+      "causes": [
+        {
+          "cause": "Spray arm movement obstructed",
+          "short": "spray arm",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Spray arm nozzles clogged",
+          "short": "spray arm nozzles",
+          "likelihood": "most likely",
+          "procedure_id": "she53t55uc-clean-spray-arms"
+        },
+        {
+          "cause": "Improper use of detergents",
+          "short": "detergent",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Filters could be clogged",
+          "short": "filters",
+          "likelihood": "possible",
+          "procedure_id": "she53t55uc-clean-filter-system"
+        },
+        {
+          "cause": "Dishes are nested or loaded too closely together",
+          "short": "loading",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Selected wash cycle is not suitable for food soil conditions",
+          "short": "wash cycle",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "streaks on glassware or residue on the dishes",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "streaks",
+        "residue"
+      ],
+      "causes": [
+        {
+          "cause": "Incorrect rinse aid setting",
+          "short": "rinse aid setting",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "dishes are not getting dry enough",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "dry",
+        "not dry enough"
+      ],
+      "causes": [
+        {
+          "cause": "Rinse aid dispenser is empty or incorrect rinse aid amount is set",
+          "short": "rinse aid",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Improper loading of dishes",
+          "short": "loading",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "odor",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "odor"
+      ],
+      "causes": [
+        {
+          "cause": "Food debris is present at the bottom of the dishwasher",
+          "short": "food debris",
+          "likelihood": "most likely",
+          "procedure_id": "she53t55uc-clean-filter-system"
+        },
+        {
+          "cause": "Food particles are present near the door seal",
+          "short": "door seal",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Residual water is present at the bottom of the dishwasher",
+          "short": "residual water",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Drain hose is obstructed",
+          "short": "drain hose",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "dishwasher not filling with water or \"Check water supply\" display lights up",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "filling",
+        "water",
+        "check water supply"
+      ],
+      "causes": [
+        {
+          "cause": "Restriction in the water supply system",
+          "short": "water supply",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Previous wash cycle was not completed",
+          "short": "cycle completion",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Delay start is active",
+          "short": "delay start",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Household water supply turned off",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "fascia panel discolored or marked",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "fascia",
+        "discolored",
+        "marked"
+      ],
+      "causes": [
+        {
+          "cause": "Abrasive cleaner used",
+          "short": "abrasive cleaner",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "noise during wash cycle",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "noise",
+        "wash cycle"
+      ],
+      "causes": [
+        {
+          "cause": "Dishes may not be arranged properly",
+          "short": "dish arrangement",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "water leaks",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "leaks",
+        "water"
+      ],
+      "causes": [
+        {
+          "cause": "Suds",
+          "short": "suds",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Door seal could be pulled away from track",
+          "short": "door seal",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Condensation vent is blocked",
+          "short": "condensation vent",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Improper installation",
+          "short": "installation",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "tub stains",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "stains",
+        "tub"
+      ],
+      "causes": [
+        {
+          "cause": "Stains on the dishwasher interior are due to water hardness",
+          "short": "water hardness",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Silverware in contact with tub",
+          "short": "silverware contact",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "detergent dispenser cover will not shut",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "detergent",
+        "cover",
+        "shut"
+      ],
+      "causes": [
+        {
+          "cause": "Improper operation of detergent cover",
+          "short": "detergent cover",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Previous cycle was not finished or interrupted",
+          "short": "cycle completion",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "unable to select desired cycle",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "select",
+        "cycle"
+      ],
+      "causes": [
+        {
+          "cause": "Previous cycle not finished",
+          "short": "cycle completion",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "touch sensitive keys not activating easily or activating without being touched",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "touch",
+        "keys",
+        "activate"
+      ],
+      "causes": [
+        {
+          "cause": "Water or other liquid on the surface",
+          "short": "liquid on surface",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Touch keys not being activated properly",
+          "short": "touch keys",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "dishwasher-1"
     }
   ]
 }

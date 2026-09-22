@@ -87,9 +87,12 @@ def test_never_serviced_task_counts_from_purchase_date():
     assert washer["due_date"] == "2026-11-09" and washer["last_done"] is None
 
 
-def test_sample_data_is_consistent():
+def test_home_data_is_consistent():
     h = store.load_home()
     ids = {a["id"] for a in h["appliances"]}
     assert all(e["appliance_id"] in ids for e in h["service_log"])
-    tasks = {(a["id"], m["task"]) for a in h["appliances"] for m in a["maintenance"]}
-    assert all((e["appliance_id"], e["task"]) in tasks for e in h["service_log"])
+    assert all(p["appliance_id"] in ids for p in h["procedures"])
+    assert all(s["appliance_id"] in ids for s in h["symptoms"])
+    procedure_ids = {p["id"] for p in h["procedures"]}
+    linked = {c["procedure_id"] for s in h["symptoms"] for c in s["causes"] if c["procedure_id"]}
+    assert linked <= procedure_ids

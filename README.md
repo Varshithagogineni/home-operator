@@ -6,7 +6,9 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
-> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. Three appliances are real, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and checked by a person: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven and the **Whirlpool GSS30C6EY** refrigerator. The dishwasher and furnace are still placeholders (brand "Sample"). Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
+> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. Four appliances are real, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and checked by a person: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven, the **Whirlpool GSS30C6EY** refrigerator and the **Bosch SHE53T55UC** dishwasher. Only the furnace is still a placeholder (brand "Sample").
+
+The recall check is real too. The Bosch dishwasher's model is named in CPSC's 2017 BSH recall for a power cord that can overheat, which Home Operator finds by querying the live CPSC API — no staged data. Appliance and repair state is kept in memory and resets when the server restarts; DynamoDB replaces it later. There's **no authentication yet** (OAuth 2.1 comes next), so only run it on `127.0.0.1`.
 
 ## Tools
 
@@ -142,7 +144,7 @@ uv run home-operator-extract manuals/<manual>.pdf --brand LG --model WM9500HKA -
 uv run python -m home_operator.merge
 ```
 
-What review found across three manuals: the model copied all four procedures and the error-code table accurately, but where the manual was vague it **invented maintenance intervals** ("every 30 days" where LG says "periodically"), even when told not to, and on one run it **dropped two sub-steps** that a later step depends on. On the Whirlpool manual — scanned, with no text layer, so pages had to be read as images — it **omitted a CAUTION: IRRITANT warning** entirely, and cited pages from the manual's French half rather than the English one. Twenty-one corrections in total, each tied to a page and a quotation. Manufacturer PDFs are not in this repository; download them from the manufacturer's support site.
+What review found across three manuals: the model copied all four procedures and the error-code table accurately, but where the manual was vague it **invented maintenance intervals** ("every 30 days" where LG says "periodically"), even when told not to, and on one run it **dropped two sub-steps** that a later step depends on. On the Bosch manual it invented "clean the filter system every 1825 days" where the manual gives conditions rather than a frequency, and omitted a WARNING about sharp debris. On the Whirlpool manual — scanned, with no text layer, so pages had to be read as images — it **omitted a CAUTION: IRRITANT warning** entirely, and cited pages from the manual's French half rather than the English one. Twenty-one corrections in total, each tied to a page and a quotation. Manufacturer PDFs are not in this repository; download them from the manufacturer's support site.
 
 ## AWS services used
 

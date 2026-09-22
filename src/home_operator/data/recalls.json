@@ -1,9 +1,20 @@
 {
-  "checked_on": "2026-09-21",
+  "checked_on": "2026-09-22",
   "by_appliance": {
-    "dishwasher-1": [],
     "furnace-1": [],
-    "fridge-1": [],
-    "washer-1": []
+    "washer-1": [],
+    "oven-1": [],
+    "dishwasher-1": [
+      {
+        "recall_number": "18013",
+        "date": "2017-10-20",
+        "title": "BSH Home Appliances Expands Recall of Dishwashers Due to Fire Hazard",
+        "hazard": "The dishwasher power cord can overheat and catch fire.",
+        "remedy": "Consumers should immediately stop using the recalled dishwashers and contact BSH Home Appliances for a free inspection and repair.",
+        "url": "https://www.cpsc.gov/Recalls/2018/BSH-Home-Appliances-Expands-Recall-of-Dishwashers",
+        "matched_code": "SHE53T"
+      }
+    ],
+    "fridge-1": []
   }
 }

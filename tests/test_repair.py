@@ -18,24 +18,24 @@ def sessions():
 
 
 def test_diagnose_ranks_causes_and_offers_a_fix(home):
-    result = store.diagnose_symptom(home, "dishwasher", "it won't drain, there's standing water", TODAY)
+    result = store.diagnose_symptom(home, "furnace", "the airflow is weak", TODAY)
     assert result["found"] is True
     top = result["causes"][0]
     assert top["likelihood"] == "most likely"
     assert top["fix_available"] is True
-    assert top["procedure_id"] == "dw-clean-filter"
-    assert top["days_since_last_done"] == 219
+    assert top["procedure_id"] == "fn-replace-filter"
+    assert top["days_since_last_done"] == 108
 
 
 @pytest.mark.parametrize("spoken", [
-    "Why won't my dishwasher drain?",
-    "it wont drain!",
-    "There's standing water in the bottom.",
+    "Why won't my furnace blow properly?",
+    "the airflow is weak!",
+    "There's hardly any air from the vents.",
 ])
 def test_diagnose_handles_punctuation_and_apostrophes(home, spoken):
-    result = store.diagnose_symptom(home, "dishwasher", spoken, TODAY)
+    result = store.diagnose_symptom(home, "furnace", spoken, TODAY)
     assert result["found"] is True
-    assert result["causes"][0]["procedure_id"] == "dw-clean-filter"
+    assert result["causes"][0]["procedure_id"] == "fn-replace-filter"
 
 
 def test_find_appliance_ignores_punctuation(home):
@@ -43,21 +43,21 @@ def test_find_appliance_ignores_punctuation(home):
 
 
 def test_diagnose_unknown_symptom_lists_what_is_known(home):
-    result = store.diagnose_symptom(home, "dishwasher", "it is playing music", TODAY)
+    result = store.diagnose_symptom(home, "furnace", "it is playing music", TODAY)
     assert result["found"] is False
     assert result["known_symptoms"]
 
 
 def test_start_repair_returns_first_step_with_safety(home, sessions):
-    result = store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    result = store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     assert result["started"] is True
-    assert result["step_number"] == 1 and result["total_steps"] == 7
+    assert result["step_number"] == 1 and result["total_steps"] == 6
     assert result["tools_needed"] and result["safety_note"]
     assert sessions["default"]["step_index"] == 0
 
 
 def test_gate_step_blocks_until_confirmed(home, sessions):
-    started = store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    started = store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     assert started["awaiting_confirmation"] is True
     assert "off" in started["confirm_prompt"]
 
@@ -67,7 +67,7 @@ def test_gate_step_blocks_until_confirmed(home, sessions):
 
 
 def test_confirming_the_gate_advances_and_stays_cleared(home, sessions):
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     after = store.navigate_repair(home, sessions, "done", TODAY)
     assert after["step_number"] == 2
     assert after["awaiting_confirmation"] is False
@@ -83,7 +83,7 @@ def test_procedure_without_a_gate_advances_normally(home, sessions):
 
 
 def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place(home, sessions):
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     store.navigate_repair(home, sessions, "done", TODAY)
     store.navigate_repair(home, sessions, "next", TODAY)
     assert store.navigate_repair(home, sessions, "repeat", TODAY)["step_number"] == 3
@@ -91,7 +91,7 @@ def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place
 
 
 def test_back_stops_at_the_first_step(home, sessions):
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     store.navigate_repair(home, sessions, "done", TODAY)
     assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
     assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
@@ -99,14 +99,14 @@ def test_back_stops_at_the_first_step(home, sessions):
 
 def test_finishing_the_last_step_logs_the_service(home, sessions):
     before = len(home["service_log"])
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     store.navigate_repair(home, sessions, "done", TODAY)
-    for _ in range(5):
+    for _ in range(4):
         store.navigate_repair(home, sessions, "next", TODAY)
     result = store.navigate_repair(home, sessions, "next", TODAY)
 
     assert result["finished"] is True
-    assert result["logged"]["task"] == "clean the filter"
+    assert result["logged"]["task"] == "replace the air filter"
     assert result["logged"]["next_due"] == "2026-12-16"
     assert len(home["service_log"]) == before + 1
     assert "default" not in sessions
@@ -119,7 +119,7 @@ def test_navigating_with_no_repair_in_progress_explains_instead_of_failing(home,
 
 
 def test_two_homes_keep_separate_places(home, sessions):
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY, home_id="home-a")
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY, home_id="home-a")
     store.start_repair(home, sessions, "washer", "clean the door seal", TODAY, home_id="home-b")
     store.navigate_repair(home, sessions, "done", TODAY, home_id="home-a")
     store.navigate_repair(home, sessions, "next", TODAY, home_id="home-a")
@@ -129,7 +129,7 @@ def test_two_homes_keep_separate_places(home, sessions):
 
 
 def test_unknown_action_keeps_the_current_step(home, sessions):
-    store.start_repair(home, sessions, "dishwasher", "clean the filter", TODAY)
+    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
     result = store.navigate_repair(home, sessions, "sideways", TODAY)
     assert result["step_number"] == 1
     assert result["valid_actions"] == ["next", "back", "repeat"]

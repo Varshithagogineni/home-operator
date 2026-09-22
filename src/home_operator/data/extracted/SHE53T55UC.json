@@ -1,0 +1,537 @@
+{
+  "source": {
+    "manual": "bosch-she53t55uc.pdf",
+    "extracted_on": "2026-09-22",
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "source_uri": "s3://home-operator-manuals-258524844702/manuals/bosch-she53t55uc.pdf",
+    "input_tokens": 22170,
+    "output_tokens": 2984,
+    "review": {
+      "reviewed_on": "2026-09-22",
+      "method": "Every procedure, interval and citation checked by a person against the manual's English pages.",
+      "kept_verbatim": "The filter system and spray arm steps, and all sixteen troubleshooting symptoms with their causes.",
+      "changes": [
+        {
+          "change": "Removed 'clean the filter system every 1825 days': the manual gives no interval, only conditions",
+          "page": 32,
+          "manual_says": "Your filter system may need to be cleaned when: You notice food soils remaining on the filter system or objects trapped in the Large Object Trap. A drop in cleaning performance or a gritty film forms on the dishware."
+        },
+        {
+          "change": "Spray arm steps cited to page 33 and given the same sharp-debris warning",
+          "page": 33,
+          "manual_says": "Spray arms: Check spray arms for grease and limescale deposits."
+        },
+        {
+          "change": "Filter steps cited to page 33, where they are printed, not 32",
+          "page": 33,
+          "manual_says": "To check or clean the filter system: 1. Unscrew the Large Object Trap as illustrated and remove the entire filter system."
+        },
+        {
+          "change": "Added the WARNING the model omitted",
+          "page": 32,
+          "manual_says": "WARNING: Use caution when removing parts for cleaning as some debris may be sharp."
+        },
+        {
+          "change": "Restored the manual's caution about abrasive brushes to the rinsing step",
+          "page": 33,
+          "manual_says": "Note: do not use abrasive brushes or steel wool, etc., as they may damage the filter."
+        }
+      ]
+    }
+  },
+  "brand": "Bosch",
+  "model_number": "SHE53T55UC",
+  "category": "dishwasher",
+  "consumables": [
+    {
+      "name": "detergent",
+      "part_number": null,
+      "size": null
+    },
+    {
+      "name": "rinse aid",
+      "part_number": null,
+      "size": null
+    }
+  ],
+  "maintenance": [],
+  "symptoms": [
+    {
+      "symptom": "dishwasher does not start",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "start",
+        "not start"
+      ],
+      "causes": [
+        {
+          "cause": "Door may not be properly latched",
+          "short": "door latch",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher may not be turned on",
+          "short": "power switch",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher not reset or previous cycle not completed",
+          "short": "reset",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Delay start engaged",
+          "short": "delay start",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Interruption of electrical power supply to dishwasher or blown fuse",
+          "short": "power supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "The door may have been closed without first selecting a cycle",
+          "short": "cycle selection",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Water supply may not be turned on",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "cycle does not resume after door is opened and closed during cycle",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "cycle",
+        "resume",
+        "door"
+      ],
+      "causes": [
+        {
+          "cause": "Door is opened longer than 4 seconds after a cycle has started",
+          "short": "door open time",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "display does not illuminate",
+      "meaning": null,
+      "source_page": 35,
+      "keywords": [
+        "display",
+        "illuminate"
+      ],
+      "causes": [
+        {
+          "cause": "A fuse may have been blown or circuit breaker tripped",
+          "short": "fuse/breaker",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Door not closed or latched",
+          "short": "door latch",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "dishwasher seems to run a long time",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "run",
+        "long time"
+      ],
+      "causes": [
+        {
+          "cause": "Incoming water is not warm enough",
+          "short": "water temperature",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Cycle time can vary due to soil and water conditions",
+          "short": "cycle time",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Rinse aid dispenser is empty, or rinse aid setting has been set to \"0\"",
+          "short": "rinse aid",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Dishwasher connected to cold water supply",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "dishes are not getting clean enough",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "clean",
+        "not clean enough"
+      ],
+      "causes": [
+        {
+          "cause": "Spray arm movement obstructed",
+          "short": "spray arm",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Spray arm nozzles clogged",
+          "short": "spray arm nozzles",
+          "likelihood": "most likely",
+          "procedure_id": "clean-spray-arms"
+        },
+        {
+          "cause": "Improper use of detergents",
+          "short": "detergent",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Filters could be clogged",
+          "short": "filters",
+          "likelihood": "possible",
+          "procedure_id": "clean-filter-system"
+        },
+        {
+          "cause": "Dishes are nested or loaded too closely together",
+          "short": "loading",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Selected wash cycle is not suitable for food soil conditions",
+          "short": "wash cycle",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "streaks on glassware or residue on the dishes",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "streaks",
+        "residue"
+      ],
+      "causes": [
+        {
+          "cause": "Incorrect rinse aid setting",
+          "short": "rinse aid setting",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "dishes are not getting dry enough",
+      "meaning": null,
+      "source_page": 36,
+      "keywords": [
+        "dry",
+        "not dry enough"
+      ],
+      "causes": [
+        {
+          "cause": "Rinse aid dispenser is empty or incorrect rinse aid amount is set",
+          "short": "rinse aid",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Improper loading of dishes",
+          "short": "loading",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "odor",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "odor"
+      ],
+      "causes": [
+        {
+          "cause": "Food debris is present at the bottom of the dishwasher",
+          "short": "food debris",
+          "likelihood": "most likely",
+          "procedure_id": "clean-filter-system"
+        },
+        {
+          "cause": "Food particles are present near the door seal",
+          "short": "door seal",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Residual water is present at the bottom of the dishwasher",
+          "short": "residual water",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Drain hose is obstructed",
+          "short": "drain hose",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "dishwasher not filling with water or \"Check water supply\" display lights up",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "filling",
+        "water",
+        "check water supply"
+      ],
+      "causes": [
+        {
+          "cause": "Restriction in the water supply system",
+          "short": "water supply",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Previous wash cycle was not completed",
+          "short": "cycle completion",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Delay start is active",
+          "short": "delay start",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Household water supply turned off",
+          "short": "water supply",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "fascia panel discolored or marked",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "fascia",
+        "discolored",
+        "marked"
+      ],
+      "causes": [
+        {
+          "cause": "Abrasive cleaner used",
+          "short": "abrasive cleaner",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "noise during wash cycle",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "noise",
+        "wash cycle"
+      ],
+      "causes": [
+        {
+          "cause": "Dishes may not be arranged properly",
+          "short": "dish arrangement",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "water leaks",
+      "meaning": null,
+      "source_page": 37,
+      "keywords": [
+        "leaks",
+        "water"
+      ],
+      "causes": [
+        {
+          "cause": "Suds",
+          "short": "suds",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Door seal could be pulled away from track",
+          "short": "door seal",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Condensation vent is blocked",
+          "short": "condensation vent",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "Improper installation",
+          "short": "installation",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "tub stains",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "stains",
+        "tub"
+      ],
+      "causes": [
+        {
+          "cause": "Stains on the dishwasher interior are due to water hardness",
+          "short": "water hardness",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Silverware in contact with tub",
+          "short": "silverware contact",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "detergent dispenser cover will not shut",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "detergent",
+        "cover",
+        "shut"
+      ],
+      "causes": [
+        {
+          "cause": "Improper operation of detergent cover",
+          "short": "detergent cover",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Previous cycle was not finished or interrupted",
+          "short": "cycle completion",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "unable to select desired cycle",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "select",
+        "cycle"
+      ],
+      "causes": [
+        {
+          "cause": "Previous cycle not finished",
+          "short": "cycle completion",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "touch sensitive keys not activating easily or activating without being touched",
+      "meaning": null,
+      "source_page": 38,
+      "keywords": [
+        "touch",
+        "keys",
+        "activate"
+      ],
+      "causes": [
+        {
+          "cause": "Water or other liquid on the surface",
+          "short": "liquid on surface",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "Touch keys not being activated properly",
+          "short": "touch keys",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "id": "clean-spray-arms",
+      "source_page": 33,
+      "title": "Clean the spray arms",
+      "task": "clean the spray arms",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Take care when removing parts for cleaning, as some debris may be sharp.",
+      "gate_prompt": null,
+      "steps": [
+        "Unscrew the upper spray arm and pull off the lower spray arm",
+        "Inspect for deposits",
+        "Clean the appliance with detergents/appliance cleaners which are particularly suitable for use with dishwashers",
+        "Fill detergent dispenser with detergent and start the appliance without utensils in the cycle with the highest rinsing temperature"
+      ]
+    },
+    {
+      "id": "clean-filter-system",
+      "source_page": 33,
+      "title": "Clean the filter system",
+      "task": "clean the filter system",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Take care when removing parts for cleaning, as some debris may be sharp.",
+      "gate_prompt": null,
+      "steps": [
+        "Unscrew the Large Object Trap and remove the entire filter system",
+        "Remove any residue and clean the filters by rinsing under running water. Don't use abrasive brushes or steel wool, as they can damage the filter.",
+        "Reinstall the filter system in reverse sequence and lock into place by screwing the Large Object Trap until the marking arrows align"
+      ]
+    }
+  ]
+}
