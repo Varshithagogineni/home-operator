@@ -22,8 +22,7 @@ def test_oe_names_the_hose_first_then_links_the_drain_filter_fix():
 
 
 def test_drain_filter_repair_is_gated_on_power_and_cites_its_page():
-    sessions = {}
-    r = store.start_repair(store.load_home(), sessions, "washer", "clean the drain pump filter", TODAY)
+    r = store.start_repair(store.load_home(), "washer", "clean the drain pump filter", TODAY)
     assert r["total_steps"] == 8
     assert r["step"] == "Turn off the washer, and unplug the power cord."
     assert r["awaiting_confirmation"] and "unplugged" in r["confirm_prompt"]
@@ -55,15 +54,19 @@ def test_merge_replaces_an_appliance_and_everything_attached_to_it():
 
 
 def test_finishing_an_unscheduled_repair_logs_it_without_touching_other_tasks():
-    home, sessions = store.load_home(), {}
+    home = store.load_home()
     door_seal_before = [i for i in store.maintenance_due(home, TODAY)["overdue"] if i["task"] == "clean the door seal"]
     assert door_seal_before
 
-    store.start_repair(home, sessions, "washer", "clean the drain pump filter", TODAY)
-    store.navigate_repair(home, sessions, "done", TODAY)
-    for _ in range(6):
-        store.navigate_repair(home, sessions, "next", TODAY)
-    finished = store.navigate_repair(home, sessions, "next", TODAY)
+    started = store.start_repair(home, "washer", "clean the drain pump filter", TODAY)
+    repair = started["repair"]
+    step = store.navigate_repair(home, "done", repair, 1, TODAY)["step_number"]
+    while True:
+        moved = store.navigate_repair(home, "next", repair, step, TODAY)
+        if moved.get("finished"):
+            finished = moved
+            break
+        step = moved["step_number"]
 
     assert finished["logged"]["task"] == "clean the drain pump filter"
     assert finished["logged"]["next_due"] is None
@@ -92,7 +95,7 @@ def test_oven_error_codes_match_however_they_are_spoken(said):
 
 
 def test_oven_light_repair_carries_the_tools_lg_names():
-    r = store.start_repair(store.load_home(), {}, "oven", "change the oven light", TODAY)
+    r = store.start_repair(store.load_home(), "oven", "change the oven light", TODAY)
     assert r["started"] is True
     assert "screwdriver" in " ".join(r["tools_needed"])
     assert "25-watt halogen" in " ".join(r["tools_needed"])

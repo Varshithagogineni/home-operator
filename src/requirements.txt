@@ -1,6 +1,8 @@
 # Dependencies for the MCP server when it runs on AgentCore Runtime.
 # Deliberately short: the deployed server is only the eight tools.
-mcp>=2.2,<3
+# Pinned to 2.1.x: the Strands SDK requires mcp<2.2, and local and deployed
+# must run the same version.
+mcp>=2.1,<2.2
 pydantic>=2
 uvicorn>=0.30
 boto3>=1.40

@@ -21,6 +21,29 @@ def _open_recalls(home: dict, appliance_id: str) -> list[dict]:
     ]
 
 
+def recall_sentence(nickname: str, recall: dict) -> str:
+    """The exact words to say about a recall.
+
+    A recall names model numbers, not serial numbers, so a match means this
+    appliance *may* be affected - saying it is recalled would be wrong, and
+    telling someone to stop using a working appliance on a maybe is worse. The
+    wording is built here, once, so that nothing downstream has to get it right
+    from raw data. It is returned to callers as say_first, and a caller that
+    speaks must say it exactly as written.
+    """
+    hazard = (recall.get("hazard") or "").strip()
+    if hazard and not hazard.endswith("."):
+        hazard += "."
+    parts = [
+        f"Before anything else, heads up. Your {nickname.lower()}'s model is named "
+        "in a safety recall, so it may be affected."
+    ]
+    if hazard:
+        parts.append(hazard)
+    parts.append("Check the serial number against the notice. If yours is included, the fix is free.")
+    return " ".join(parts)
+
+
 def _normalize(text: str) -> str:
     # Drop punctuation so spoken text matches keywords: "won't drain?" -> "wont drain"
     cleaned = re.sub(r"[^a-z0-9\s]", "", text.lower().replace("-", " "))
@@ -79,6 +102,7 @@ def describe_appliance(home: dict, query: str, today: date) -> dict:
     a = matches[0]
     warranty_until = date.fromisoformat(a["warranty_until"])
     last = _last_service(home, a["id"])
+    recalls = _open_recalls(home, a["id"])
     return {
         "found": True,
         "nickname": a["nickname"],
@@ -90,7 +114,8 @@ def describe_appliance(home: dict, query: str, today: date) -> dict:
             "until": a["warranty_until"],
         },
         "consumables": a["consumables"],
-        "open_recalls": _open_recalls(home, a["id"]),
+        "open_recalls": recalls,
+        **({"say_first": recall_sentence(a["nickname"], recalls[0])} if recalls else {}),
         "last_service": None if last is None else {
             "task": last["task"],
             "date": last["date"],
@@ -130,6 +155,7 @@ def maintenance_due(home: dict, today: date, within_days: int = 30) -> dict:
         "as_of": today.isoformat(),
         "window_days": within_days,
         "open_recalls": recalls,
+        **({"say_first": recall_sentence(recalls[0]["nickname"], recalls[0])} if recalls else {}),
         "overdue": overdue,
         "upcoming": upcoming,
     }
@@ -210,18 +236,16 @@ def diagnose_symptom(home: dict, query: str, symptom: str, today: date) -> dict:
     }
 
 
-def start_repair(home: dict, sessions: dict, query: str, task: str, today: date, home_id: str = "default") -> dict:
+def start_repair(home: dict, query: str, task: str, today: date) -> dict:
     matches = find_appliances(home, query)
     if len(matches) != 1:
         return describe_appliance(home, query, today)
 
     a = matches[0]
     procs = [p for p in home["procedures"] if p["appliance_id"] == a["id"]]
-    words = set(_normalize(task).split())
-    scored = [(len(words & set(_normalize(f'{p["title"]} {p["task"]}').split())), p) for p in procs]
-    best_score, proc = max(scored, key=lambda pair: pair[0], default=(0, None))
+    proc = _best_procedure(procs, task)
 
-    if proc is None or best_score == 0:
+    if proc is None:
         return {
             "started": False,
             **_brief(a),
@@ -229,10 +253,10 @@ def start_repair(home: dict, sessions: dict, query: str, task: str, today: date,
             "available_repairs": [p["title"] for p in procs],
         }
 
-    sessions[home_id] = {"procedure_id": proc["id"], "step_index": 0, "confirmed": False}
     return {
         "started": True,
         **_brief(a),
+        "repair": proc["id"],
         "procedure": proc["title"],
         "estimated_minutes": proc["minutes"],
         "tools_needed": proc["tools_needed"],
@@ -241,8 +265,36 @@ def start_repair(home: dict, sessions: dict, query: str, task: str, today: date,
         "total_steps": len(proc["steps"]),
         "step": proc["steps"][0],
         "source": _source(home, a, proc),
-        **_gate_fields(proc, 0, confirmed=False),
+        **_gate_fields(proc, 0),
     }
+
+
+def _best_procedure(procs: list[dict], task: str) -> dict | None:
+    """The stored procedure a spoken task refers to, or None."""
+    words = set(_normalize(task).split())
+    if not words:
+        return None
+    scored = [
+        (len(words & set(_normalize(f'{p["title"]} {p["task"]}').split())), p)
+        for p in procs
+    ]
+    best_score, proc = max(scored, key=lambda pair: pair[0], default=(0, None))
+    return proc if best_score else None
+
+
+def _resolve_procedure(home: dict, repair: str) -> dict | None:
+    """Find the procedure a caller names, by stored id or by what they said.
+
+    The id is what start_repair hands back, so a well-behaved caller passes it
+    straight through. Spoken words are accepted too, because a model relaying a
+    conversation may paraphrase.
+    """
+    if not repair:
+        return None
+    for proc in home["procedures"]:
+        if proc["id"] == repair:
+            return proc
+    return _best_procedure(home["procedures"], repair)
 
 
 def _source(home: dict, appliance: dict, proc: dict) -> str | None:
@@ -252,9 +304,14 @@ def _source(home: dict, appliance: dict, proc: dict) -> str | None:
     return f"{appliance['brand']} owner's manual, page {proc['source_page']}"
 
 
-def _gate_fields(proc: dict, step_index: int, confirmed: bool) -> dict:
-    """A gate step will not advance until the person confirms it is safe."""
-    if proc.get("gate_step") != step_index or confirmed:
+def _gate_fields(proc: dict, step_index: int) -> dict:
+    """A gate step will not advance on "next" until the person confirms it is safe.
+
+    Whether the gate has been cleared is not remembered anywhere: clearing it
+    means moving past it, so the step number alone says where things stand. Going
+    back to a gate step asks again, which is the safe behaviour.
+    """
+    if proc.get("gate_step") != step_index:
         return {"awaiting_confirmation": False}
     return {"awaiting_confirmation": True, "confirm_prompt": proc["gate_prompt"]}
 
@@ -262,74 +319,104 @@ def _gate_fields(proc: dict, step_index: int, confirmed: bool) -> dict:
 CONFIRM_WORDS = {"confirm", "confirmed", "done", "yes", "its off", "it is off", "unplugged", "off"}
 
 
-def navigate_repair(home: dict, sessions: dict, action: str, today: date, home_id: str = "default") -> dict:
-    session = sessions.get(home_id)
-    if session is None:
+def _clamp_step(step: int | None, total: int) -> int:
+    """Turn a caller's 1-based step number into a safe 0-based index."""
+    try:
+        index = int(step) - 1
+    except (TypeError, ValueError):
+        index = 0
+    return max(0, min(index, total - 1))
+
+
+def navigate_repair(
+    home: dict,
+    action: str,
+    repair: str,
+    step: int | None,
+    today: date,
+) -> dict:
+    """Move through a repair. The caller says which repair and which step.
+
+    Nothing is stored between calls. The first version of this kept progress in
+    the server's memory, which worked on one laptop and broke the moment the
+    tools ran on AgentCore Runtime, where a second call can land on a different
+    copy of the container that never saw the repair start. Carrying the place in
+    the call itself removes the problem rather than coordinating state, and it
+    matches how a voice assistant calls tools: one shot, no memory.
+    """
+    proc = _resolve_procedure(home, repair)
+    if proc is None:
         return {
             "active": False,
-            "message": "No repair is in progress. Start one first.",
+            "message": (
+                "I need to know which repair. Start one first, then pass back the "
+                "repair id and step number from that reply."
+            ),
             "available_repairs": [p["title"] for p in home["procedures"]],
         }
 
-    proc = _procedure(home, session["procedure_id"])
     a = _appliance(home, proc["appliance_id"])
     total = len(proc["steps"])
+    index = _clamp_step(step, total)
     action = _normalize(action or "next") or "next"
-    at_gate = proc.get("gate_step") == session["step_index"] and not session["confirmed"]
+    at_gate = proc.get("gate_step") == index
+    confirming = action in CONFIRM_WORDS
 
-    if action in CONFIRM_WORDS and at_gate:
-        session["confirmed"] = True
-        action = "next"
-    elif action == "next" and at_gate:
+    if at_gate and action == "next" and not confirming:
+        # Hold here. The person has to say the machine is safe first.
         return {
             "active": True,
             "finished": False,
             **_brief(a),
+            "repair": proc["id"],
             "procedure": proc["title"],
-            "step_number": session["step_index"] + 1,
+            "step_number": index + 1,
             "total_steps": total,
-            "step": proc["steps"][session["step_index"]],
+            "step": proc["steps"][index],
             "awaiting_confirmation": True,
             "confirm_prompt": proc["gate_prompt"],
         }
-    elif action in CONFIRM_WORDS:
+
+    if confirming:
         action = "next"
 
     if action == "next":
-        if session["step_index"] + 1 >= total:
-            sessions.pop(home_id, None)
+        if index + 1 >= total:
             logged = log_service(home, a["nickname"], proc["task"], today)
             return {
                 "active": False,
                 "finished": True,
                 **_brief(a),
+                "repair": proc["id"],
                 "procedure": proc["title"],
                 "message": f'That was the last step. {proc["title"]} is done.',
                 "logged": logged,
             }
-        session["step_index"] += 1
+        index += 1
     elif action == "back":
-        session["step_index"] = max(0, session["step_index"] - 1)
+        index = max(0, index - 1)
     elif action != "repeat":
         return {
             "active": True,
             "message": f'Unknown action "{action}".',
-            "valid_actions": ["next", "back", "repeat"],
-            "step_number": session["step_index"] + 1,
+            "valid_actions": ["next", "back", "repeat", "done"],
+            "repair": proc["id"],
+            "step_number": index + 1,
             "total_steps": total,
-            "step": proc["steps"][session["step_index"]],
+            "step": proc["steps"][index],
         }
 
     return {
         "active": True,
         "finished": False,
         **_brief(a),
+        "repair": proc["id"],
         "procedure": proc["title"],
-        "step_number": session["step_index"] + 1,
+        "step_number": index + 1,
         "total_steps": total,
-        "step": proc["steps"][session["step_index"]],
+        "step": proc["steps"][index],
         "source": _source(home, a, proc),
-        **_gate_fields(proc, session["step_index"], session["confirmed"]),
+        **_gate_fields(proc, index),
     }
 
 

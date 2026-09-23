@@ -18,10 +18,6 @@ WEB_DIR = Path(__file__).parent / "web"
 
 HOME = store.load_home()
 
-# In-memory for now: one home, one repair at a time, reset on restart.
-# Week 3 moves both to DynamoDB, keyed per customer.
-SESSIONS: dict = {}
-
 mcp = MCPServer(
     name="home-operator",
     title="Home Operator",
@@ -46,6 +42,8 @@ READ_ONLY = ToolAnnotations(
         "Look up one appliance in this home. Returns its model number, warranty status, "
         "the replacement parts it takes (such as filter sizes), and its most recent service. "
         "If nothing matches, or several appliances match, returns the options to ask about."
+        " If the reply contains say_first, that is checked safety wording: speak it"
+        " first, word for word, before anything else."
     ),
     annotations=READ_ONLY,
 )
@@ -63,6 +61,8 @@ def get_appliance(
     description=(
         "List home maintenance that is overdue, and tasks coming due soon, across every "
         "appliance in this home. Overdue items are sorted most overdue first."
+        " If the reply contains say_first, that is checked safety wording: speak it"
+        " first, word for word, before anything else."
     ),
     annotations=READ_ONLY,
 )
@@ -95,7 +95,8 @@ def diagnose_symptom(
     title="Start a repair",
     description=(
         "Begin a step-by-step repair and return the first step, along with the tools needed, "
-        "a safety note and how many steps there are. Keeps the person's place until they finish."
+        "a safety note and how many steps there are. The reply includes a repair id and a "
+        "step_number: pass both to navigate_repair to move through the steps."
     ),
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
@@ -103,23 +104,27 @@ def start_repair(
     appliance: Annotated[str, Field(description='Which appliance, e.g. "dishwasher".')],
     task: Annotated[str, Field(description='The repair to walk through, e.g. "clean the filter".')],
 ) -> dict:
-    return store.start_repair(HOME, SESSIONS, appliance, task, date.today())
+    return store.start_repair(HOME, appliance, task, date.today())
 
 
 @mcp.tool(
     title="Move through a repair",
     description=(
-        "Move through the repair already in progress. Use next to advance, back to return to the "
-        "previous step, and repeat to hear the current step again. Some steps are safety gates "
-        "(awaiting_confirmation is true): they won't advance on next, so send done once the person "
-        "confirms it is safe, e.g. they say it's unplugged. Finishing the last step records the service."
+        "Move through a repair that is under way. This tool remembers nothing, so say which "
+        "repair and which step: pass the repair id and step_number exactly as the last reply gave "
+        "them. Use next to advance, back for the previous step, repeat to hear the current step "
+        "again, and done to clear a safety gate. A step with awaiting_confirmation true is a "
+        "safety gate: it will not advance on next, only on done, and only once the person has "
+        "actually confirmed it is safe. Finishing the last step records the service."
     ),
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
 def navigate_repair(
     action: Annotated[str, Field(description='One of "next", "back", "repeat", or "done" to confirm a safety gate.')] = "next",
+    repair: Annotated[str, Field(description="The repair id from the previous reply.")] = "",
+    step: Annotated[int, Field(description="The step_number from the previous reply.")] = 1,
 ) -> dict:
-    return store.navigate_repair(HOME, SESSIONS, action, date.today())
+    return store.navigate_repair(HOME, action, repair, step, date.today())
 
 
 @mcp.tool(

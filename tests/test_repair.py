@@ -6,15 +6,20 @@ from home_operator import store
 
 TODAY = date(2026, 9, 17)
 
+FURNACE_REPAIR = "fn-replace-filter"
+
 
 @pytest.fixture
 def home():
     return store.load_home()
 
 
-@pytest.fixture
-def sessions():
-    return {}
+def start_furnace(home):
+    return store.start_repair(home, "furnace", "replace the air filter", TODAY)
+
+
+def nav(home, action, step, repair=FURNACE_REPAIR):
+    return store.navigate_repair(home, action, repair, step, TODAY)
 
 
 def test_diagnose_ranks_causes_and_offers_a_fix(home):
@@ -23,7 +28,7 @@ def test_diagnose_ranks_causes_and_offers_a_fix(home):
     top = result["causes"][0]
     assert top["likelihood"] == "most likely"
     assert top["fix_available"] is True
-    assert top["procedure_id"] == "fn-replace-filter"
+    assert top["procedure_id"] == FURNACE_REPAIR
     assert top["days_since_last_done"] == 108
 
 
@@ -35,7 +40,7 @@ def test_diagnose_ranks_causes_and_offers_a_fix(home):
 def test_diagnose_handles_punctuation_and_apostrophes(home, spoken):
     result = store.diagnose_symptom(home, "furnace", spoken, TODAY)
     assert result["found"] is True
-    assert result["causes"][0]["procedure_id"] == "fn-replace-filter"
+    assert result["causes"][0]["procedure_id"] == FURNACE_REPAIR
 
 
 def test_find_appliance_ignores_punctuation(home):
@@ -48,91 +53,117 @@ def test_diagnose_unknown_symptom_lists_what_is_known(home):
     assert result["known_symptoms"]
 
 
-def test_start_repair_returns_first_step_with_safety(home, sessions):
-    result = store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
+def test_start_repair_returns_first_step_with_safety(home):
+    result = start_furnace(home)
     assert result["started"] is True
     assert result["step_number"] == 1 and result["total_steps"] == 6
     assert result["tools_needed"] and result["safety_note"]
-    assert sessions["default"]["step_index"] == 0
+    # The caller is told which repair this is, so it can navigate without the
+    # server remembering anything.
+    assert result["repair"] == FURNACE_REPAIR
 
 
-def test_gate_step_blocks_until_confirmed(home, sessions):
-    started = store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
+def test_gate_step_blocks_until_confirmed(home):
+    started = start_furnace(home)
     assert started["awaiting_confirmation"] is True
     assert "off" in started["confirm_prompt"]
 
-    blocked = store.navigate_repair(home, sessions, "next", TODAY)
+    blocked = nav(home, "next", step=1)
     assert blocked["step_number"] == 1
     assert blocked["awaiting_confirmation"] is True
 
 
-def test_confirming_the_gate_advances_and_stays_cleared(home, sessions):
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
-    after = store.navigate_repair(home, sessions, "done", TODAY)
+def test_confirming_the_gate_advances(home):
+    after = nav(home, "done", step=1)
     assert after["step_number"] == 2
     assert after["awaiting_confirmation"] is False
 
-    back = store.navigate_repair(home, sessions, "back", TODAY)
-    assert back["step_number"] == 1 and back["awaiting_confirmation"] is False
-    assert store.navigate_repair(home, sessions, "next", TODAY)["step_number"] == 2
+
+def test_going_back_to_a_gate_asks_again(home):
+    """Returning to a power-off step re-asks, because time has passed and the
+    machine may have been plugged back in. Safer than remembering a yes."""
+    back = nav(home, "back", step=2)
+    assert back["step_number"] == 1
+    assert back["awaiting_confirmation"] is True
 
 
-def test_procedure_without_a_gate_advances_normally(home, sessions):
-    store.start_repair(home, sessions, "washer", "clean the door seal", TODAY)
-    assert store.navigate_repair(home, sessions, "next", TODAY)["step_number"] == 2
+def test_procedure_without_a_gate_advances_normally(home):
+    started = store.start_repair(home, "washer", "clean the door seal", TODAY)
+    assert started["awaiting_confirmation"] is False
+    moved = store.navigate_repair(home, "next", started["repair"], 1, TODAY)
+    assert moved["step_number"] == 2
 
 
-def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place(home, sessions):
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
-    store.navigate_repair(home, sessions, "done", TODAY)
-    store.navigate_repair(home, sessions, "next", TODAY)
-    assert store.navigate_repair(home, sessions, "repeat", TODAY)["step_number"] == 3
-    assert store.navigate_repair(home, sessions, "repeat", TODAY)["step_number"] == 3
+def test_repeat_holds_position_so_a_question_mid_repair_does_not_lose_your_place(home):
+    assert nav(home, "repeat", step=3)["step_number"] == 3
+    assert nav(home, "repeat", step=3)["step_number"] == 3
 
 
-def test_back_stops_at_the_first_step(home, sessions):
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
-    store.navigate_repair(home, sessions, "done", TODAY)
-    assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
-    assert store.navigate_repair(home, sessions, "back", TODAY)["step_number"] == 1
+def test_back_stops_at_the_first_step(home):
+    assert nav(home, "back", step=2)["step_number"] == 1
+    assert nav(home, "back", step=1)["step_number"] == 1
 
 
-def test_finishing_the_last_step_logs_the_service(home, sessions):
+def test_finishing_the_last_step_logs_the_service(home):
     before = len(home["service_log"])
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
-    store.navigate_repair(home, sessions, "done", TODAY)
-    for _ in range(4):
-        store.navigate_repair(home, sessions, "next", TODAY)
-    result = store.navigate_repair(home, sessions, "next", TODAY)
+    result = nav(home, "next", step=6)
 
     assert result["finished"] is True
     assert result["logged"]["task"] == "replace the air filter"
     assert result["logged"]["next_due"] == "2026-12-16"
     assert len(home["service_log"]) == before + 1
-    assert "default" not in sessions
 
 
-def test_navigating_with_no_repair_in_progress_explains_instead_of_failing(home, sessions):
-    result = store.navigate_repair(home, sessions, "next", TODAY)
+def test_navigating_without_naming_a_repair_explains_instead_of_failing(home):
+    result = store.navigate_repair(home, "next", "", 1, TODAY)
     assert result["active"] is False
     assert result["available_repairs"]
 
 
-def test_two_homes_keep_separate_places(home, sessions):
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY, home_id="home-a")
-    store.start_repair(home, sessions, "washer", "clean the door seal", TODAY, home_id="home-b")
-    store.navigate_repair(home, sessions, "done", TODAY, home_id="home-a")
-    store.navigate_repair(home, sessions, "next", TODAY, home_id="home-a")
+def test_a_repair_survives_a_server_that_remembers_nothing(home):
+    """The reason this tool takes a step number.
 
-    assert store.navigate_repair(home, sessions, "repeat", TODAY, home_id="home-a")["step_number"] == 3
-    assert store.navigate_repair(home, sessions, "repeat", TODAY, home_id="home-b")["step_number"] == 1
+    On AgentCore Runtime a second call can land on a different copy of the
+    container, which never saw the repair start. Here that is simulated by
+    loading a fresh home - no shared state of any kind - and carrying on.
+    """
+    started = start_furnace(home)
+    elsewhere = store.load_home()
+    resumed = store.navigate_repair(
+        elsewhere, "done", started["repair"], started["step_number"], TODAY
+    )
+    assert resumed["step_number"] == 2
+    assert resumed["procedure"] == started["procedure"]
 
 
-def test_unknown_action_keeps_the_current_step(home, sessions):
-    store.start_repair(home, sessions, "furnace", "replace the air filter", TODAY)
-    result = store.navigate_repair(home, sessions, "sideways", TODAY)
+def test_two_repairs_interleave_without_interfering(home):
+    furnace = start_furnace(home)
+    washer = store.start_repair(home, "washer", "clean the door seal", TODAY)
+
+    a = store.navigate_repair(home, "done", furnace["repair"], 1, TODAY)
+    b = store.navigate_repair(home, "next", washer["repair"], 1, TODAY)
+
+    assert a["procedure"] == furnace["procedure"] and a["step_number"] == 2
+    assert b["procedure"] == washer["procedure"] and b["step_number"] == 2
+
+
+def test_a_spoken_task_name_works_as_well_as_the_id(home):
+    """A model relaying a conversation may paraphrase rather than pass the id."""
+    result = store.navigate_repair(home, "done", "replace the furnace air filter", 1, TODAY)
+    assert result["repair"] == FURNACE_REPAIR
+    assert result["step_number"] == 2
+
+
+@pytest.mark.parametrize("bad_step", [0, -3, 99, None, "two"])
+def test_a_nonsense_step_number_lands_somewhere_valid(home, bad_step):
+    result = nav(home, "repeat", step=bad_step)
+    assert 1 <= result["step_number"] <= result["total_steps"]
+
+
+def test_unknown_action_keeps_the_current_step(home):
+    result = nav(home, "sideways", step=1)
     assert result["step_number"] == 1
-    assert result["valid_actions"] == ["next", "back", "repeat"]
+    assert result["valid_actions"] == ["next", "back", "repeat", "done"]
 
 
 def test_log_service_clears_the_overdue_item(home):
