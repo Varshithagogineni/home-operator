@@ -1,0 +1,17 @@
+{
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "HomeOperatorMCP": {
+            "runtimeId": "homeoperator_HomeOperatorMCP-NRP7UR6Xk5",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:258524844702:runtime/homeoperator_HomeOperatorMCP-NRP7UR6Xk5",
+            "roleArn": "arn:aws:iam::258524844702:role/AgentCore-homeoperator-de-ApplicationAgentHomeOpera-LkpwTP6NYfcI"
+          }
+        },
+        "stackName": "AgentCore-homeoperator-default",
+        "deployHash": "0b229a288fedc9a4"
+      }
+    }
+  }
+}

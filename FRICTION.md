@@ -98,3 +98,36 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Low, but it would have put wrong references on screen.
 - **Workaround:** Checked one procedure by rendering pages as images, found the fixed 22-page offset, and re-cited all of them.
 - **Suggestion:** Worth a note in the document-understanding guide: for multilingual documents, state the language section you want cited, since the model may ground itself in either.
+
+### AgentCore Runtime returns 421 because the MCP SDK rejects its proxy's Host header
+- **Date:** 2026-09-23
+- **Tool / API:** Amazon Bedrock AgentCore Runtime (protocol MCP), MCP Python SDK 2.2.0
+- **Task attempted:** Call a deployed MCP server through the AgentCore invocation endpoint.
+- **Steps taken:** Deployed with `agentcore deploy` (CodeZip, `protocol: MCP`, `CUSTOM_JWT` authorizer against a Cognito pool). The container started cleanly and served `/mcp` locally. Connected with the SDK's `streamable_http_client` and a valid Cognito bearer token.
+- **Expected:** `initialize` succeeds, since auth passed and the server is healthy.
+- **Actual:** `MCPError: Received error (421) from runtime. Please check your CloudWatch logs for more information.` The client has no way to tell this apart from a server crash. CloudWatch showed the real cause: `Invalid Host header: cell01.us-east-1.prod.arp.kepler-analytics.aws.dev` — the SDK's DNS-rebinding protection rejecting AgentCore's internal proxy hostname, then returning 421 Misdirected Request.
+- **Severity:** Blocker, and hard to diagnose: the documented MCP hosting walkthrough never mentions it.
+- **Workaround:** Pass `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)` to `streamable_http_app` in the AgentCore entry point only. Inside the runtime the check protects nothing — the container is not routable and the only way in is through AgentCore, which has already validated the JWT — but the local entry point keeps it enabled.
+- **Suggestion:** Either document this in "Deploy MCP servers in AgentCore Runtime", or have the runtime forward the client-facing host so the SDK's default passes. Surfacing the container's response body in the client error would have saved an hour of guessing.
+
+### AgentCore health-checks /ping, which an MCP server does not serve
+- **Date:** 2026-09-23
+- **Tool / API:** Amazon Bedrock AgentCore Runtime (protocol MCP)
+- **Task attempted:** Deploy an MCP server built with the official SDK, unmodified.
+- **Steps taken:** Read CloudWatch logs after deployment.
+- **Expected:** No unexplained requests, since the MCP protocol contract only describes `/mcp`.
+- **Actual:** Repeated `GET /ping HTTP/1.1" 404 Not Found` alongside the `/mcp` traffic. The runtime still worked, so it is cosmetic, but it looks like a fault and no MCP SDK serves `/ping` by default.
+- **Severity:** Low.
+- **Workaround:** Added a `/ping` route returning `{"status": "ok"}` to the AgentCore entry point.
+- **Suggestion:** State in the MCP protocol contract whether `/ping` is required, optional, or ignored, so implementers know whether to add it.
+
+### AWS MCP examples use the v1 Python SDK API, which no longer exists in v2
+- **Date:** 2026-09-23
+- **Tool / API:** AgentCore MCP documentation, MCP Python SDK 2.2.0
+- **Task attempted:** Follow the documented client and server examples with the current SDK.
+- **Steps taken:** Copied the sample code from "Deploy MCP servers in AgentCore Runtime".
+- **Expected:** The samples run against the current `mcp` package on PyPI.
+- **Actual:** Three separate breaks: `from mcp.server.fastmcp import FastMCP` (v2 uses `MCPServer` from `mcp.server.mcpserver`), `streamablehttp_client` (renamed `streamable_http_client`), and the client context manager now yields two values rather than three, so the documented `as (read, write, _)` raises `ValueError: not enough values to unpack`. Headers also moved from a positional argument to an `http_client` you construct yourself.
+- **Severity:** Medium — every sample on the page fails on a fresh `pip install mcp`.
+- **Workaround:** Read the installed package's signatures with `inspect.signature` and port the samples.
+- **Suggestion:** Pin the SDK version in the docs, or update the samples to v2. A reader cannot tell whether the error is their mistake or documentation drift.

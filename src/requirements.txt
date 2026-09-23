@@ -1,0 +1,6 @@
+# Dependencies for the MCP server when it runs on AgentCore Runtime.
+# Deliberately short: the deployed server is only the eight tools.
+mcp>=2.2,<3
+pydantic>=2
+uvicorn>=0.30
+boto3>=1.40

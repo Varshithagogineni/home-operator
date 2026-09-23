@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "homeoperator",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "homeoperator"
+  },
+  "runtimes": [
+    {
+      "name": "HomeOperatorMCP",
+      "build": "CodeZip",
+      "entrypoint": "home_operator/mcp_entry.py",
+      "codeLocation": "../src/",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "instrumentation": {
+        "enableOtel": false
+      },
+      "protocol": "MCP",
+      "requestHeaderAllowlist": [
+        "Authorization"
+      ],
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_IGNVeENW0/.well-known/openid-configuration",
+          "allowedClients": [
+            "1g6170lu0vgnj0ibn6nlgkpd8"
+          ]
+        }
+      },
+      "lifecycleConfiguration": {
+        "idleRuntimeSessionTimeout": 3600
+      }
+    }
+  ],
+  "memories": [],
+  "knowledgeBases": [],
+  "credentials": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "capacityProviders": [],
+  "payments": []
+}

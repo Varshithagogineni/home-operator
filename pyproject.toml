@@ -7,11 +7,13 @@ license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "boto3[crt]>=1.43.99",
+    "httpx>=0.28.1",
     "mcp>=2.2,<3",
 ]
 
 [project.scripts]
 home-operator = "home_operator.server:main"
+home-operator-mcp = "home_operator.mcp_entry:main"
 home-operator-check-recalls = "home_operator.recalls:main"
 home-operator-extract = "home_operator.extract:main"
 
