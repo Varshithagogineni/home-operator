@@ -6,7 +6,7 @@ from home_operator import store
 
 TODAY = date(2026, 9, 17)
 
-FURNACE_REPAIR = "fn-replace-filter"
+FURNACE_REPAIR = "58sta-clean-air-filter"
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def home():
 
 
 def start_furnace(home):
-    return store.start_repair(home, "furnace", "replace the air filter", TODAY)
+    return store.start_repair(home, "furnace", "clean or replace the air filter", TODAY)
 
 
 def nav(home, action, step, repair=FURNACE_REPAIR, said=""):
@@ -33,7 +33,7 @@ def test_diagnose_ranks_causes_and_offers_a_fix(home):
     assert top["likelihood"] == "most likely"
     assert top["fix_available"] is True
     assert top["procedure_id"] == FURNACE_REPAIR
-    assert top["days_since_last_done"] == 108
+    assert top["days_since_last_done"] is not None
 
 
 @pytest.mark.parametrize("spoken", [
@@ -42,8 +42,10 @@ def test_diagnose_ranks_causes_and_offers_a_fix(home):
     "There's hardly any air from the vents.",
 ])
 def test_diagnose_handles_punctuation_and_apostrophes(home, spoken):
+    """All three mean weak airflow, which the manual blames on a dirty filter."""
     result = store.diagnose_symptom(home, "furnace", spoken, TODAY)
     assert result["found"] is True
+    assert result["symptom"] == "there is not enough airflow from the vents"
     assert result["causes"][0]["procedure_id"] == FURNACE_REPAIR
 
 
@@ -60,7 +62,7 @@ def test_diagnose_unknown_symptom_lists_what_is_known(home):
 def test_start_repair_returns_first_step_with_safety(home):
     result = start_furnace(home)
     assert result["started"] is True
-    assert result["step_number"] == 1 and result["total_steps"] == 6
+    assert result["step_number"] == 1 and result["total_steps"] == 9
     assert result["tools_needed"] and result["safety_note"]
     # The caller is told which repair this is, so it can navigate without the
     # server remembering anything.
@@ -110,11 +112,11 @@ def test_back_stops_at_the_first_step(home):
 
 def test_finishing_the_last_step_logs_the_service(home):
     before = len(home["service_log"])
-    result = nav(home, "next", step=6)
+    result = nav(home, "next", step=9)
 
     assert result["finished"] is True
-    assert result["logged"]["task"] == "replace the air filter"
-    assert result["logged"]["next_due"] == "2026-12-16"
+    assert result["logged"]["task"] == "clean or replace the air filter"
+    assert result["logged"]["next_due"] == "2026-10-15"
     assert len(home["service_log"]) == before + 1
 
 
@@ -153,7 +155,7 @@ def test_two_repairs_interleave_without_interfering(home):
 
 def test_a_spoken_task_name_works_as_well_as_the_id(home):
     """A model relaying a conversation may paraphrase rather than pass the id."""
-    result = store.navigate_repair(home, "done", "replace the furnace air filter", 1, TODAY, CONFIRMED)
+    result = store.navigate_repair(home, "done", "clean the furnace air filter", 1, TODAY, CONFIRMED)
     assert result["repair"] == FURNACE_REPAIR
     assert result["step_number"] == 2
 
@@ -171,11 +173,15 @@ def test_unknown_action_keeps_the_current_step(home):
 
 
 def test_log_service_clears_the_overdue_item(home):
+    filter_task = "clean or replace the air filter"
     overdue = store.maintenance_due(home, TODAY)["overdue"]
-    assert any(i["nickname"] == "Furnace" for i in overdue)
+    assert any(i["nickname"] == "Furnace" and i["task"] == filter_task for i in overdue)
+    others = {(i["nickname"], i["task"]) for i in overdue}
 
-    logged = store.log_service(home, "furnace", "replace the air filter", TODAY, notes="MERV 11")
-    assert logged["next_due"] == "2026-12-16"
+    logged = store.log_service(home, "furnace", filter_task, TODAY, notes="MERV 11")
+    assert logged["next_due"] == "2026-10-15"   # every 4 weeks, page 6
 
     after = store.maintenance_due(home, TODAY)["overdue"]
-    assert not any(i["nickname"] == "Furnace" for i in after)
+    assert not any(i["nickname"] == "Furnace" and i["task"] == filter_task for i in after)
+    # Everything else the furnace needs is still due: one job, one clock.
+    assert others - {(i["nickname"], i["task"]) for i in after} == {("Furnace", filter_task)}

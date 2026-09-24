@@ -67,6 +67,11 @@ APPLIANCES = [
          {"task": "replace the water filter", "date": "2026-03-20", "notes": None},
          {"task": "replace the air filter", "date": "2026-05-01", "notes": None},
      ]},
+    {"file": "58STA.json", "appliance_id": "furnace-1", "nickname": "Furnace", "room": "basement",
+     "purchase_date": "2016-11-02", "warranty_until": "2026-11-02",
+     "service_log": [
+         {"task": "clean or replace the air filter", "date": "2026-07-28", "notes": None},
+     ]},
 ]
 
 
@@ -76,8 +81,9 @@ def main() -> None:
         extracted = json.loads((EXTRACTED_DIR / spec["file"]).read_text())
         merge(home, extracted, **{k: v for k, v in spec.items() if k != "file"})
         print(f"Merged {extracted['brand']} {extracted['model_number']} as {spec['appliance_id']}.")
-    home["_note"] = ("Demo household: real appliance models and their manufacturer manuals, with seeded "
-                     "service history. Appliances marked brand 'Sample' are placeholders still to be replaced.")
+    home["_note"] = ("Demo household: every appliance is a real model, with data taken from its "
+                     "manufacturer's own manual and checked against the pages by a person. The service "
+                     "history is seeded.")
     HOME_FILE.write_text(json.dumps(home, indent=2) + "\n")
 
 

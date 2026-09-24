@@ -1,33 +1,6 @@
 {
-  "_note": "Demo household: real appliance models and their manufacturer manuals, with seeded service history. Appliances marked brand 'Sample' are placeholders still to be replaced.",
+  "_note": "Demo household: every appliance is a real model, with data taken from its manufacturer's own manual and checked against the pages by a person. The service history is seeded.",
   "appliances": [
-    {
-      "id": "furnace-1",
-      "nickname": "Furnace",
-      "room": "basement",
-      "category": "furnace",
-      "brand": "Sample",
-      "model_number": "SAMPLE-FN-80",
-      "purchase_date": "2021-10-04",
-      "warranty_until": "2031-10-04",
-      "consumables": [
-        {
-          "name": "air filter",
-          "part_number": "SAMPLE-AF-20251",
-          "size": "20 by 25 by 1 inch, MERV 11"
-        }
-      ],
-      "maintenance": [
-        {
-          "task": "replace the air filter",
-          "interval_days": 90
-        },
-        {
-          "task": "professional tune-up",
-          "interval_days": 365
-        }
-      ]
-    },
     {
       "id": "washer-1",
       "nickname": "Washer",
@@ -349,21 +322,171 @@
           ]
         }
       }
+    },
+    {
+      "id": "furnace-1",
+      "nickname": "Furnace",
+      "room": "basement",
+      "category": "gas furnace",
+      "brand": "Carrier",
+      "model_number": "58STA",
+      "purchase_date": "2016-11-02",
+      "warranty_until": "2026-11-02",
+      "consumables": [
+        {
+          "name": "air filter",
+          "part_number": null,
+          "size": "16 x 25 in for a side return; a bottom return takes 14 x 25 to 24 x 25 depending on casing width"
+        }
+      ],
+      "maintenance": [
+        {
+          "task": "clean or replace the air filter",
+          "interval_days": 28
+        },
+        {
+          "task": "inspect the cabinet for signs of damage",
+          "interval_days": 30
+        },
+        {
+          "task": "inspect and clean the blower assembly",
+          "interval_days": 180
+        },
+        {
+          "task": "inspect and clean the door louvers",
+          "interval_days": 180
+        },
+        {
+          "task": "inspect external wiring for damage",
+          "interval_days": 180
+        },
+        {
+          "task": "inspect the airflow system for leaks",
+          "interval_days": 180
+        },
+        {
+          "task": "inspect the electrical disconnect",
+          "interval_days": 180
+        },
+        {
+          "task": "inspect the evaporator coil, drain pan and condensate drain lines",
+          "interval_days": 180
+        },
+        {
+          "task": "check the combustion blower housing for lint and debris",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the burner assembly",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the combustion area and vent system",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the control box, controls, wiring and connections",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the flue system",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the gas supply line and manual shut-off for leaks",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the gas valve and check manifold gas pressure",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the heat exchanger",
+          "interval_days": 365
+        },
+        {
+          "task": "inspect the ignition system and safety controls",
+          "interval_days": 365
+        }
+      ],
+      "source": {
+        "manual": "carrier-58.pdf",
+        "extracted_on": "2026-09-24",
+        "model_id": "us.amazon.nova-2-lite-v1:0",
+        "source_uri": "carrier-58.pdf",
+        "input_tokens": 3145,
+        "output_tokens": 1074,
+        "review": {
+          "reviewed_on": "2026-09-24",
+          "method": "Read every entry against the Carrier owner's manual, page by page, rendering page 10 as an image because the interval table's columns cannot be told apart from extracted text.",
+          "kept_verbatim": "Both procedures' step wording, the safety warnings, and the twelve intervals that were already right.",
+          "changes": [
+            {
+              "change": "Corrected 'inspect airflow system (ductwork)' from every 30 days to every 180 days",
+              "page": 10,
+              "manual_says": "The maintenance checklist marks it Bi-annually, not Monthly. The columns are indistinguishable in extracted text, so the page was rendered as an image to read which column the X sits in."
+            },
+            {
+              "change": "Corrected 'inspect evaporator coil, drain pan and condensate drain lines' from every 30 days to every 180 days",
+              "page": 10,
+              "manual_says": "Marked Bi-annually in the same table, for the same reason."
+            },
+            {
+              "change": "Added the missing task 'inspect the cabinet for signs of damage', every 30 days",
+              "page": 10,
+              "manual_says": "'Inspect cabinet for signs of damage.' is marked Monthly, and was dropped from the extraction entirely."
+            },
+            {
+              "change": "Changed the air filter interval from 30 days to 28",
+              "page": 6,
+              "manual_says": "'The furnace filter should be checked every 4 weeks and cleaned or replaced if necessary.' Four weeks is 28 days; the checklist on page 10 says only 'Monthly'. The specific figure was used."
+            },
+            {
+              "change": "Removed three duplicated steps from the air filter procedure",
+              "page": 7,
+              "manual_says": "The manual itself prints steps 7-9 (reinstall filter, replace cabinet door, turn on electrical supply) and then repeats them as steps 10-12. The extraction copied the manual faithfully; the manual is wrong. Kept steps 1-9."
+            },
+            {
+              "change": "Added a safety gate on power to both procedures",
+              "page": 6,
+              "manual_says": "Step 1 of the filter procedure is 'Turn off the electrical supply to the furnace', and the combustion inspection opens the same way. No gate was extracted, so the walkthrough would have moved on without the furnace being switched off."
+            },
+            {
+              "change": "Replaced the air filter procedure's safety note with the CUT HAZARD caution",
+              "page": 6,
+              "manual_says": "'Although special care has been taken to minimize sharp edges, be extremely careful when handling parts or reaching into the furnace. Wear safety glasses, gloves, and appropriate protective clothing.' The extraction kept only the UNIT PERFORMANCE caution about running without a filter, which is about the machine rather than the person. Both are now carried."
+            },
+            {
+              "change": "Added six causes to 'the furnace is not running at all'",
+              "page": 9,
+              "manual_says": "'Before you request a service call' lists the thermostat setting and HEAT mode, the power supply switch, the blower access door being firmly in place, blown fuses or a tripped breaker, and the manual gas shut-off valve. Only the blocked vent and high-temperature causes were extracted, which are the two a homeowner can do least about."
+            },
+            {
+              "change": "Recorded the filter size from the table on page 8",
+              "page": 8,
+              "manual_says": "Side return takes one 16 x 25 in filter across every casing width; bottom return varies from 14 x 25 to 24 x 25 with the casing. Extraction left the size empty."
+            },
+            {
+              "change": "Reverted a step reorder I had made myself, back to the manual's order",
+              "page": 8,
+              "manual_says": "'4. Restore electrical power to the furnace. 5. Start the furnace and observe its operation... 6. Replace the access door.' I had moved the door back on before restoring power, which felt safer. The manual wants the flames watched with the door off, and steps are quoted, not improved. The extraction had it right and I was wrong."
+            },
+            {
+              "change": "Named carbon monoxide in the combustion inspection's safety note",
+              "page": 8,
+              "manual_says": "The page carries two CARBON MONOXIDE POISONING HAZARD warnings: 'If holes are found or if the vent pipe is obstructed or is not connected, toxic fumes can escape into your home. DO NOT OPERATE YOUR FURNACE.' The extraction kept the instruction but dropped what the hazard actually is."
+            },
+            {
+              "change": "Added 'inspect the combustion area and vent system' as an annual task",
+              "page": 8,
+              "manual_says": "'Inspect the combustion area and vent system before each heating season.' It was extracted as a procedure but never as something that comes due."
+            }
+          ]
+        }
+      }
     }
   ],
   "service_log": [
-    {
-      "appliance_id": "furnace-1",
-      "task": "replace the air filter",
-      "date": "2026-06-01",
-      "notes": "Used a MERV 11 filter."
-    },
-    {
-      "appliance_id": "furnace-1",
-      "task": "professional tune-up",
-      "date": "2025-10-20",
-      "notes": null
-    },
     {
       "appliance_id": "washer-1",
       "task": "clean the door seal",
@@ -399,30 +522,15 @@
       "task": "replace the air filter",
       "date": "2026-05-01",
       "notes": null
+    },
+    {
+      "appliance_id": "furnace-1",
+      "task": "clean or replace the air filter",
+      "date": "2026-07-28",
+      "notes": null
     }
   ],
   "procedures": [
-    {
-      "id": "fn-replace-filter",
-      "appliance_id": "furnace-1",
-      "title": "Replace the furnace air filter",
-      "task": "replace the air filter",
-      "minutes": 5,
-      "tools_needed": [
-        "a new 20 by 25 by 1 inch MERV 11 filter"
-      ],
-      "safety_note": "Switch the furnace off at its service switch or breaker before opening any panel.",
-      "steps": [
-        "Turn the furnace off at the service switch on its side, or at the breaker.",
-        "Open the blower door panel, usually the lower front panel.",
-        "Before pulling the old filter out, look at the arrow printed on its frame and note which way it points.",
-        "Slide the old filter out.",
-        "Slide the new filter in with its arrow pointing the same way, toward the blower.",
-        "Close the panel and turn the furnace back on."
-      ],
-      "gate_step": 0,
-      "gate_prompt": "Tell me when the power is off at the switch or breaker."
-    },
     {
       "id": "wm9500hka-clean-the-drum",
       "source_page": 37,
@@ -730,43 +838,57 @@
       "appliance_id": "fridge-1",
       "gate_step": 0,
       "gate_prompt": "Tell me when the refrigerator is unplugged."
+    },
+    {
+      "id": "58sta-clean-air-filter",
+      "source_page": 6,
+      "title": "Clean or replace the air filter",
+      "task": "clean or replace the air filter",
+      "minutes": 15,
+      "tools_needed": [
+        "safety glasses",
+        "gloves"
+      ],
+      "safety_note": "Be extremely careful reaching into the furnace: wear safety glasses and gloves, because edges inside can be sharp. Never run the furnace without a filter in place.",
+      "steps": [
+        "Turn off the electrical supply to the furnace.",
+        "Remove the filter cabinet door or rack.",
+        "Remove the filter cabinet door. It may be necessary to remove one thumbscrew.",
+        "Slide the air filter out of the filter cabinet, keeping the dirty side up to avoid spilling dirt.",
+        "Inspect the filter. If it is torn, replace it.",
+        "If the filter is dirty, wash it in a sink, bathtub, or outside with a garden hose. Always use cold tap water, with a mild liquid detergent if necessary. Spray water through the filter in the opposite direction of airflow, and allow it to dry. A factory specified disposable media filter must not be washed: replace it with the same part number and size.",
+        "Reinstall the clean air filter.",
+        "Replace the filter cabinet door.",
+        "Turn on the electrical supply to the furnace."
+      ],
+      "appliance_id": "furnace-1",
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the electrical supply to the furnace is off."
+    },
+    {
+      "id": "58sta-inspect-combustion-area-and-vent",
+      "source_page": 8,
+      "title": "Inspect the combustion area and vent system",
+      "task": "inspect the combustion area and vent system",
+      "minutes": 20,
+      "tools_needed": [
+        "a flashlight"
+      ],
+      "safety_note": "This is a carbon monoxide risk, not a comfort one. If you find dirt, rust, soot or scale, or if the vent pipe has holes, is blocked or is disconnected, do not operate the furnace. Call your dealer.",
+      "steps": [
+        "Turn off the electrical supply to the furnace and remove the access door.",
+        "Carefully inspect the gas burner for dirt, rust or scale. Inspect the elbow, the flue connection area and the vent pipe for rust.",
+        "Inspect the vent pipe for a sag, holes or a disconnection. A horizontal vent pipe must slope upward away from the furnace. If you find rusty joints or seams, or signs of water leaking, call your dealer.",
+        "Restore electrical power to the furnace.",
+        "Start the furnace and watch it run. If you can, watch the burner flames. Are they burning bright blue? If not, or if you suspect anything else is wrong, call your servicing dealer.",
+        "Replace the access door."
+      ],
+      "appliance_id": "furnace-1",
+      "gate_step": 0,
+      "gate_prompt": "Tell me when the electrical supply to the furnace is off."
     }
   ],
   "symptoms": [
-    {
-      "appliance_id": "furnace-1",
-      "symptom": "weak airflow from the vents",
-      "keywords": [
-        "airflow",
-        "air",
-        "weak",
-        "blowing",
-        "vents",
-        "heat",
-        "cold",
-        "warm"
-      ],
-      "causes": [
-        {
-          "cause": "The air filter is dirty and restricting airflow.",
-          "likelihood": "most likely",
-          "procedure_id": "fn-replace-filter",
-          "short": "a dirty air filter"
-        },
-        {
-          "cause": "Supply vents are closed or blocked by furniture.",
-          "likelihood": "possible",
-          "procedure_id": null,
-          "short": "blocked vents"
-        },
-        {
-          "cause": "The blower motor or capacitor is failing.",
-          "likelihood": "less likely",
-          "procedure_id": null,
-          "short": "the blower motor"
-        }
-      ]
-    },
     {
       "symptom": "shows error code IE",
       "meaning": "inlet error",
@@ -2039,6 +2161,119 @@
         }
       ],
       "appliance_id": "dishwasher-1"
+    },
+    {
+      "symptom": "the furnace is not running at all",
+      "meaning": null,
+      "source_page": 9,
+      "keywords": [
+        "not running",
+        "wont start",
+        "no heat",
+        "fails to operate",
+        "dead"
+      ],
+      "causes": [
+        {
+          "cause": "the thermostat is not set above room temperature, or is not in HEAT mode",
+          "short": "thermostat setting",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "the electrical power supply switch is off",
+          "short": "power switch off",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "the blower access door is not firmly in place",
+          "short": "access door",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "a fuse has blown on the furnace control, or a circuit breaker has tripped",
+          "short": "fuse or breaker",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "the manual shut-off valve in the gas supply pipe is closed, sitting at a right angle to the pipe",
+          "short": "gas valve closed",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "the vent is blocked, so the draft safeguard switch has shut the furnace off; it resets once the furnace cools",
+          "short": "blocked vent",
+          "likelihood": "possible",
+          "procedure_id": null
+        },
+        {
+          "cause": "a manual reset limit switch on the end of the burner enclosure has tripped",
+          "short": "limit switch",
+          "likelihood": "less likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "furnace-1"
+    },
+    {
+      "symptom": "there is not enough airflow from the vents",
+      "meaning": "usually a dirty filter or a blocked grille, which also makes the furnace overheat and shut down",
+      "source_page": 9,
+      "keywords": [
+        "airflow",
+        "weak",
+        "hardly any air",
+        "not blowing",
+        "low air",
+        "blow",
+        "blowing",
+        "wont blow",
+        "blow properly",
+        "barely any air",
+        "no air",
+        "weak air"
+      ],
+      "causes": [
+        {
+          "cause": "the air filter is dirty",
+          "short": "dirty filter",
+          "likelihood": "most likely",
+          "procedure_id": "58sta-clean-air-filter"
+        },
+        {
+          "cause": "a return-air or supply-air grille is blocked or closed",
+          "short": "blocked grille",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "furnace-1"
+    },
+    {
+      "symptom": "the furnace makes a loud noise when the burners light",
+      "meaning": "delayed ignition",
+      "source_page": 8,
+      "keywords": [
+        "loud noise",
+        "bang",
+        "boom",
+        "burners",
+        "ignite",
+        "lights"
+      ],
+      "causes": [
+        {
+          "cause": "buildup on the main burners is making them fire late; the manual says to call your dealer",
+          "short": "burner buildup",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ],
+      "appliance_id": "furnace-1"
     }
   ]
 }

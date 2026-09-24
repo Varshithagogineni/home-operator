@@ -1,0 +1,169 @@
+{
+  "source": {
+    "manual": "carrier-58.pdf",
+    "extracted_on": "2026-09-24",
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "source_uri": "carrier-58.pdf",
+    "input_tokens": 3145,
+    "output_tokens": 1074
+  },
+  "brand": "Carrier",
+  "model_number": "58STA",
+  "category": "gas furnace",
+  "consumables": [
+    {
+      "name": "air filter",
+      "part_number": null,
+      "size": null
+    }
+  ],
+  "maintenance": [
+    {
+      "task": "clean or replace air filters",
+      "interval_days": 30
+    },
+    {
+      "task": "inspect and clean door louvers",
+      "interval_days": 180
+    },
+    {
+      "task": "inspect electrical disconnect",
+      "interval_days": 180
+    },
+    {
+      "task": "inspect external wiring",
+      "interval_days": 180
+    },
+    {
+      "task": "inspect gas supply line and manual shut-off",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect and clean blower assembly",
+      "interval_days": 180
+    },
+    {
+      "task": "inspect gas valve and check manifold gas pressure",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect ignition system and safety controls",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect control box, associated controls, wiring and connections",
+      "interval_days": 365
+    },
+    {
+      "task": "check combustion blower housing for lint and debris",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect burner assembly",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect heat exchanger",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect flue system",
+      "interval_days": 365
+    },
+    {
+      "task": "inspect airflow system",
+      "interval_days": 30
+    },
+    {
+      "task": "inspect evaporator coil, drain pan and condensate drain lines",
+      "interval_days": 30
+    }
+  ],
+  "symptoms": [
+    {
+      "symptom": "furnace makes loud noise when main burners ignite",
+      "meaning": "delayed ignition",
+      "source_page": 8,
+      "keywords": [
+        "loud noise",
+        "main burners",
+        "ignite"
+      ],
+      "causes": [
+        {
+          "cause": "buildup on main burners causing faulty firing",
+          "short": "burner buildup",
+          "likelihood": "most likely",
+          "procedure_id": null
+        }
+      ]
+    },
+    {
+      "symptom": "furnace fails to operate",
+      "meaning": null,
+      "source_page": 9,
+      "keywords": [
+        "fails to operate"
+      ],
+      "causes": [
+        {
+          "cause": "blocked vent causing draft safeguard switch to shut off",
+          "short": "blocked vent",
+          "likelihood": "most likely",
+          "procedure_id": null
+        },
+        {
+          "cause": "high-temperature condition due to inadequate combustion air",
+          "short": "high temperature",
+          "likelihood": "possible",
+          "procedure_id": null
+        }
+      ]
+    }
+  ],
+  "procedures": [
+    {
+      "id": "clean-air-filter",
+      "source_page": 6,
+      "title": "Clean or replace air filter",
+      "task": "clean or replace air filter",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Failure to follow this caution may result in product damage. Never operate your furnace without a filter in place.",
+      "gate_prompt": null,
+      "steps": [
+        "Turn off electrical supply to the furnace",
+        "Remove filter cabinet door/rack",
+        "Remove filter cabinet door",
+        "Slide air filter out of filter cabinet",
+        "Inspect the filter. If torn, replace it",
+        "Wash filter (if dirty) in sink, bathtub, or outside with a garden hose",
+        "Reinstall clean air filter",
+        "Replace filter cabinet door",
+        "Turn on electrical supply to furnace",
+        "Reinstall clean air filter",
+        "Replace filter cabinet door",
+        "Turn on electrical supply to furnace"
+      ]
+    },
+    {
+      "id": "inspect-combustion-area-and-vent-system",
+      "source_page": 8,
+      "title": "Inspect combustion area and vent system",
+      "task": "inspect combustion area and vent system",
+      "minutes": null,
+      "tools_needed": [],
+      "safety_note": "Failure to follow this warning could result in personal injury or death. If dirt, rust, soot, or scale accumulations are found, call your dealer. Do not operate your furnace.",
+      "gate_prompt": null,
+      "steps": [
+        "Turn off electrical supply to the furnace and remove the access door",
+        "Carefully inspect the gas burner for dirt, rust, or scale",
+        "Inspect the elbow, flue connection area, and the vent pipe for rust",
+        "Inspect the vent pipe for a sag, holes, or a disconnection",
+        "Restore electrical power to the furnace",
+        "Start the furnace and observe its operation",
+        "Replace the access door"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 {
-  "checked_on": "2026-09-22",
+  "checked_on": "2026-09-24",
   "by_appliance": {
-    "furnace-1": [],
     "washer-1": [],
     "oven-1": [],
     "dishwasher-1": [
@@ -15,6 +14,7 @@
         "matched_code": "SHE53T"
       }
     ],
-    "fridge-1": []
+    "fridge-1": [],
+    "furnace-1": []
   }
 }

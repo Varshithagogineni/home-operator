@@ -6,7 +6,7 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
-> **Status:** A local MCP server with all eight tools, running on a **demo household**: real appliance models and their manufacturers' manuals, with seeded service history. Four appliances are real, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and checked by a person: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven, the **Whirlpool GSS30C6EY** refrigerator and the **Bosch SHE53T55UC** dishwasher. Only the furnace is still a placeholder (brand "Sample").
+> **Status:** All eight tools run on Amazon Bedrock AgentCore Runtime behind a Cognito authorizer, and a Bedrock model chooses which one to call. The demo household is **five real appliances**, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and then checked by a person against the pages: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven, the **Whirlpool GSS30C6EY** refrigerator, the **Bosch SHE53T55UC** dishwasher and the **Carrier 58STA** gas furnace. Nothing in the household is invented.
 
 The recall check is real too. The Bosch dishwasher's model is named in CPSC's 2017 BSH recall for a power cord that can overheat, which Home Operator finds by querying the live CPSC API — no staged data.
 
@@ -318,7 +318,7 @@ src/home_operator/
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
 homeoperator/            AgentCore CDK project (created by `agentcore create`)
-tests/                   99 tests, with real CPSC recall records as fixtures
+tests/                   211 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 

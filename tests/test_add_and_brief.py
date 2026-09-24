@@ -55,17 +55,17 @@ def test_added_appliance_is_findable_and_shows_up_as_due(home):
 
 
 def test_pro_brief_includes_what_was_tried_today(home):
-    store.log_service(home, "furnace", "replace the air filter", TODAY)
+    store.log_service(home, "furnace", "clean or replace the air filter", TODAY)
     brief = store.prepare_pro_brief(home, "furnace", TODAY, symptom="still barely any airflow")
     assert brief["found"] is True
-    assert "SAMPLE-FN-80" in brief["brief"]
+    assert "58STA" in brief["brief"]
     assert "Problem: still barely any airflow." in brief["brief_lines"]
-    assert any("Already tried today: replace the air filter" in line for line in brief["brief_lines"])
+    assert any("Already tried today: clean or replace the air filter" in line for line in brief["brief_lines"])
 
 
 def test_pro_brief_lists_a_repeated_attempt_once(home):
-    store.log_service(home, "furnace", "replace the air filter", TODAY)
-    store.log_service(home, "furnace", "replace the air filter", TODAY)
+    store.log_service(home, "furnace", "clean or replace the air filter", TODAY)
+    store.log_service(home, "furnace", "clean or replace the air filter", TODAY)
     brief = store.prepare_pro_brief(home, "furnace", TODAY)
     tried = next(line for line in brief["brief_lines"] if line.startswith("Already tried today"))
     assert tried.count("replace the air filter") == 1

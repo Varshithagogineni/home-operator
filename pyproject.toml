@@ -21,6 +21,8 @@ home-operator-extract = "home_operator.extract:main"
 
 [dependency-groups]
 dev = [
+    "pillow>=12.3.0",
+    "pypdfium2>=5.13.0",
     "pytest>=8",
 ]
 speech = [

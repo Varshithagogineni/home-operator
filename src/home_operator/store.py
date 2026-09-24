@@ -310,13 +310,31 @@ def _resolve_procedure(home: dict, repair: str) -> dict | None:
     The id is what start_repair hands back, so a well-behaved caller passes it
     straight through. Spoken words are accepted too, because a model relaying a
     conversation may paraphrase.
+
+    Matching includes the appliance's own names. Three appliances in this home
+    have a procedure about an air filter, so "replace the furnace air filter"
+    was resolving to the fridge: the words that distinguish them are the ones
+    naming the machine, not the job.
     """
     if not repair:
         return None
     for proc in home["procedures"]:
         if proc["id"] == repair:
             return proc
-    return _best_procedure(home["procedures"], repair)
+
+    words = set(_normalize(repair).split())
+    if not words:
+        return None
+    best_score, best = 0, None
+    for proc in home["procedures"]:
+        appliance = _appliance(home, proc["appliance_id"])
+        described = f'{proc["title"]} {proc["task"]}'
+        if appliance:
+            described += f' {appliance["nickname"]} {appliance["category"]} {appliance["room"]}'
+        score = len(words & set(_normalize(described).split()))
+        if score > best_score:
+            best_score, best = score, proc
+    return best
 
 
 def _source(home: dict, appliance: dict, proc: dict) -> str | None:
