@@ -28,6 +28,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--san
   background:radial-gradient(circle at 34% 30%,#9BE9FF,var(--accent) 45%,var(--accent-2));
   box-shadow:0 0 28px rgba(54,201,242,.55)}
 .orb.thinking{animation:pulse 1.1s ease-in-out infinite}
+.orb.listening{box-shadow:0 0 0 4px rgba(127,214,227,.22),0 0 22px rgba(127,214,227,.35)}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.09);opacity:1}}
 @media (prefers-reduced-motion: reduce){.orb.thinking{animation:none}}
 .said{display:flex;gap:16px;align-items:flex-start}
@@ -327,6 +328,7 @@ function loadVoices() {
 const POLLY = "polly:Ruth";
 let usePolly = true, pollyUp = true, currentAudio = null, sayToken = 0;
 let pollyFailures = 0;  // consecutive; Ruth is only given up on after three
+let lastSpoken = "";
 
 function stopSpeaking() {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
@@ -351,6 +353,7 @@ async function say(line) {
   // functions' own phrasing is shown but not spoken.
   if (mute_render_speech) { $("spoken").textContent = line; return; }
   $("spoken").textContent = line;
+  lastSpoken = line;  // so the microphone can tell her voice from the person's
   const token = ++sayToken;
   stopSpeaking();
   if (!speak) return;
@@ -777,18 +780,42 @@ CHIPS.forEach(c => {
   $("chips").appendChild(b);
 });
 
-// ---- Talking to it out loud -------------------------------------------------
-// The browser does the listening. On a real Alexa+ device this is Alexa's job,
-// and the add-on never sees audio at all: this only exists so the simulator can
-// be used hands-free, which is the whole point of the product.
+// ---- Talking to it out loud, and interrupting -------------------------------
+// Hands-free is the point of the product: someone at a machine cannot reach for
+// a button. So the microphone stays open while Ruth is talking, and the moment
+// they start speaking she stops. Cutting someone off, or making them wait for a
+// sentence to finish before they can say "hang on", is what makes an assistant
+// feel like a menu instead of a person.
+//
+// On a real Alexa+ device this is Alexa's job and the add-on never sees audio.
+// It exists here so the simulator behaves the way the product would.
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recogniser = null, listening = false;
+let recogniser = null, handsFree = false, restarting = false;
+let bargedIn = false;      // whether this utterance already stopped her
+
+const normalise = t => t.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+
+// The microphone hears Ruth through the speakers. Without this, her own words
+// come back as a new question and she interrupts herself forever.
+function soundsLikeRuth(heard) {
+  const said = normalise(heard);
+  if (said.length < 4) return true;
+  const mine = normalise(lastSpoken);
+  if (!mine) return false;
+  if (mine.includes(said)) return true;
+  const words = said.split(" ").filter(w => w.length > 3);
+  if (!words.length) return false;
+  const shared = words.filter(w => mine.includes(w)).length;
+  return shared / words.length > 0.7;
+}
 
 function setListening(on) {
-  listening = on;
+  handsFree = on;
   const btn = $("mic");
   btn.setAttribute("aria-pressed", String(on));
-  btn.title = on ? "Listening - click to stop" : "Hold a conversation out loud";
+  btn.title = on ? "Listening - click to stop" : "Talk to it out loud";
+  $("orb").classList.toggle("listening", on);
+  if (on && !$("heard").textContent.startsWith("You said")) $("heard").textContent = "Listening…";
 }
 
 if (Recognition) {
@@ -796,36 +823,62 @@ if (Recognition) {
   recogniser = new Recognition();
   recogniser.lang = "en-US";
   recogniser.interimResults = true;
-  recogniser.continuous = false;
+  recogniser.continuous = true;
 
   recogniser.onresult = event => {
-    let finalText = "";
-    let interim = "";
+    let finalText = "", interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       if (result.isFinal) finalText += result[0].transcript;
       else interim += result[0].transcript;
     }
-    if (interim) $("heard").innerHTML = `You said: <b>${escapeHtml(interim)}</b>…`;
-    if (finalText.trim()) send(finalText.trim());
+
+    const heard = (finalText || interim).trim();
+    if (!heard || soundsLikeRuth(heard)) return;
+
+    // Stop her the instant there are real words, not when the sentence ends.
+    if (!bargedIn) {
+      bargedIn = true;
+      stopSpeaking();
+      $("orb").classList.remove("thinking");
+    }
+    if (interim && !finalText) $("heard").innerHTML = `You said: <b>${escapeHtml(interim)}</b>…`;
+    if (finalText.trim()) {
+      bargedIn = false;
+      send(finalText.trim());
+    }
   };
 
   recogniser.onerror = event => {
-    setListening(false);
     if (event.error === "not-allowed") {
+      setListening(false);
       $("heard").innerHTML = "Microphone blocked. Allow it in the address bar, or type instead.";
     }
+    // "no-speech" and "aborted" are ordinary in a long conversation: onend restarts.
   };
-  recogniser.onend = () => setListening(false);
+
+  // Browsers end a continuous session on their own after a pause. Restart it,
+  // or hands-free quietly stops working halfway through a repair.
+  recogniser.onend = () => {
+    if (!handsFree || restarting) return;
+    restarting = true;
+    setTimeout(() => {
+      restarting = false;
+      if (!handsFree) return;
+      try { recogniser.start(); } catch (err) { setListening(false); }
+    }, 250);
+  };
 
   $("mic").addEventListener("click", () => {
-    if (listening) { recogniser.stop(); return; }
-    // Speaking over Ruth should interrupt her, the way it would with a person.
+    if (handsFree) {
+      setListening(false);
+      recogniser.stop();
+      return;
+    }
     stopSpeaking();
     try {
       recogniser.start();
       setListening(true);
-      $("heard").textContent = "Listening…";
     } catch (err) {
       setListening(false);
     }

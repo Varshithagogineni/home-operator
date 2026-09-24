@@ -285,3 +285,32 @@ def test_leaving_a_repair_clears_the_place():
     assert talk.repair is None and talk.step is None and talk.offer is None
     assert "leave that for now" in reply["say"]
     assert reply["tool_calls"] == []
+
+
+def test_answering_mid_repair_says_where_you_were(monkeypatch):
+    """Interrupting to ask something else should not feel like losing your place."""
+    from home_operator import chat as conversations
+
+    talk = object.__new__(conversations.Conversation)
+    talk.repair, talk.step, talk.offer, talk.last_used = "r1", 3, None, 0.0
+    talk.agent = FakeAgent([])
+    monkeypatch.setattr(conversations, "_exchange", lambda agent, i: [
+        {"name": "get_appliance", "args": {}, "result": {"found": True}}
+    ])
+
+    reply = talk._ask_agent("wait, what filter does the fridge take?")
+    assert reply["say"].endswith("We're still on step 3 whenever you're ready.")
+
+
+def test_no_resume_hint_when_no_repair_is_open(monkeypatch):
+    from home_operator import chat as conversations
+
+    talk = object.__new__(conversations.Conversation)
+    talk.repair, talk.step, talk.offer, talk.last_used = None, None, None, 0.0
+    talk.agent = FakeAgent([])
+    monkeypatch.setattr(conversations, "_exchange", lambda agent, i: [
+        {"name": "get_appliance", "args": {}, "result": {"found": True}}
+    ])
+
+    reply = talk._ask_agent("what filter does the fridge take?")
+    assert "still on step" not in reply["say"]

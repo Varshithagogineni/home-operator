@@ -271,6 +271,11 @@ class Conversation:
         if any(c["name"] in ("start_repair", "navigate_repair") for c in calls):
             say = None
 
+        # Interrupted mid-repair to ask something else, they should not have to
+        # wonder whether their place survived. It does, so say so.
+        if say and self.repair and self.step:
+            say = f"{say} We're still on step {self.step} whenever you're ready."
+
         self._remember(data)
         return {
             "path": "agent",
