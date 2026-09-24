@@ -326,6 +326,12 @@ tests/                   211 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 
+## Submitting this
+
+[SUBMISSION.md](SUBMISSION.md) holds the Devpost text: what it does, how it
+works, what is real and what stands in, the product feedback, and the Open
+Source challenge entry. Every number in it is checkable in this repo.
+
 ## License
 
 [MIT](LICENSE)
