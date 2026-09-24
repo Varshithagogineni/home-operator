@@ -74,6 +74,15 @@ button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{padding:8px 12px;font-size:13.5px;border-radius:999px;color:var(--muted)}
 .chips button:hover{color:var(--ink)}
+#mic[aria-pressed="true"]{background:#7f1d1d;color:#fff;border-color:#b91c1c}
+#mic[aria-pressed="true"]::after{content:"";display:inline-block;width:6px;height:6px;margin-left:5px;
+  border-radius:50%;background:#fff;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#mic[aria-pressed="true"]::after{animation:none}}
+.brain{font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;
+  padding:5px 9px;border-radius:3px;background:#12313a;color:#7fd6e3;border:1px solid #1d4a56;white-space:nowrap}
+.brain[data-mode="keywords"]{background:#3a2f12;color:#e3c87f;border-color:#564a1d}
+.entry i{font-style:normal;opacity:.6;font-size:.85em}
 .voicepick{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .voicepick select{background:var(--panel);border:1px solid var(--line);color:var(--ink);
   border-radius:8px;padding:7px 9px;font:400 13px var(--sans);max-width:260px}
@@ -96,7 +105,7 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
     <div class="screen">
       <div class="said"><div class="orb" id="orb"></div><p id="spoken">Ask me about anything in your home.</p></div>
       <p class="heard" id="heard">&nbsp;</p>
-      <div class="card" id="card"><h3>Ready</h3><div class="row"><span>Try "why won't my dishwasher drain?"</span><span>6 tools live</span></div></div>
+      <div class="card" id="card"><h3>Ready</h3><div class="row"><span>Try "why won't my dishwasher drain?"</span><span>8 tools live</span></div></div>
     </div>
   </div>
 
@@ -107,17 +116,34 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
   <form id="form">
     <input type="text" id="input" autocomplete="off" placeholder="Say something to Alexa…" aria-label="What you say">
     <button class="primary" type="submit">Send</button>
+    <button type="button" id="mic" aria-pressed="false" title="Hold a conversation out loud" hidden>🎤</button>
     <button type="button" id="mute" aria-pressed="false" title="Toggle speech">🔊</button>
   </form>
   <label class="voicepick">Voice <select id="voice" aria-label="Choose a voice"></select></label>
+  <span class="brain" id="brain" data-mode="agent" title="A Bedrock model chooses the tools, standing in for Alexa+'s orchestrator">Brain: Nova 2 Lite</span>
+  <span class="brain" id="voicebadge" data-mode="agent" title="Amazon Polly generative voice">Voice: Polly Ruth</span>
   <div class="chips" id="chips"></div>
 </div>
 
-<footer>A simulation for development and demo purposes. Not affiliated with Amazon. The assistant side is scripted; every answer comes from the real Home Operator MCP server.</footer>
+<footer>A simulation for development and demo purposes. Not affiliated with Amazon. The Alexa+ add-on toolkit is a partner-only preview, so a Strands agent on Amazon Nova 2 Lite stands in for Alexa+'s orchestrator: it only chooses which tool to call. Every fact comes from the Home Operator MCP server running on Amazon Bedrock AgentCore Runtime.</footer>
 
 <script>
 const $ = id => document.getElementById(id);
 let rpcId = 0, lastAppliance = null, speak = true, activeRepair = null, offeredFix = null, lastNav = null;
+
+// The agent is the brain by default. If /chat cannot be reached - no AWS
+// credentials, no deployed runtime - the simulator falls back to matching
+// keywords locally, so a demo never dies on a missing token.
+let brain = "agent";
+let agentFailures = 0;
+let mute_render_speech = false;
+const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+
+// AgentCore takes about five seconds to wake a runtime session for a new
+// client. Opening it now means that wait never lands mid-conversation.
+fetch(`/chat/warm?session=${sessionId}`).then(r => r.json()).then(info => {
+  if (!info.warm) setBrain("keywords", info.error || "the agent is not reachable");
+}).catch(err => setBrain("keywords", err.message));
 
 // The server remembers nothing about a repair, so every move says which
 // repair and which step. Both come straight from the last reply.
@@ -161,13 +187,15 @@ async function callTool(name, args) {
   return JSON.parse(payload.result.content[0].text);
 }
 
-function logCall(name, args, ms) {
+function logCall(name, args, ms, label) {
   const log = $("log");
   const empty = log.querySelector(".empty");
   if (empty) empty.remove();
   const el = document.createElement("div");
   el.className = "entry";
-  el.innerHTML = `<b>${name}</b> · ${ms} ms<span>${escapeHtml(JSON.stringify(args))}</span>`;
+  const badge = label ? ` <i>${label}</i>` : "";
+  const timing = ms != null ? ` · ${ms} ms` : "";
+  el.innerHTML = `<b>${name}</b>${timing}${badge}<span>${escapeHtml(JSON.stringify(args))}</span>`;
   log.appendChild(el);
   log.scrollTop = log.scrollHeight;
 }
@@ -315,6 +343,9 @@ function sayWithBrowser(line) {
 
 // Ruth from Amazon Polly when the server can reach AWS; the browser voice otherwise.
 async function say(line) {
+  // On the agent path the model has already written what to say, so the render
+  // functions' own phrasing is shown but not spoken.
+  if (mute_render_speech) { $("spoken").textContent = line; return; }
   $("spoken").textContent = line;
   const token = ++sayToken;
   stopSpeaking();
@@ -335,7 +366,11 @@ async function say(line) {
       return;
     } catch (e) {
       if (token !== sayToken) return;
+      // Falling back to the browser's own voice sounds markedly worse, and the
+      // usual cause is an expired AWS session rather than anything in the code.
+      // Say so, rather than letting it be mistaken for a change in quality.
       pollyUp = false;
+      setVoiceBadge(false, e.message);
       loadVoices();
     }
   }
@@ -590,9 +625,19 @@ const RENDER = {
   get_maintenance_due: renderDue, log_service: renderLog
 };
 
-async function send(text) {
-  if (!text.trim()) return;
-  $("heard").innerHTML = `You said: <b>${escapeHtml(text)}</b>`;
+async function askAgent(text) {
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, session: sessionId })
+  });
+  const payload = await res.json();
+  if (!res.ok) throw new Error(payload.error || `chat failed (${res.status})`);
+  return payload;
+}
+
+// The keyword router, kept as the fallback brain.
+async function sendWithKeywords(text) {
   const plan = route(text);
   if (!plan && activeRepair) {
     say(`No rush. I'm still on step ${spokenNumber(activeRepair.step_number)} whenever you're ready. Just say next.`);
@@ -604,10 +649,87 @@ async function send(text) {
     return;
   }
   if (plan.tool === "navigate_repair") lastNav = plan.args.action;
+  const data = await callTool(plan.tool, plan.args);
+  RENDER[plan.tool](data);
+}
+
+async function sendWithAgent(text) {
+  const reply = await askAgent(text);
+  const calls = reply.tool_calls || [];
+  // Per-call timing only exists on the fast path, where one call is the whole
+  // turn. On the agent path the model's thinking is most of the wait, so the
+  // turn is timed once rather than pinning the same number on every call.
+  calls.forEach(c => logCall(c.name, c.args || {}, c.ms != null ? c.ms : null,
+                             reply.path === "fast" ? "no model" : null));
+  if (reply.path !== "fast") logCall("Nova 2 Lite", { turn: text }, null, `${reply.seconds}s for the turn`);
+
+  const last = calls.length ? calls[calls.length - 1].name : null;
+  if (last === "navigate_repair") lastNav = (calls[calls.length - 1].args || {}).action;
+
+  if (reply.path === "fast") {
+    // No model ran, so the card speaks in its own words, as it always has.
+    if (reply.data && RENDER[last]) RENDER[last](reply.data);
+    else if (reply.say) say(reply.say);
+    return;
+  }
+
+  if (!reply.say) {
+    // No spoken line came back, so the card speaks in its own words. That is
+    // what happens when the backend overrides the model, such as refusing to
+    // start a repair nobody asked for.
+    if (reply.data && RENDER[last]) RENDER[last](reply.data);
+    else say("I didn't catch that. Try asking about one of your appliances.");
+    return;
+  }
+  // The model wrote the spoken line. Render the card silently, then say it.
+  if (reply.data && RENDER[last]) {
+    mute_render_speech = true;
+    try { RENDER[last](reply.data); } finally { mute_render_speech = false; }
+  }
+  say(reply.say);
+}
+
+function setVoiceBadge(up, why) {
+  const el = $("voicebadge");
+  if (!el) return;
+  el.textContent = up ? "Voice: Polly Ruth" : "Voice: browser fallback";
+  el.dataset.mode = up ? "agent" : "keywords";
+  el.title = up ? "Amazon Polly generative voice"
+                : `Polly is unavailable, so the browser's own voice is speaking. Usually an expired AWS session: run \`aws login\`. (${why || "no detail"})`;
+}
+
+function setBrain(mode, why) {
+  brain = mode;
+  const el = $("brain");
+  if (!el) return;
+  el.textContent = mode === "agent" ? "Brain: Nova 2 Lite" : "Brain: keyword match";
+  el.title = why || (mode === "agent"
+    ? "A Bedrock model chooses the tools, standing in for Alexa+'s orchestrator"
+    : "Local keyword matching, because the agent could not be reached");
+  el.dataset.mode = mode;
+}
+
+async function send(text) {
+  if (!text.trim()) return;
+  $("heard").innerHTML = `You said: <b>${escapeHtml(text)}</b>`;
   $("orb").classList.add("thinking");
   try {
-    const data = await callTool(plan.tool, plan.args);
-    RENDER[plan.tool](data);
+    if (agentFailures < 3) {
+      try {
+        await sendWithAgent(text);
+        agentFailures = 0;
+        setBrain("agent");
+      } catch (err) {
+        // Answer this turn with keywords, but try the agent again next time:
+        // the usual cause is an expired AWS session, and `aws login` fixes it
+        // without reloading the page.
+        agentFailures += 1;
+        setBrain("keywords", `Falling back: ${err.message}`);
+        await sendWithKeywords(text);
+      }
+    } else {
+      await sendWithKeywords(text);
+    }
   } catch (err) {
     say("I couldn't reach the server just now. Try again in a moment.");
     card("Error", `<div class="row"><span>${escapeHtml(err.message)}</span><span></span></div>`);
@@ -638,6 +760,61 @@ CHIPS.forEach(c => {
   b.addEventListener("click", () => send(c));
   $("chips").appendChild(b);
 });
+
+// ---- Talking to it out loud -------------------------------------------------
+// The browser does the listening. On a real Alexa+ device this is Alexa's job,
+// and the add-on never sees audio at all: this only exists so the simulator can
+// be used hands-free, which is the whole point of the product.
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recogniser = null, listening = false;
+
+function setListening(on) {
+  listening = on;
+  const btn = $("mic");
+  btn.setAttribute("aria-pressed", String(on));
+  btn.title = on ? "Listening - click to stop" : "Hold a conversation out loud";
+}
+
+if (Recognition) {
+  $("mic").hidden = false;
+  recogniser = new Recognition();
+  recogniser.lang = "en-US";
+  recogniser.interimResults = true;
+  recogniser.continuous = false;
+
+  recogniser.onresult = event => {
+    let finalText = "";
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const result = event.results[i];
+      if (result.isFinal) finalText += result[0].transcript;
+      else interim += result[0].transcript;
+    }
+    if (interim) $("heard").innerHTML = `You said: <b>${escapeHtml(interim)}</b>…`;
+    if (finalText.trim()) send(finalText.trim());
+  };
+
+  recogniser.onerror = event => {
+    setListening(false);
+    if (event.error === "not-allowed") {
+      $("heard").innerHTML = "Microphone blocked. Allow it in the address bar, or type instead.";
+    }
+  };
+  recogniser.onend = () => setListening(false);
+
+  $("mic").addEventListener("click", () => {
+    if (listening) { recogniser.stop(); return; }
+    // Speaking over Ruth should interrupt her, the way it would with a person.
+    stopSpeaking();
+    try {
+      recogniser.start();
+      setListening(true);
+      $("heard").textContent = "Listening…";
+    } catch (err) {
+      setListening(false);
+    }
+  });
+}
 </script>
 </body>
 </html>

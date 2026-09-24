@@ -60,13 +60,15 @@ def test_finishing_an_unscheduled_repair_logs_it_without_touching_other_tasks():
 
     started = store.start_repair(home, "washer", "clean the drain pump filter", TODAY)
     repair = started["repair"]
-    step = store.navigate_repair(home, "done", repair, 1, TODAY)["step_number"]
-    while True:
+    step = store.navigate_repair(home, "done", repair, 1, TODAY, "it's unplugged")["step_number"]
+    finished = None
+    for _ in range(20):  # a guard: a gate that never clears would loop forever
         moved = store.navigate_repair(home, "next", repair, step, TODAY)
         if moved.get("finished"):
             finished = moved
             break
         step = moved["step_number"]
+    assert finished is not None, "the walkthrough never reached the last step"
 
     assert finished["logged"]["task"] == "clean the drain pump filter"
     assert finished["logged"]["next_due"] is None

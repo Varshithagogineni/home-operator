@@ -18,8 +18,12 @@ def start_furnace(home):
     return store.start_repair(home, "furnace", "replace the air filter", TODAY)
 
 
-def nav(home, action, step, repair=FURNACE_REPAIR):
-    return store.navigate_repair(home, action, repair, step, TODAY)
+def nav(home, action, step, repair=FURNACE_REPAIR, said=""):
+    return store.navigate_repair(home, action, repair, step, TODAY, said)
+
+
+# What a person actually says to confirm a machine is safe.
+CONFIRMED = "it's off and unplugged"
 
 
 def test_diagnose_ranks_causes_and_offers_a_fix(home):
@@ -74,7 +78,7 @@ def test_gate_step_blocks_until_confirmed(home):
 
 
 def test_confirming_the_gate_advances(home):
-    after = nav(home, "done", step=1)
+    after = nav(home, "done", step=1, said=CONFIRMED)
     assert after["step_number"] == 2
     assert after["awaiting_confirmation"] is False
 
@@ -130,7 +134,7 @@ def test_a_repair_survives_a_server_that_remembers_nothing(home):
     started = start_furnace(home)
     elsewhere = store.load_home()
     resumed = store.navigate_repair(
-        elsewhere, "done", started["repair"], started["step_number"], TODAY
+        elsewhere, "done", started["repair"], started["step_number"], TODAY, CONFIRMED
     )
     assert resumed["step_number"] == 2
     assert resumed["procedure"] == started["procedure"]
@@ -140,7 +144,7 @@ def test_two_repairs_interleave_without_interfering(home):
     furnace = start_furnace(home)
     washer = store.start_repair(home, "washer", "clean the door seal", TODAY)
 
-    a = store.navigate_repair(home, "done", furnace["repair"], 1, TODAY)
+    a = store.navigate_repair(home, "done", furnace["repair"], 1, TODAY, CONFIRMED)
     b = store.navigate_repair(home, "next", washer["repair"], 1, TODAY)
 
     assert a["procedure"] == furnace["procedure"] and a["step_number"] == 2
@@ -149,7 +153,7 @@ def test_two_repairs_interleave_without_interfering(home):
 
 def test_a_spoken_task_name_works_as_well_as_the_id(home):
     """A model relaying a conversation may paraphrase rather than pass the id."""
-    result = store.navigate_repair(home, "done", "replace the furnace air filter", 1, TODAY)
+    result = store.navigate_repair(home, "done", "replace the furnace air filter", 1, TODAY, CONFIRMED)
     assert result["repair"] == FURNACE_REPAIR
     assert result["step_number"] == 2
 

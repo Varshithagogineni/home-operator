@@ -96,7 +96,10 @@ def diagnose_symptom(
     description=(
         "Begin a step-by-step repair and return the first step, along with the tools needed, "
         "a safety note and how many steps there are. The reply includes a repair id and a "
-        "step_number: pass both to navigate_repair to move through the steps."
+        "step_number: pass both to navigate_repair to move through the steps. "
+        "Only call this once the person has asked to be walked through the repair. If they "
+        "have just described a problem, diagnose it and offer first, then wait for them to "
+        "agree: starting a repair unasked commits someone to opening up an appliance."
     ),
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
@@ -123,8 +126,13 @@ def navigate_repair(
     action: Annotated[str, Field(description='One of "next", "back", "repeat", or "done" to confirm a safety gate.')] = "next",
     repair: Annotated[str, Field(description="The repair id from the previous reply.")] = "",
     step: Annotated[int, Field(description="The step_number from the previous reply.")] = 1,
+    said: Annotated[str, Field(description=(
+        "What the person actually said, word for word, when they are confirming a safety gate. "
+        "Only their own words clear a gate, so pass exactly what you heard and never invent it. "
+        "A vague yes is not a confirmation that a machine is switched off."
+    ))] = "",
 ) -> dict:
-    return store.navigate_repair(HOME, action, repair, step, date.today())
+    return store.navigate_repair(HOME, action, repair, step, date.today(), said)
 
 
 @mcp.tool(

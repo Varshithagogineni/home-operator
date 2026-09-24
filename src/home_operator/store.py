@@ -257,6 +257,7 @@ def start_repair(home: dict, query: str, task: str, today: date) -> dict:
         "started": True,
         **_brief(a),
         "repair": proc["id"],
+        "say_first": _opening_line(proc),
         "procedure": proc["title"],
         "estimated_minutes": proc["minutes"],
         "tools_needed": proc["tools_needed"],
@@ -267,6 +268,27 @@ def start_repair(home: dict, query: str, task: str, today: date) -> dict:
         "source": _source(home, a, proc),
         **_gate_fields(proc, 0),
     }
+
+
+def _opening_line(proc: dict) -> str:
+    """The exact words that open a repair: the warning, the first step, the gate.
+
+    Composed here rather than left to whoever is speaking. A model asked to
+    summarise a safety note produced "open the drain filter will cause water to
+    overflow" - grammatically broken, and the warning is the part that matters
+    most. Anything safety-critical is written once, in full sentences, and
+    spoken verbatim.
+    """
+    parts: list[str] = []
+    note = (proc.get("safety_note") or "").strip()
+    if note:
+        parts.append(note if note.endswith((".", "!", "?")) else note + ".")
+    first = (proc["steps"][0] or "").strip()
+    if first:
+        parts.append(first if first.endswith((".", "!", "?")) else first + ".")
+    if proc.get("gate_step") == 0 and proc.get("gate_prompt"):
+        parts.append(proc["gate_prompt"].strip())
+    return " ".join(parts)
 
 
 def _best_procedure(procs: list[dict], task: str) -> dict | None:
@@ -318,6 +340,16 @@ def _gate_fields(proc: dict, step_index: int) -> dict:
 
 CONFIRM_WORDS = {"confirm", "confirmed", "done", "yes", "its off", "it is off", "unplugged", "off"}
 
+# Clearing a safety gate is stricter than agreeing to something. The gate asks a
+# question about the machine - "tell me when it is off and unplugged" - so the
+# answer has to be about the machine. A bare "yes" does not count: the model
+# that caused this rule turned "yes please", said in answer to "want me to walk
+# you through it?", into a cleared power-off gate. If someone only says yes,
+# they get asked again, which costs them two seconds.
+GATE_CONFIRM_WORDS = {
+    "off", "unplugged", "disconnected", "done", "confirm", "confirmed", "isolated",
+}
+
 
 def _clamp_step(step: int | None, total: int) -> int:
     """Turn a caller's 1-based step number into a safe 0-based index."""
@@ -328,12 +360,18 @@ def _clamp_step(step: int | None, total: int) -> int:
     return max(0, min(index, total - 1))
 
 
+def _is_confirmation(said: str) -> bool:
+    """Whether these are a person's words confirming a machine is safe."""
+    return bool(set(_normalize(said).split()) & GATE_CONFIRM_WORDS)
+
+
 def navigate_repair(
     home: dict,
     action: str,
     repair: str,
     step: int | None,
     today: date,
+    said: str = "",
 ) -> dict:
     """Move through a repair. The caller says which repair and which step.
 
@@ -360,9 +398,14 @@ def navigate_repair(
     index = _clamp_step(step, total)
     action = _normalize(action or "next") or "next"
     at_gate = proc.get("gate_step") == index
-    confirming = action in CONFIRM_WORDS
+    # A safety gate is cleared by what the person said, never by a caller simply
+    # asking to clear it. A model once turned a vague "yes please" into
+    # action="done" and sent someone to open a drain filter on a washer that was
+    # still plugged in and full of water. So "done" alone is not enough: the
+    # person's own words have to carry a confirmation.
+    confirming = action in CONFIRM_WORDS and (not at_gate or _is_confirmation(said))
 
-    if at_gate and action == "next" and not confirming:
+    if at_gate and not confirming and (action == "next" or action in CONFIRM_WORDS):
         # Hold here. The person has to say the machine is safe first.
         return {
             "active": True,

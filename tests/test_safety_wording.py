@@ -77,3 +77,71 @@ def test_the_agent_is_told_to_speak_it_verbatim():
     assert "say_first" in prompt
     assert "word for word" in prompt
     assert "Never say an appliance \"is recalled\"" in prompt
+
+
+def test_a_gated_repair_dictates_its_opening_line(home):
+    """The warning, the first step and the gate question, in full sentences."""
+    started = store.start_repair(home, "washer", "clean the drain pump filter", TODAY)
+    line = started["say_first"]
+    assert line.startswith("Opening the drain filter will result in water overflowing")
+    assert "Turn off the washer, and unplug the power cord." in line
+    assert line.endswith("Tell me when the washer is off and unplugged.")
+
+
+def test_the_opening_line_ends_its_sentences(home):
+    """A model once ran a warning into a step: "open the drain filter will cause
+    water to overflow". Every part is punctuated so that cannot happen."""
+    for task in ("clean the drain pump filter", "clean the door seal"):
+        line = store.start_repair(home, "washer", task, TODAY)["say_first"]
+        assert line.strip().endswith((".", "?", "!"))
+        assert ".." not in line
+
+
+def test_a_repair_with_no_safety_note_still_opens_cleanly():
+    line = store._opening_line({"safety_note": None, "steps": ["Pull the filter out"], "gate_step": None})
+    assert line == "Pull the filter out."
+
+
+# --- A safety gate clears on what the person said, not on being asked to ------
+#
+# The model, given a vague "yes please", called navigate_repair with
+# action="done" and cleared the power-off gate on the washer repair. That sent
+# someone to open a drain filter on a machine that may still have been plugged
+# in and full of water. Asking the model not to do that is not a control, so the
+# tool refuses instead.
+
+WASHER_REPAIR = "wm9500hka-clean-the-drain-pump-filter"
+
+
+def test_done_without_the_persons_words_does_not_clear_a_gate(home):
+    held = store.navigate_repair(home, "done", WASHER_REPAIR, 1, TODAY)
+    assert held["step_number"] == 1
+    assert held["awaiting_confirmation"] is True
+
+
+@pytest.mark.parametrize("vague", ["yes", "yes please", "sure", "ok", "go ahead", "", "   "])
+def test_a_vague_yes_is_not_a_confirmation(home, vague):
+    """Agreeing to a repair is not the same as saying the power is off."""
+    held = store.navigate_repair(home, "done", WASHER_REPAIR, 1, TODAY, vague)
+    assert held["step_number"] == 1, f"{vague!r} should not clear a safety gate"
+    assert held["awaiting_confirmation"] is True
+
+
+@pytest.mark.parametrize("confirmation", [
+    "it's unplugged",
+    "its off",
+    "the power is off",
+    "I unplugged it",
+    "done, it's off",
+    "unplugged",
+])
+def test_the_persons_own_words_do_clear_it(home, confirmation):
+    moved = store.navigate_repair(home, "done", WASHER_REPAIR, 1, TODAY, confirmation)
+    assert moved["step_number"] == 2
+    assert moved["awaiting_confirmation"] is False
+
+
+def test_words_are_only_needed_at_a_gate(home):
+    """Ordinary steps are not gates, so "done" moves on without ceremony."""
+    moved = store.navigate_repair(home, "done", WASHER_REPAIR, 3, TODAY)
+    assert moved["step_number"] == 4

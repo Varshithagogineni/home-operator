@@ -164,3 +164,17 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Medium. Nothing is broken; the feature is simply not adoptable on a deadline.
 - **Workaround:** Kept Polly generative Ruth for speech, with the browser's own speech recognition for input. The tools stay reachable by any model because they are plain MCP.
 - **Suggestion:** The three re:Post tool-use reports are the blocker worth fixing first: speech-to-speech without reliable tool calling cannot drive an assistant that does anything. Publishing a known-issues list for Nova 2 Sonic tool use, and a supported non-preview client path, would make it adoptable.
+
+### Nova 2 Lite speaks repair steps it was never given, including past a safety gate
+- **Date:** 2026-09-24
+- **Tool / API:** Amazon Bedrock, Amazon Nova 2 Lite (`us.amazon.nova-2-lite-v1:0`), via Strands Agents with MCP tools
+- **Task attempted:** Have the model choose tools for a spoken repair walkthrough, where every repair step must come from a manufacturer's manual and a safety gate must hold until the person confirms the appliance is switched off.
+- **Steps taken:** System prompt states, in its own section, that every appliance fact must come from a tool, that a step must be said as written, and that a repair must not start until asked. The tool description for `start_repair` repeats the last point. Ran the same five-turn conversation after each change.
+- **Expected:** The model routes to tools and quotes what they return.
+- **Actual:** Three distinct failures, none fixed by instructions.
+  1. Asked "want me to walk you through it?", the person said "yes please". The model called `navigate_repair` with `action: "done"` and cleared the power-off safety gate, moving to the step that opens a drain filter. The person had agreed to a repair, not confirmed that a washer was unplugged.
+  2. On a later "yes please", the model called **no tool at all** and said "Now open the drain pump filter cover" from its own knowledge. That is a repair instruction, spoken aloud, that came from no manual.
+  3. Told by the tool that the washer still had to be unplugged (`awaiting_confirmation: true`), the model said "Now open the drain filter cover" anyway - contradicting the tool result it had just received, in wording that is not in the LG manual.
+- **Severity:** High. In a voice product these are physical-safety failures, not formatting problems.
+- **Workaround:** Stopped relying on instructions for anything that matters. A safety gate now clears only on the person's own words about the machine, checked server-side, so `action: "done"` by itself does nothing. Agreeing to an offered repair is matched in the backend and answered by calling `start_repair` directly. Any turn that touches a repair tool is spoken from the tool's text rather than the model's, and a turn that calls no tool during a repair is discarded and the current step re-read. 23 tests pin this.
+- **Suggestion:** Two things would have helped a great deal. First, a supported way to constrain a turn to tool-grounded output, so a model cannot answer a domain question without calling a tool: for agents over MCP this is the common safety requirement, and every builder is currently re-implementing it. Second, the guidance for Nova 2 Lite should say plainly that tool results are not authoritative to the model and that safety-critical state must be enforced in the tool, not the prompt. We found this by testing; a smaller team might ship it.

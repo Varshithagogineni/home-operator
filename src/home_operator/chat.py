@@ -45,6 +45,23 @@ TRAILING = re.compile(r"\s+(please|now|then|thanks|thank you)$")
 LEADING = re.compile(r"^(ok|okay|alright|right|and|so|um|uh|yeah|yep)[,\s]+")
 
 
+# Agreeing to an offered repair. Kept separate from the navigation words: this
+# starts a repair rather than moving through one.
+ACCEPTANCES = re.compile(
+    r"(yes|yes please|yeah|yep|sure|ok|okay|please|please do|go ahead|do it|lets do it|"
+    r"walk me through it|walk me through that|show me|talk me through it|"
+    r"yes walk me through it|i guess|why not)"
+)
+
+
+def is_acceptance(said: str) -> bool:
+    """Whether this is someone saying yes to a repair that was just offered."""
+    text = said.strip().lower().rstrip(".!?").replace("'", "")
+    text = LEADING.sub("", text)
+    text = TRAILING.sub("", text).strip()
+    return bool(ACCEPTANCES.fullmatch(text))
+
+
 def fast_action(said: str) -> str | None:
     """The navigation action a phrase means, or None to let the model decide.
 
@@ -136,6 +153,7 @@ class Conversation:
         self.lane = FastLane()
         self.repair: str | None = None
         self.step: int | None = None
+        self.offer: dict | None = None
         self.last_used = time.time()
 
     def close(self) -> None:
@@ -159,13 +177,27 @@ class Conversation:
         if isinstance(data.get("step_number"), int):
             self.step = data["step_number"]
 
+        # A diagnosis ends by offering a fix. Remember it, so that saying yes
+        # starts the real walkthrough instead of leaving the model to answer
+        # from memory - which it did, once, reciting a repair step that came
+        # from no manual at all.
+        if data.get("found") and data.get("causes"):
+            fix = next((c for c in data["causes"] if c.get("fix_available")), None)
+            self.offer = (
+                {"appliance": data.get("nickname", ""), "task": fix["fix"]} if fix else None
+            )
+        elif data.get("started") or data.get("active"):
+            self.offer = None
+
     # -- the two paths ------------------------------------------------------
 
-    def _fast(self, action: str) -> dict:
+    def _fast(self, action: str, said: str) -> dict:
         started = time.perf_counter()
         result = self.lane.call(
             "navigate_repair",
-            {"action": action, "repair": self.repair, "step": self.step},
+            # The fast path passes the person's words through untouched, which is
+            # what lets a safety gate clear at all.
+            {"action": action, "repair": self.repair, "step": self.step, "said": said},
         )
         ms = (time.perf_counter() - started) * 1000
         data = _first_json(result)
@@ -183,21 +215,81 @@ class Conversation:
         started = time.perf_counter()
         reply = self.agent(said)
         seconds = time.perf_counter() - started
-        calls, data = _exchange(self.agent, before)
+
+        calls = _exchange(self.agent, before)
+        say: str | None = str(reply).strip()
+        data = next((c["result"] for c in reversed(calls) if c["result"] is not None), None)
+
+        # A repair may only begin when the person asks for it. The model likes to
+        # diagnose and then start the walkthrough in the same breath, which
+        # commits someone to opening up an appliance they only asked about. When
+        # that happens the diagnosis is kept and the offer is made instead, and
+        # the repair simply is not started - nothing here is left to persuasion.
+        names = [c["name"] for c in calls]
+        if "start_repair" in names and "diagnose_symptom" in names:
+            diagnosis = next(c["result"] for c in calls if c["name"] == "diagnose_symptom")
+            calls = [c for c in calls if c["name"] != "start_repair"]
+            data = diagnosis
+            say = None  # the diagnosis card ends by offering, in its own words
+
+        # While a repair is under way, every spoken line has to come from a tool.
+        # Twice the model answered a turn with no tool call at all and recited a
+        # step from its own memory - once "open the drain filter cover", which is
+        # not what the manual says. Rather than trusting it not to, a turn that
+        # touched no tool during a repair is thrown away and the current step is
+        # read again from the server.
+        if self.repair and not calls:
+            again = self._fast("repeat", said="")
+            again["overridden"] = "the model answered without calling a tool"
+            return again
+
+        # Inside a repair the model does not get to choose the words. It called
+        # navigate_repair, was told the washer still had to be unplugged, and
+        # then said "Now open the drain filter cover" regardless. Repair steps
+        # are quoted from a manual a person checked, so when a turn touches
+        # start_repair or navigate_repair the step card speaks instead, using
+        # the tool's own text. The model still decides which tool to call: that
+        # is its job here, and the only one.
+        if any(c["name"] in ("start_repair", "navigate_repair") for c in calls):
+            say = None
+
         self._remember(data)
         return {
             "path": "agent",
-            "say": str(reply).strip(),
-            "tool_calls": calls,
+            "say": say,
+            "tool_calls": [{"name": c["name"], "args": c["args"]} for c in calls],
             "data": data,
             "seconds": round(seconds, 2),
         }
 
+    def _accept_offer(self) -> dict:
+        offer = self.offer
+        self.offer = None
+        started = time.perf_counter()
+        result = self.lane.call("start_repair", offer)
+        ms = (time.perf_counter() - started) * 1000
+        data = _first_json(result)
+        self._remember(data)
+        return {
+            "path": "fast",
+            "say": None,  # the step card speaks, including its safety gate
+            "tool_calls": [{"name": "start_repair", "args": offer, "ms": round(ms)}],
+            "data": data,
+            "seconds": round(ms / 1000, 2),
+        }
+
     def respond(self, said: str) -> dict:
         self.last_used = time.time()
+
         action = fast_action(said)
         if action and self.repair:
-            return self._fast(action)
+            return self._fast(action, said)
+
+        # Saying yes to an offered repair is answered from the tools, not from
+        # the model's memory of what a drain filter usually looks like.
+        if self.offer and is_acceptance(said):
+            return self._accept_offer()
+
         return self._ask_agent(said)
 
 
@@ -222,25 +314,33 @@ def _first_json(result) -> dict | None:
     return None
 
 
-def _exchange(agent: Agent, from_index: int) -> tuple[list[dict], dict | None]:
-    """What the agent called this turn, and the last thing a tool returned."""
+def _exchange(agent: Agent, from_index: int) -> list[dict]:
+    """What the agent called this turn, each call paired with what it returned."""
     calls: list[dict] = []
-    data: dict | None = None
+    by_id: dict[str, dict] = {}
     for message in agent.messages[from_index:]:
         for block in message.get("content", []):
             if "toolUse" in block:
                 use = block["toolUse"]
-                calls.append({"name": use["name"], "args": use.get("input", {})})
+                call = {"name": use["name"], "args": use.get("input", {}), "result": None}
+                by_id[use.get("toolUseId", "")] = call
+                calls.append(call)
             if "toolResult" in block:
-                for content in block["toolResult"].get("content", []):
+                result = block["toolResult"]
+                call = by_id.get(result.get("toolUseId", ""))
+                for content in result.get("content", []):
                     text = content.get("text")
                     if not text:
                         continue
                     try:
-                        data = json.loads(text)
+                        parsed = json.loads(text)
                     except (TypeError, ValueError):
-                        pass
-    return calls, data
+                        continue
+                    if call is not None:
+                        call["result"] = parsed
+                    elif calls:
+                        calls[-1]["result"] = parsed
+    return calls
 
 
 # One conversation per browser session. Sessions are dropped once they go quiet
