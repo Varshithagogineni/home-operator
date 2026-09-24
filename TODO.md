@@ -56,14 +56,19 @@ merged before the deadline.
 
 ---
 
-## 3. The furnace is still a placeholder
+## 3. The furnace's model number is a series, not one unit
 
-Four appliances are real, extracted from manufacturer PDFs and reviewed page by
-page. The furnace is brand "Sample" with invented model `SAMPLE-FN-80`. Either
-run a real furnace manual through the existing pipeline, or remove it so every
-appliance in the demo household is real. The demo does not lean on it.
+Done, with a caveat worth knowing. The furnace is a real Carrier 58STA and its
+data comes from Carrier's owner's manual OM58-132, edition 05/18. But the other
+four appliances carry full model numbers, and "58STA" is a series covering
+fourteen sizes. The record names the size this household is meant to have
+(090-14, the 17-1/2 inch casing, which is why the filter is a definite 16 x 25)
+and says where that comes from, but the manual itself is written for the family
+and says "representative drawing only, some model may vary" four times.
 
----
+If it ever matters, buy a real furnace's manual rather than a family one. It does
+not matter for the demo, and it is written down here rather than left to be
+noticed.
 
 ## 4. Account linking for a real Alexa+ add-on
 

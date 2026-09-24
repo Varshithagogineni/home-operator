@@ -135,6 +135,12 @@ def maintenance_due(home: dict, today: date, within_days: int = 30) -> dict:
             item = {
                 **_brief(a),
                 "task": m["task"],
+                # Who the manual expects to do this. The Carrier manual is
+                # explicit that a homeowner changes filters and a trained
+                # technician does everything else, so a due list must not read
+                # out "inspect the heat exchanger" in the same voice as
+                # "change the filter".
+                "who": m.get("who", "homeowner"),
                 "due_date": due.isoformat(),
                 "last_done": last["date"] if last else None,
             }

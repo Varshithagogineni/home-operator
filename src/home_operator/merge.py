@@ -67,10 +67,30 @@ APPLIANCES = [
          {"task": "replace the water filter", "date": "2026-03-20", "notes": None},
          {"task": "replace the air filter", "date": "2026-05-01", "notes": None},
      ]},
+    # A furnace this age has had service visits. Without them every dealer task
+    # reads as overdue at once and drowns out the one job the owner can act on.
     {"file": "58STA.json", "appliance_id": "furnace-1", "nickname": "Furnace", "room": "basement",
      "purchase_date": "2016-11-02", "warranty_until": "2026-11-02",
      "service_log": [
          {"task": "clean or replace the air filter", "date": "2026-07-28", "notes": None},
+         {"task": "inspect the combustion area and vent system", "date": "2026-04-18",
+          "notes": "annual service"},
+         {"task": "inspect the gas supply line and manual shut-off for leaks", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the gas valve and check manifold gas pressure", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the ignition system and safety controls", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the control box, controls, wiring and connections", "date": "2026-04-18", "notes": None},
+         {"task": "check the combustion blower housing for lint and debris", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the burner assembly", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the heat exchanger", "date": "2026-04-18", "notes": None},
+         {"task": "inspect the flue system", "date": "2026-04-18", "notes": None},
+         {"task": "inspect and clean the blower assembly", "date": "2026-06-20", "notes": None},
+         {"task": "inspect and clean the door louvers", "date": "2026-06-20", "notes": None},
+         {"task": "inspect the electrical disconnect", "date": "2026-06-20", "notes": None},
+         {"task": "inspect external wiring for damage", "date": "2026-06-20", "notes": None},
+         {"task": "inspect the airflow system for leaks", "date": "2026-06-20", "notes": None},
+         {"task": "inspect the evaporator coil, drain pan and condensate drain lines",
+          "date": "2026-06-20", "notes": None},
+         {"task": "inspect the cabinet for signs of damage", "date": "2026-09-10", "notes": None},
      ]},
 ]
 

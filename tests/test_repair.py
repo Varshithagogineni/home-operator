@@ -116,7 +116,7 @@ def test_finishing_the_last_step_logs_the_service(home):
 
     assert result["finished"] is True
     assert result["logged"]["task"] == "clean or replace the air filter"
-    assert result["logged"]["next_due"] == "2026-10-15"
+    assert result["logged"]["next_due"] == "2026-10-17"
     assert len(home["service_log"]) == before + 1
 
 
@@ -179,7 +179,7 @@ def test_log_service_clears_the_overdue_item(home):
     others = {(i["nickname"], i["task"]) for i in overdue}
 
     logged = store.log_service(home, "furnace", filter_task, TODAY, notes="MERV 11")
-    assert logged["next_due"] == "2026-10-15"   # every 4 weeks, page 6
+    assert logged["next_due"] == "2026-10-17"   # monthly, pages 2 and 10
 
     after = store.maintenance_due(home, TODAY)["overdue"]
     assert not any(i["nickname"] == "Furnace" and i["task"] == filter_task for i in after)

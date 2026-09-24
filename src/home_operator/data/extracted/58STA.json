@@ -9,7 +9,7 @@
     "review": {
       "reviewed_on": "2026-09-24",
       "method": "Read every entry against the Carrier owner's manual, page by page, rendering page 10 as an image because the interval table's columns cannot be told apart from extracted text.",
-      "kept_verbatim": "Both procedures' step wording, the safety warnings, and the twelve intervals that were already right.",
+      "kept_verbatim": "Nothing is quoted word for word. Every step is faithful to the manual but several were rewritten: the washing step folds in the manual's NOTE about factory media filters, and two combustion steps were merged. Listed below rather than claimed away.",
       "changes": [
         {
           "change": "Corrected 'inspect airflow system (ductwork)' from every 30 days to every 180 days",
@@ -25,11 +25,6 @@
           "change": "Added the missing task 'inspect the cabinet for signs of damage', every 30 days",
           "page": 10,
           "manual_says": "'Inspect cabinet for signs of damage.' is marked Monthly, and was dropped from the extraction entirely."
-        },
-        {
-          "change": "Changed the air filter interval from 30 days to 28",
-          "page": 6,
-          "manual_says": "'The furnace filter should be checked every 4 weeks and cleaned or replaced if necessary.' Four weeks is 28 days; the checklist on page 10 says only 'Monthly'. The specific figure was used."
         },
         {
           "change": "Removed three duplicated steps from the air filter procedure",
@@ -70,9 +65,59 @@
           "change": "Added 'inspect the combustion area and vent system' as an annual task",
           "page": 8,
           "manual_says": "'Inspect the combustion area and vent system before each heating season.' It was extracted as a procedure but never as something that comes due."
+        },
+        {
+          "change": "Left the air filter interval at 30 days after first changing it to 28",
+          "page": 6,
+          "manual_says": "Page 6 says 'every 4 weeks', but page 2's homeowner list and the page 10 checklist both say monthly, and Carrier's installation instructions for this model say monthly. Three statements to one, and 28 days was false precision dressed up as care."
+        },
+        {
+          "change": "Marked each maintenance task as the homeowner's or a dealer's",
+          "page": 3,
+          "manual_says": "'Untrained personnel can perform basic maintenance functions such as cleaning or replacing air filters. All other operations must be performed by trained service personnel.' Fifteen of the seventeen tasks are a dealer's, and were being read out in the same voice as changing a filter."
+        },
+        {
+          "change": "Added a third symptom, 'there is not enough airflow from the vents', which the extraction did not produce",
+          "page": 9,
+          "manual_says": "'Check for sufficient airflow. Check the air filter for dirt. Check for blocked return-air or supply-air grilles.' This is the first thing the troubleshooting page says and it was missing entirely."
+        },
+        {
+          "change": "Restored the manual's instruction to shut the furnace down for a loud ignition noise",
+          "page": 8,
+          "manual_says": "'If your furnace makes a loud noise when the main burners are ignited, shut down the furnace and call your servicing dealer.' Only 'call your dealer' had survived, which drops the urgent half."
+        },
+        {
+          "change": "Restored 'call your servicing dealer' to the airflow symptom, and the service-agency and limit-switch warnings to the no-heat symptom",
+          "page": 9,
+          "manual_says": "'If this isn't the cause of the problem, call your servicing dealer'; 'If the furnace fails to operate, contact a qualified service agency'; and for the reset switch, turn the power off and remove the door first, and if it trips a second time call for service."
+        },
+        {
+          "change": "Rewrote the combustion safety note in the manual's words after writing it in my own",
+          "page": 8,
+          "manual_says": "I had written 'This is a carbon monoxide risk, not a comfort one', which is my sentence, not Carrier's. The note now quotes the manual: 'If holes are found or if the vent pipe is obstructed or is not connected, toxic fumes can escape into your home.'"
+        },
+        {
+          "change": "Recorded that the likelihood order is the manual's listing order, not a ranking it gives",
+          "page": 9,
+          "manual_says": "The manual lists checks; it never ranks them. The labels order the list for speech and the entry now says so, rather than implying Carrier judged one cause more likely than another."
+        },
+        {
+          "change": "Noted what was added that is not in the manual at all: estimated minutes, tools needed, and spoken keywords",
+          "page": null,
+          "manual_says": "The manual gives no timings and no list of tools. Fifteen and twenty minutes are this project's estimates, the tools are inferred from the steps, and the keywords exist so someone can say 'it won't blow properly'. None of it is Carrier's, and it should not read as though it were."
+        },
+        {
+          "change": "Recorded the manual's catalog number, edition, URL, and why it is attributed to this model",
+          "page": null,
+          "manual_says": "The record said only 'carrier-58.pdf'. A reader could not check the furnace the way they can check the other four appliances."
         }
       ]
-    }
+    },
+    "manual_catalog": "OM58-132",
+    "manual_edition": "05/18",
+    "manual_url": "https://www.shareddocs.com/hvac/docs/1009/Public/01/OM58-132.pdf",
+    "attribution": "Carrier's family owner's manual for 80% AFUE induced-combustion gas furnaces. It names 58STA and 58STX on page 3, and Figure 1 is captioned '80% AFUE Single Stage Furnace Components', which is what the 58STA is. Carrier product data 58ST-13PD (edition 09/18, https://www.shareddocs.com/hvac/docs/1009/Public/0F/58ST-13PD.pdf) confirms the model was current when this manual was published. The manual is written for the family, not for one size: it says 'Representative drawing only, some model may vary' four times.",
+    "size_chosen": "090-14 for this household: 88,000 Btuh input, 1400 CFM, 17-1/2 in casing per the dimensions table in 58ST-13PD. That casing width is the one row of the manual's filter table where side and bottom return take the same 16 x 25 filter, so the part is definite rather than a range."
   },
   "brand": "Carrier",
   "model_number": "58STA",
@@ -87,71 +132,88 @@
   "maintenance": [
     {
       "task": "clean or replace the air filter",
-      "interval_days": 28
+      "interval_days": 30,
+      "who": "homeowner"
     },
     {
       "task": "inspect the cabinet for signs of damage",
-      "interval_days": 30
+      "interval_days": 30,
+      "who": "dealer"
     },
     {
       "task": "inspect and clean the blower assembly",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "inspect and clean the door louvers",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "inspect external wiring for damage",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "inspect the airflow system for leaks",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "inspect the electrical disconnect",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "inspect the evaporator coil, drain pan and condensate drain lines",
-      "interval_days": 180
+      "interval_days": 180,
+      "who": "dealer"
     },
     {
       "task": "check the combustion blower housing for lint and debris",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the burner assembly",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the combustion area and vent system",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "homeowner"
     },
     {
       "task": "inspect the control box, controls, wiring and connections",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the flue system",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the gas supply line and manual shut-off for leaks",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the gas valve and check manifold gas pressure",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the heat exchanger",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     },
     {
       "task": "inspect the ignition system and safety controls",
-      "interval_days": 365
+      "interval_days": 365,
+      "who": "dealer"
     }
   ],
   "symptoms": [
@@ -198,18 +260,19 @@
           "procedure_id": null
         },
         {
-          "cause": "the vent is blocked, so the draft safeguard switch has shut the furnace off; it resets once the furnace cools",
+          "cause": "the vent is blocked, so the draft safeguard switch has shut the furnace off. It resets once the furnace cools; if it fails to operate, the manual says to contact a qualified service agency",
           "short": "blocked vent",
           "likelihood": "possible",
           "procedure_id": null
         },
         {
-          "cause": "a manual reset limit switch on the end of the burner enclosure has tripped",
+          "cause": "a manual reset limit switch on the end of the burner enclosure has tripped. Turn off the electrical power and remove the access door before checking it, and if it trips a second time the manual says to turn off the furnace and call for service",
           "short": "limit switch",
           "likelihood": "less likely",
           "procedure_id": null
         }
-      ]
+      ],
+      "ordering_note": "Ordered as the manual lists the checks on page 9. The manual does not rank causes by likelihood; these labels carry its order, not a judgement of its own."
     },
     {
       "symptom": "there is not enough airflow from the vents",
@@ -241,6 +304,12 @@
           "short": "blocked grille",
           "likelihood": "possible",
           "procedure_id": null
+        },
+        {
+          "cause": "if neither the filter nor the grilles is the problem, the manual says to call your servicing dealer",
+          "short": "call your dealer",
+          "likelihood": "less likely",
+          "procedure_id": null
         }
       ]
     },
@@ -258,7 +327,7 @@
       ],
       "causes": [
         {
-          "cause": "buildup on the main burners is making them fire late; the manual says to call your dealer",
+          "cause": "buildup on the main burners is making them fire late. The manual says to shut down the furnace and call your servicing dealer",
           "short": "burner buildup",
           "likelihood": "most likely",
           "procedure_id": null
@@ -277,7 +346,7 @@
         "safety glasses",
         "gloves"
       ],
-      "safety_note": "Be extremely careful reaching into the furnace: wear safety glasses and gloves, because edges inside can be sharp. Never run the furnace without a filter in place.",
+      "safety_note": "Be extremely careful when handling parts or reaching into the furnace, and wear safety glasses, gloves and appropriate protective clothing. Never operate your furnace without a filter in place.",
       "gate_prompt": "Tell me when the electrical supply to the furnace is off.",
       "steps": [
         "Turn off the electrical supply to the furnace.",
@@ -300,7 +369,7 @@
       "tools_needed": [
         "a flashlight"
       ],
-      "safety_note": "This is a carbon monoxide risk, not a comfort one. If you find dirt, rust, soot or scale, or if the vent pipe has holes, is blocked or is disconnected, do not operate the furnace. Call your dealer.",
+      "safety_note": "If dirt, rust, soot or scale accumulations are found, call your dealer. Do not operate your furnace. If holes are found, or if the vent pipe is obstructed or is not connected, toxic fumes can escape into your home.",
       "gate_prompt": "Tell me when the electrical supply to the furnace is off.",
       "steps": [
         "Turn off the electrical supply to the furnace and remove the access door.",

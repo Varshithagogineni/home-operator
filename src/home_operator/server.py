@@ -59,6 +59,9 @@ def get_appliance(
 @mcp.tool(
     title="Check maintenance due",
     description=(
+        "Each item says who it is for: who is \"homeowner\" for a job someone can do themselves, "
+        "and \"dealer\" for one the manufacturer says needs a trained technician - say so rather "
+        "than telling someone to inspect their own heat exchanger. "
         "List home maintenance that is overdue, and tasks coming due soon, across every "
         "appliance in this home. Overdue items are sorted most overdue first."
         " If the reply contains say_first, that is checked safety wording: speak it"
