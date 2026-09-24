@@ -131,3 +131,36 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Medium — every sample on the page fails on a fresh `pip install mcp`.
 - **Workaround:** Read the installed package's signatures with `inspect.signature` and port the samples.
 - **Suggestion:** Pin the SDK version in the docs, or update the samples to v2. A reader cannot tell whether the error is their mistake or documentation drift.
+
+### Strands MCPClient.call_tool_sync pays an AgentCore session wake-up on every call
+- **Date:** 2026-09-23
+- **Tool / API:** Strands Agents SDK 1.57.0 (`strands.tools.mcp.MCPClient`), Amazon Bedrock AgentCore Runtime
+- **Task attempted:** Call one MCP tool repeatedly on a deployed AgentCore runtime, without a model in the loop, for a latency-sensitive path ("next", "back", "repeat" during a repair walkthrough).
+- **Steps taken:** Built `MCPClient(url=..., headers={"Authorization": ...})`, called `start()`, then `call_tool_sync` four times in a row with the same arguments and timed each call.
+- **Expected:** The first call pays AgentCore's session start-up, later calls reuse the session. A separate measurement with the MCP SDK's own `streamable_http_client`, holding one session open against the same endpoint with the same token, answers in **317-449 ms** (median 366 ms).
+- **Actual:** 8289 ms, 4572 ms, 4641 ms, 3581 ms. Every call costs roughly what a cold session costs, about ten times the round trip of a reused session, which suggests the session is not being reused across calls.
+- **Severity:** High for anything interactive. Four seconds to answer "next" is unusable when someone is standing at an appliance.
+- **Workaround:** Hold an MCP session open on a background event loop and call `session.call_tool` directly for the latency-sensitive path, leaving the Strands client for the model's own tool use. That path now answers in 0.3-0.9 s end to end, including the agent-layer overhead. See `FastLane` in `src/home_operator/chat.py`.
+- **Suggestion:** Document whether `MCPClient` is expected to reuse a transport session between `call_tool_sync` calls, and expose the underlying session so a caller can reuse it deliberately instead of building a second client. A note in the Strands MCP docs about remote servers with expensive session start-up would have saved the measurement.
+
+### Ending an MCP session against AgentCore logs a 404 on every close
+- **Date:** 2026-09-23
+- **Tool / API:** Amazon Bedrock AgentCore Runtime (protocol MCP), MCP Python SDK 2.1.1
+- **Task attempted:** Close an MCP client session cleanly.
+- **Steps taken:** Exited the `streamable_http_client` context manager normally.
+- **Expected:** Either a clean shutdown, or a documented note that session termination is not supported.
+- **Actual:** `Session termination failed: 404` printed on every close. Nothing is broken, but the message appears in demo output and logs, and reads like a fault. The MCP spec's `DELETE` on the session endpoint appears unimplemented by the runtime.
+- **Severity:** Low.
+- **Workaround:** None needed; it is noise.
+- **Suggestion:** Implement `DELETE` as a no-op returning 200, or state in the MCP protocol contract that termination is unsupported so clients can stop logging it as a failure.
+
+### Amazon Nova 2 Sonic was evaluated for speech-to-speech and not adopted
+- **Date:** 2026-09-23
+- **Tool / API:** Amazon Nova 2 Sonic (`amazon.nova-2-sonic-v1:0`), `aws-sdk-bedrock-runtime` (Developer Preview), Amazon Polly
+- **Task attempted:** Replace the Polly text-to-speech layer with a true speech-to-speech model that can also call the MCP tools.
+- **Steps taken:** Confirmed the model is `ACTIVE` in the account with `SPEECH` input and `SPEECH`/`TEXT` output. Read the bidirectional streaming and tool configuration guides, and searched for current reports of tool use working end to end.
+- **Expected:** A supported path to speech in, speech out, with tool calling.
+- **Actual:** Adoption was blocked by four things together. `InvokeModelWithBidirectionalStream` is not in boto3 and needs `aws-sdk-bedrock-runtime[awscrt]`, which AWS's own documentation labels Developer Preview and says not to use for production workloads. Three tool-use defects are open on re:Post: `promptStart` rejected when `toolConfiguration` is included, a hang when chaining tools, and an infinite tool-calling loop with multiple tools. The available voices do not include Polly's generative "Ruth", which this project had already chosen after listening to samples. And because the model returns raw PCM, the SSML `<break>` pacing written into every spoken line would be discarded.
+- **Severity:** Medium. Nothing is broken; the feature is simply not adoptable on a deadline.
+- **Workaround:** Kept Polly generative Ruth for speech, with the browser's own speech recognition for input. The tools stay reachable by any model because they are plain MCP.
+- **Suggestion:** The three re:Post tool-use reports are the blocker worth fixing first: speech-to-speech without reliable tool calling cannot drive an assistant that does anything. Publishing a known-issues list for Nova 2 Sonic tool use, and a supported non-preview client path, would make it adoptable.

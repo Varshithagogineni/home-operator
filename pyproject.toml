@@ -23,6 +23,9 @@ home-operator-extract = "home_operator.extract:main"
 dev = [
     "pytest>=8",
 ]
+speech = [
+    "aws-sdk-bedrock-runtime[awscrt]>=0.1.0",
+]
 
 [build-system]
 requires = ["hatchling"]

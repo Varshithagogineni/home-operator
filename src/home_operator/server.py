@@ -186,10 +186,60 @@ async def speak(request: Request) -> Response:
     return Response(audio, media_type="audio/mpeg")
 
 
+async def chat(request: Request) -> Response:
+    """Ask the agent. The simulator's brain, standing in for Alexa+'s.
+
+    Imported here rather than at module scope on purpose: the agent needs AWS
+    credentials and the Strands SDK, and the simulator has to keep working
+    without either.
+    """
+    from home_operator import chat as conversations
+
+    try:
+        payload = await request.json()
+    except ValueError:
+        return JSONResponse({"error": "expected JSON"}, status_code=400)
+
+    said = (payload.get("text") or "").strip()
+    if not said:
+        return JSONResponse({"error": "nothing was said"}, status_code=400)
+    session_id = payload.get("session") or "default"
+
+    try:
+        talk = await anyio.to_thread.run_sync(conversations.conversation, session_id)
+        reply = await anyio.to_thread.run_sync(talk.respond, said)
+    except Exception as exc:  # noqa: BLE001 - the browser needs a reason, not a stack trace
+        return JSONResponse(
+            {"error": f"{type(exc).__name__}: {exc}", "hint": "check .env and `aws login`"},
+            status_code=502,
+        )
+    return JSONResponse(reply)
+
+
+async def warm(request: Request) -> Response:
+    """Open the session and pay the handshake now, not on camera.
+
+    AgentCore takes about five seconds to wake a runtime session for a new
+    client. Calling this before a demo moves that wait off the recording.
+    """
+    from home_operator import chat as conversations
+
+    session_id = request.query_params.get("session", "default")
+    started = date.today()
+    try:
+        talk = await anyio.to_thread.run_sync(conversations.conversation, session_id)
+        tools = await anyio.to_thread.run_sync(talk.tools.list_tools_sync)
+    except Exception as exc:  # noqa: BLE001
+        return JSONResponse({"warm": False, "error": f"{type(exc).__name__}: {exc}"}, status_code=502)
+    return JSONResponse({"warm": True, "tools": len(tools), "as_of": started.isoformat()})
+
+
 def build_app():
     """The MCP endpoint at /mcp, the Polly voice at /speak, and the simulator at /sim."""
     app = mcp.streamable_http_app(stateless_http=True, json_response=True)
     app.router.routes.append(Route("/speak", speak, methods=["POST"]))
+    app.router.routes.append(Route("/chat", chat, methods=["POST"]))
+    app.router.routes.append(Route("/chat/warm", warm, methods=["GET"]))
     app.router.routes.append(
         Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")
     )
