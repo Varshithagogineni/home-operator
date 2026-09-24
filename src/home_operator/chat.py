@@ -57,10 +57,7 @@ ACCEPTANCES = re.compile(
 
 def is_acceptance(said: str) -> bool:
     """Whether this is someone saying yes to a repair that was just offered."""
-    text = said.strip().lower().rstrip(".!?").replace("'", "")
-    text = LEADING.sub("", text)
-    text = TRAILING.sub("", text).strip()
-    return bool(ACCEPTANCES.fullmatch(text))
+    return bool(ACCEPTANCES.fullmatch(_clean(said)))
 
 
 # Leaving a repair. Without this the only way out of a safety gate is to say the
@@ -72,12 +69,26 @@ ESCAPES = re.compile(
 )
 
 
+def _clean(said: str) -> str:
+    """A spoken phrase reduced to its words, for exact matching.
+
+    Punctuation has to go, not just the punctuation at the end: "Yes, walk me
+    through it" failed to match "yes walk me through it" because of the comma,
+    so the suggestion chip of that exact wording fell through to the model and
+    no repair started.
+    """
+    # Apostrophes close up ("it's" -> "its"); everything else becomes a space,
+    # so a comma separates words rather than welding them together.
+    text = said.lower().replace("'", "").replace("\u2019", "")
+    text = re.sub(r"[^a-z0-9 ]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = LEADING.sub("", text)
+    return TRAILING.sub("", text).strip()
+
+
 def is_escape(said: str) -> bool:
     """Whether someone wants out of the repair they are in."""
-    text = said.strip().lower().rstrip(".!?").replace("'", "")
-    text = LEADING.sub("", text)
-    text = TRAILING.sub("", text).strip()
-    return bool(ESCAPES.fullmatch(text))
+    return bool(ESCAPES.fullmatch(_clean(said)))
 
 
 def fast_action(said: str) -> str | None:
@@ -87,10 +98,7 @@ def fast_action(said: str) -> str | None:
     the model. Sending a real question down the fast path would answer the wrong
     thing, which is worse than being slow.
     """
-    text = said.strip().lower().rstrip(".!?")
-    text = text.replace("'", "")
-    text = LEADING.sub("", text)
-    text = TRAILING.sub("", text).strip()
+    text = _clean(said)
     for pattern, action in FAST_ACTIONS:
         if pattern.fullmatch(text):
             return action
@@ -386,12 +394,26 @@ def _exchange(agent: Agent, from_index: int) -> list[dict]:
 IDLE_SECONDS = 1800
 _sessions: dict[str, Conversation] = {}
 
+# Building a conversation opens an MCP session, which takes about five seconds.
+# The page warms its session on load and the first message can arrive while that
+# is still happening: both then saw "no session yet" and built one, and the
+# second build failed on list_tools. The visible result was the first turn
+# falling back to keyword matching, and the agent - which had never seen that
+# turn - guessing the wrong appliance on the next one.
+_building = threading.Lock()
+
 
 def conversation(session_id: str) -> Conversation:
     _drop_idle()
-    if session_id not in _sessions:
-        _sessions[session_id] = Conversation()
-    return _sessions[session_id]
+    existing = _sessions.get(session_id)
+    if existing is not None:
+        return existing
+    with _building:
+        # Checked again inside the lock: another thread may have built it while
+        # this one waited.
+        if session_id not in _sessions:
+            _sessions[session_id] = Conversation()
+        return _sessions[session_id]
 
 
 def _drop_idle() -> None:

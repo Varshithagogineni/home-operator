@@ -314,3 +314,73 @@ def test_no_resume_hint_when_no_repair_is_open(monkeypatch):
 
     reply = talk._ask_agent("what filter does the fridge take?")
     assert "still on step" not in reply["say"]
+
+
+def test_one_session_is_built_even_when_asked_for_at_once(monkeypatch):
+    """The page warms a session on load while the first message is being sent.
+
+    Both used to see "no session yet" and build one; the second build failed,
+    the turn fell back to keyword matching, and the agent - never having seen
+    that turn - started a repair on the wrong appliance.
+    """
+    import threading
+    import time as _time
+    from home_operator import chat as conversations
+
+    built = []
+
+    class SlowConversation:
+        def __init__(self):
+            _time.sleep(0.2)   # opening an MCP session is not instant
+            built.append(self)
+
+        last_used = 0.0
+
+    monkeypatch.setattr(conversations, "Conversation", SlowConversation)
+    monkeypatch.setattr(conversations, "_sessions", {})
+
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(
+        conversations.conversation("same-session"))) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(built) == 1, "a session should be built once, not once per caller"
+    assert len({id(r) for r in results}) == 1, "everyone should get the same one"
+
+
+# Every one of these is a suggestion chip or something a person actually says.
+# The comma in "Yes, walk me through it" stopped it matching, so the chip did
+# nothing useful and the model had to guess what was meant.
+@pytest.mark.parametrize("said, accepted", [
+    ("Yes, walk me through it", True),
+    ("Yes, please", True),
+    ("Sure, go ahead", False),      # two phrases: let the model read it
+    ("Okay!", True),
+    ("Yes.", True),
+    ("Walk me through it, please", True),
+])
+def test_punctuation_does_not_hide_an_acceptance(said, accepted):
+    from home_operator.chat import is_acceptance
+    assert is_acceptance(said) is accepted
+
+
+@pytest.mark.parametrize("said, action", [
+    ("Next.", "next"),
+    ("Next!", "next"),
+    ("Ok, next", "next"),
+    ("It's unplugged.", "done"),
+    ("Say that again, please", "repeat"),
+    ("Go back.", "back"),
+])
+def test_punctuation_does_not_hide_a_command(said, action):
+    from home_operator.chat import fast_action
+    assert fast_action(said) == action
+
+
+def test_punctuation_does_not_hide_an_escape():
+    from home_operator.chat import is_escape
+    assert is_escape("Stop.")
+    assert is_escape("Never mind!")

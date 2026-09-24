@@ -6,96 +6,163 @@
 <title>Home Operator — simulated Alexa+ experience</title>
 <style>
 :root{
-  --bg:#080C11; --panel:#111A22; --panel-2:#16212B; --line:#243342;
-  --ink:#E9F1F6; --muted:#8CA3B3;
+  --bg:#06090D; --panel:#101922; --panel-2:#16212B; --line:#22303E; --line-soft:#1A2530;
+  --ink:#E9F1F6; --muted:#8CA3B3; --dim:#5E7285;
   --accent:#36C9F2; --accent-2:#5B8CFF;
   --ok:#54D6A0; --warn:#F0B44B; --bad:#F2795B;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:14px;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--sans);
-  display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 18px 40px}
-.label{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.stage{width:100%;max-width:1180px;display:grid;grid-template-columns:minmax(0,768px) minmax(260px,1fr);gap:20px;align-items:start}
+body{margin:0;background:
+    radial-gradient(1100px 620px at 50% -10%,#0D1922 0%,transparent 60%),
+    var(--bg);
+  color:var(--ink);font:400 16px/1.55 var(--sans);
+  display:flex;flex-direction:column;align-items:center;gap:20px;padding:26px 18px 44px;
+  -webkit-font-smoothing:antialiased}
+.label{font:500 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0}
+.stage{width:100%;max-width:1200px;display:grid;
+  grid-template-columns:minmax(0,768px) minmax(280px,1fr);gap:22px;align-items:start}
 @media (max-width:1080px){.stage{grid-template-columns:minmax(0,1fr)}}
 
-/* device screen */
-.device{background:linear-gradient(180deg,#0E1720,#0A1119);border:1px solid var(--line);border-radius:18px;
-  box-shadow:0 30px 70px rgba(0,0,0,.55);overflow:hidden}
-.screen{height:480px;padding:26px 30px;display:flex;flex-direction:column;gap:18px;position:relative}
-.orb{width:54px;height:54px;border-radius:50%;flex:none;
+/* ---- the device -----------------------------------------------------------
+   Sized to an Echo Show's 768x480, because that is the screen these cards would
+   actually appear on and it keeps the type honest: anything that needs leaning
+   in to read is too small. */
+.device{background:linear-gradient(180deg,#0E1821,#080F16);border:1px solid var(--line);
+  border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden}
+.screen{height:480px;padding:24px 28px 0;display:flex;flex-direction:column;gap:16px;position:relative}
+.chin{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:9px 28px;border-top:1px solid var(--line-soft);background:rgba(0,0,0,.25)}
+.chin span{font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+.orb{width:52px;height:52px;border-radius:50%;flex:none;position:relative;
   background:radial-gradient(circle at 34% 30%,#9BE9FF,var(--accent) 45%,var(--accent-2));
-  box-shadow:0 0 28px rgba(54,201,242,.55)}
-.orb.thinking{animation:pulse 1.1s ease-in-out infinite}
-.orb.listening{box-shadow:0 0 0 4px rgba(127,214,227,.22),0 0 22px rgba(127,214,227,.35)}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.09);opacity:1}}
-@media (prefers-reduced-motion: reduce){.orb.thinking{animation:none}}
-.said{display:flex;gap:16px;align-items:flex-start}
-.said p{margin:0;font-size:25px;line-height:1.3;font-weight:500;text-wrap:balance}
-.heard{font-size:14px;color:var(--muted)}
-.heard b{color:var(--ink);font-weight:500}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;overflow:auto;flex:1}
-.card h3{margin:0 0 12px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);font-weight:500}
-.row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:17px}
+  box-shadow:0 0 30px rgba(54,201,242,.5)}
+.orb.thinking{animation:breathe 1.1s ease-in-out infinite}
+.orb.listening::after{content:"";position:absolute;inset:-7px;border-radius:50%;
+  border:2px solid rgba(54,201,242,.55);animation:ring 1.6s ease-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
+@keyframes ring{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){
+  .orb.thinking{animation:none}
+  .orb.listening::after{animation:none}
+  #mic[aria-pressed="true"]::after{animation:none}
+}
+
+.said{display:flex;gap:16px;align-items:flex-start;flex:none}
+.said p{margin:0;font-size:clamp(20px,2.3vw,26px);line-height:1.28;font-weight:500;text-wrap:balance}
+.heard{font-size:13.5px;color:var(--dim);margin:0;flex:none}
+.heard b{color:var(--muted);font-weight:500}
+
+/* ---- one card grammar for every tool -------------------------------------- */
+.card{background:var(--panel);border:1px solid var(--line);border-top-left-radius:var(--r);
+  border-top-right-radius:var(--r);padding:18px 20px 20px;overflow:auto;flex:1;min-height:0;
+  border-bottom:0;position:relative}
+.card h3{margin:0 0 14px;font:500 11px/1 var(--mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+  border-bottom:1px solid var(--line-soft);font-size:16.5px}
 .row:last-child{border-bottom:0}
 /* Direct child only, so status pills inside the cell keep their own colours. */
 .row > span:last-child{color:var(--muted);text-align:right}
-.pill{font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.meta{font:500 11px/1 var(--mono);color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+
+.pill{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.07em;
+  padding:5px 9px;border-radius:999px;white-space:nowrap}
 .pill.top{background:rgba(242,121,91,.16);color:var(--bad)}
 .pill.mid{background:rgba(240,180,75,.16);color:var(--warn)}
-.pill.low{background:rgba(140,163,179,.16);color:var(--muted)}
+.pill.low{background:rgba(140,163,179,.14);color:var(--muted)}
 .pill.ok{background:rgba(84,214,160,.16);color:var(--ok)}
-.pill.recall{background:var(--bad);color:#1A0905}
-.recallrow{border-left:3px solid var(--bad);padding-left:10px}
-.cause{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:17px}
+.pill.recall{background:var(--bad);color:#1A0905;font-weight:600}
+.recallrow{border-left:3px solid var(--bad);padding-left:12px}
+.cause{display:flex;gap:12px;align-items:flex-start;padding:11px 0;
+  border-bottom:1px solid var(--line-soft);font-size:16.5px}
 .cause:last-child{border-bottom:0}
-.cause small{display:block;color:var(--muted);font-size:14px;margin-top:3px}
-.stepwrap{display:flex;flex-direction:column;gap:14px;height:100%}
-.steptext{font-size:32px;line-height:1.25;font-weight:500;text-wrap:balance}
-.dots{display:flex;gap:7px;flex-wrap:wrap}
-.dot{width:26px;height:5px;border-radius:99px;background:var(--line)}
-.dot.done{background:var(--accent)}
-.meta{font:500 12px/1 var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-.safety{font-size:14px;color:var(--warn);background:rgba(240,180,75,.1);border-radius:9px;padding:9px 12px}
-.gate{font-size:16px;color:var(--bad);background:rgba(242,121,91,.12);border:1px solid rgba(242,121,91,.35);
-  border-radius:9px;padding:11px 13px;display:flex;align-items:center;gap:10px}
-.gate b{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.cause small{display:block;color:var(--dim);font-size:13.5px;margin-top:4px}
 
-/* controls */
+/* ---- a repair step -------------------------------------------------------- */
+.stepwrap{display:flex;flex-direction:column;gap:13px;min-height:100%}
+.steprow{display:flex;justify-content:space-between;align-items:baseline;gap:14px}
+.meta.src{text-transform:none;letter-spacing:.02em;color:var(--muted);font-size:11px;
+  text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steptext{font-size:clamp(24px,3vw,33px);line-height:1.22;font-weight:500;text-wrap:balance;flex:1}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:24px;height:4px;border-radius:99px;background:var(--line);transition:background .25s}
+.dot.done{background:var(--accent)}
+.safety{font-size:13.5px;line-height:1.5;color:var(--warn);background:rgba(240,180,75,.09);
+  border-left:3px solid rgba(240,180,75,.5);border-radius:0 8px 8px 0;padding:10px 13px}
+
+/* A gate is a locked door, and it stays on screen: it sticks to the bottom of
+   the card rather than scrolling away under the fold, which is where it was
+   hiding before. */
+.gate{position:sticky;bottom:-20px;margin:0 -20px -20px;font-size:15.5px;color:var(--bad);
+  background:linear-gradient(180deg,rgba(242,121,91,.14),rgba(242,121,91,.2));
+  border-top:1px solid rgba(242,121,91,.4);padding:13px 20px;
+  display:flex;align-items:center;gap:11px;backdrop-filter:blur(6px)}
+.gate::before{content:"⏸";font-size:15px;opacity:.9}
+.gate b{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;flex:none}
+.gate span{color:var(--ink)}
+
+/* ---- controls -------------------------------------------------------------- */
 .controls{width:100%;max-width:768px;display:flex;flex-direction:column;gap:12px}
-form{display:flex;gap:10px}
-input[type=text]{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+form{display:flex;gap:9px}
+input[type=text]{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--ink);
   border-radius:12px;padding:14px 16px;font:400 16px var(--sans)}
+input[type=text]::placeholder{color:var(--dim)}
 input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
 button{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:12px;
-  padding:13px 17px;font:500 15px var(--sans);cursor:pointer}
+  padding:13px 16px;font:500 15px var(--sans);cursor:pointer;transition:border-color .15s,color .15s}
 button:hover{border-color:var(--accent)}
-button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;color:#04121A;font-weight:600}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chips button{padding:8px 12px;font-size:13.5px;border-radius:999px;color:var(--muted)}
-.chips button:hover{color:var(--ink)}
-#mic[aria-pressed="true"]{background:#7f1d1d;color:#fff;border-color:#b91c1c}
-#mic[aria-pressed="true"]::after{content:"";display:inline-block;width:6px;height:6px;margin-left:5px;
-  border-radius:50%;background:#fff;animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){#mic[aria-pressed="true"]::after{animation:none}}
-.brain{font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;
-  padding:5px 9px;border-radius:3px;background:#12313a;color:#7fd6e3;border:1px solid #1d4a56;white-space:nowrap}
-.brain[data-mode="keywords"]{background:#3a2f12;color:#e3c87f;border-color:#564a1d}
-.entry i{font-style:normal;opacity:.6;font-size:.85em}
-.voicepick{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
-.voicepick select{background:var(--panel);border:1px solid var(--line);color:var(--ink);
-  border-radius:8px;padding:7px 9px;font:400 13px var(--sans);max-width:260px}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;
+  color:#04121A;font-weight:600;padding-inline:20px}
+#mic[aria-pressed="true"]{background:rgba(242,121,91,.18);color:var(--bad);border-color:rgba(242,121,91,.5)}
+#mic[aria-pressed="true"]::after{content:"";display:inline-block;width:6px;height:6px;margin-left:6px;
+  border-radius:50%;background:var(--bad);animation:blink 1s ease-in-out infinite;vertical-align:middle}
 
-/* tool log */
-.log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
-  display:flex;flex-direction:column;gap:10px;max-height:518px;overflow:auto}
-.log .entry{font:400 12.5px/1.5 var(--mono);border-left:2px solid var(--accent);padding-left:10px}
+.statusbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.brain{display:inline-flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);
+  letter-spacing:.08em;text-transform:uppercase;padding:7px 11px;border-radius:999px;
+  background:rgba(54,201,242,.1);color:#7FD6E3;border:1px solid rgba(54,201,242,.28);white-space:nowrap}
+.brain::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.brain[data-mode="keywords"]{background:rgba(240,180,75,.12);color:var(--warn);border-color:rgba(240,180,75,.35)}
+.voicepick{font:500 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--dim);display:flex;align-items:center;gap:8px;margin-right:auto}
+.voicepick select{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:999px;padding:7px 11px;font:400 12px var(--sans);max-width:220px}
+
+/* One row that scrolls, rather than three rows of wrapping suggestions. */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.chips button{padding:8px 13px;font-size:13.5px;border-radius:999px;color:var(--muted);
+  white-space:nowrap;flex:none}
+.chips button:hover{color:var(--ink)}
+
+/* ---- the inspector rail ---------------------------------------------------- */
+.log{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:0 18px 16px;
+  display:flex;flex-direction:column;gap:11px;max-height:538px;overflow:auto}
+.log h3{position:sticky;top:0;margin:0;padding:16px 0 10px;background:var(--panel);z-index:1}
+.log .entry{font:400 12px/1.55 var(--mono);border-left:2px solid var(--accent);padding-left:11px}
 .log .entry b{color:var(--accent);font-weight:500}
+.log .entry i{font-style:normal;color:var(--dim);font-size:.9em}
 .log .entry span{color:var(--muted);display:block;word-break:break-word}
-.log .empty{color:var(--muted);font-size:13.5px}
-footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
+.log .empty{color:var(--dim);font-size:13px;margin:0}
+
+footer{max-width:768px;font-size:12.5px;line-height:1.6;color:var(--dim);text-align:center;margin:0}
+
+/* On a phone the three buttons squeeze the input to nothing, so it takes the
+   whole first line and they sit under it. */
+@media (max-width:560px){
+  body{padding:16px 14px 32px}
+  form{flex-wrap:wrap}
+  input[type=text]{flex:1 0 100%}
+  button.primary{flex:1}
+  .screen{height:auto;min-height:420px;padding:20px 18px 0}
+  .chin{padding-inline:18px}
+}
 </style>
 </head>
 <body>
@@ -107,6 +174,10 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
       <div class="said"><div class="orb" id="orb"></div><p id="spoken">Ask me about anything in your home.</p></div>
       <p class="heard" id="heard">&nbsp;</p>
       <div class="card" id="card"><h3>Ready</h3><div class="row"><span>Try "why won't my dishwasher drain?"</span><span>8 tools live</span></div></div>
+    </div>
+    <div class="chin">
+      <span>Echo Show &middot; 768 &times; 480</span>
+      <span>Simulated</span>
     </div>
   </div>
 
@@ -120,9 +191,11 @@ footer{max-width:768px;font-size:13px;color:var(--muted);text-align:center}
     <button type="button" id="mic" aria-pressed="false" title="Hold a conversation out loud" hidden>🎤</button>
     <button type="button" id="mute" aria-pressed="false" title="Toggle speech">🔊</button>
   </form>
-  <label class="voicepick">Voice <select id="voice" aria-label="Choose a voice"></select></label>
-  <span class="brain" id="brain" data-mode="agent" title="A Bedrock model chooses the tools, standing in for Alexa+'s orchestrator">Brain: Nova 2 Lite</span>
-  <span class="brain" id="voicebadge" data-mode="agent" title="Amazon Polly generative voice">Voice: Polly Ruth</span>
+  <div class="statusbar">
+    <label class="voicepick">Voice <select id="voice" aria-label="Choose a voice"></select></label>
+    <span class="brain" id="brain" data-mode="agent" title="A Bedrock model chooses the tools, standing in for Alexa+'s orchestrator">Nova 2 Lite</span>
+    <span class="brain" id="voicebadge" data-mode="agent" title="Amazon Polly generative voice">Polly Ruth</span>
+  </div>
   <div class="chips" id="chips"></div>
 </div>
 
@@ -143,9 +216,10 @@ const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()))
 
 // AgentCore takes about five seconds to wake a runtime session for a new
 // client. Opening it now means that wait never lands mid-conversation.
-fetch(`/chat/warm?session=${sessionId}`).then(r => r.json()).then(info => {
+const warmed = fetch(`/chat/warm?session=${sessionId}`).then(r => r.json()).then(info => {
   if (!info.warm) setBrain("keywords", info.error || "the agent is not reachable");
-}).catch(err => setBrain("keywords", err.message));
+  return info;
+}).catch(err => { setBrain("keywords", err.message); return { warm: false }; });
 
 // The server remembers nothing about a repair, so every move says which
 // repair and which step. Both come straight from the last reply.
@@ -570,13 +644,18 @@ function renderStep(d) {
     line = `${pick(["Nice.", "Great.", "Perfect.", "Okay."])} ${pick(["Next,", "Now,", "Then,"])} ${lowerFirst(d.step)}`;
   }
   say(d.awaiting_confirmation && (d.started || nav === "repeat" || nav === "back") ? `${line} ${d.confirm_prompt}` : line);
+  // Order matters more than decoration here: the warning about the whole job,
+  // then the one thing to do now, then what we are waiting for. The gate was
+  // below the safety note and both fell off the bottom of a 480px screen.
   card(d.procedure, `<div class="stepwrap">
-      <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
+      <div class="steprow">
+        <div class="meta">Step ${d.step_number} of ${d.total_steps}</div>
+        ${d.source ? `<div class="meta src">${escapeHtml(d.source)}</div>` : ""}
+      </div>
       <div class="dots">${dots}</div>
-      <div class="steptext">${d.step}</div>
-      ${d.source ? `<div class="meta">From the ${escapeHtml(d.source)}</div>` : ""}
-      ${d.awaiting_confirmation ? `<div class="gate"><b>Waiting</b><span>${d.confirm_prompt}</span></div>` : ""}
       ${d.step_number === 1 && d.safety_note ? `<div class="safety">${d.safety_note}</div>` : ""}
+      <div class="steptext">${d.step}</div>
+      ${d.awaiting_confirmation ? `<div class="gate"><b>Waiting</b><span>${d.confirm_prompt}</span></div>` : ""}
     </div>`);
 }
 
@@ -645,6 +724,10 @@ const RENDER = {
 };
 
 async function askAgent(text) {
+  // Wait for the session that was opened on page load. Asking before it is
+  // ready used to start a second one, and the first turn quietly fell back to
+  // keyword matching while the agent never saw it at all.
+  await warmed;
   const res = await fetch("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -711,7 +794,7 @@ async function sendWithAgent(text) {
 function setVoiceBadge(up, why) {
   const el = $("voicebadge");
   if (!el) return;
-  el.textContent = up ? "Voice: Polly Ruth" : "Voice: browser fallback";
+  el.textContent = up ? "Polly Ruth" : "Browser voice";
   el.dataset.mode = up ? "agent" : "keywords";
   el.title = up ? "Amazon Polly generative voice"
                 : `Polly is unavailable, so the browser's own voice is speaking. Usually an expired AWS session: run \`aws login\`. (${why || "no detail"})`;
@@ -721,7 +804,7 @@ function setBrain(mode, why) {
   brain = mode;
   const el = $("brain");
   if (!el) return;
-  el.textContent = mode === "agent" ? "Brain: Nova 2 Lite" : "Brain: keyword match";
+  el.textContent = mode === "agent" ? "Nova 2 Lite" : "Keyword match";
   el.title = why || (mode === "agent"
     ? "A Bedrock model chooses the tools, standing in for Alexa+'s orchestrator"
     : "Local keyword matching, because the agent could not be reached");
