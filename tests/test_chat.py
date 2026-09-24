@@ -249,3 +249,39 @@ def test_the_model_still_speaks_for_everything_else(monkeypatch):
 
     reply = talk._ask_agent("anything due?")
     assert reply["say"] == "a sentence the model made up"
+
+
+# --- Getting out of a repair -------------------------------------------------
+#
+# A demo got stuck: a repair was open at a safety gate, the next question was
+# routed into navigate_repair, and the gate answered with the same sentence
+# every time. There was no way out except saying the machine was unplugged.
+
+@pytest.mark.parametrize("said", [
+    "stop", "cancel", "quit", "never mind", "nevermind", "forget it",
+    "leave it", "start over", "not now", "later",
+])
+def test_a_repair_can_be_put_down(said):
+    from home_operator.chat import is_escape
+    assert is_escape(said)
+
+
+@pytest.mark.parametrize("said", [
+    "next", "it's unplugged", "my washer is showing OE", "stop the machine first",
+    "what needs doing",
+])
+def test_ordinary_talk_is_not_an_escape(said):
+    from home_operator.chat import is_escape
+    assert not is_escape(said)
+
+
+def test_leaving_a_repair_clears_the_place():
+    from home_operator import chat as conversations
+
+    talk = object.__new__(conversations.Conversation)
+    talk.repair, talk.step, talk.offer = "r1", 3, {"appliance": "Washer"}
+    reply = talk.leave_repair()
+
+    assert talk.repair is None and talk.step is None and talk.offer is None
+    assert "leave that for now" in reply["say"]
+    assert reply["tool_calls"] == []

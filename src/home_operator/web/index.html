@@ -136,6 +136,7 @@ let rpcId = 0, lastAppliance = null, speak = true, activeRepair = null, offeredF
 // keywords locally, so a demo never dies on a missing token.
 let brain = "agent";
 let agentFailures = 0;
+let gateHolds = 0;  // how many times running we have held at the same safety gate
 let mute_render_speech = false;
 const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
@@ -165,6 +166,8 @@ const CHIPS = [
   "Why won't my dishwasher drain?",
   "Anything I should take care of?",
   "It still won't drain, I need someone",
+  "It's unplugged",
+  "Stop",
   "I just got a Bosch dryer, model DLE3400W"
 ];
 
@@ -534,6 +537,7 @@ function renderStep(d) {
   const dots = Array.from({ length: d.total_steps }, (_, i) =>
     `<span class="dot ${i < d.step_number ? "done" : ""}"></span>`).join("");
   const isLast = d.step_number === d.total_steps;
+  if (!d.awaiting_confirmation || d.started) gateHolds = 0;
   const nav = lastNav;
   lastNav = null;
   let line;
@@ -542,7 +546,12 @@ function renderStep(d) {
   } else if (nav === "back") {
     line = `Going back. Step ${spokenNumber(d.step_number)}. ${d.step}`;
   } else if (d.awaiting_confirmation && !d.started) {
-    line = `Hold on, safety first. ${d.confirm_prompt}`;
+    // Saying the same sentence twice makes it look broken rather than careful,
+    // and someone stuck at a gate needs to hear the way out.
+    gateHolds += 1;
+    if (gateHolds === 1) line = `Hold on, safety first. ${d.confirm_prompt}`;
+    else if (gateHolds === 2) line = `I still need the power off before we open anything. Say "it's unplugged" once it is, or say "stop" to leave this for now.`;
+    else line = `No problem, we can come back to this. Say "stop" to put it down, or tell me it's unplugged and we'll carry on.`;
   } else if (d.step_number === 1 && d.tools_needed) {
     line = `${pick(["Okay, let's do it.", "Alright, let's fix it.", "Great, let's get started."])} There are ${spokenNumber(d.total_steps)} steps${d.tools_needed.length ? `, and you'll want ${list(d.tools_needed)}` : ""}. First, ${lowerFirst(d.step)}`;
   } else if (isLast) {

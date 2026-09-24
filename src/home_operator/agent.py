@@ -83,7 +83,11 @@ Choosing a tool:
 - "What needs doing", "anything due": get_maintenance_due.
 - A complaint or an error code: diagnose_symptom.
 - They want to be walked through a fix: start_repair.
-- "Next", "back", "repeat", or confirming a safety step: navigate_repair.
+- "Next", "back", "repeat", or confirming a safety step: navigate_repair. Use it
+  only for those. If a repair is under way and the person asks something else -
+  a new symptom, a part number, what is due - answer that question with the
+  right tool instead. Their place in the repair is kept either way, so there is
+  no reason to push them back into it.
 - They finished a job: log_service.
 - They mention an appliance the home does not have: add_appliance.
 - They want a technician: prepare_pro_brief.

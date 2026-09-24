@@ -41,7 +41,8 @@ FAST_ACTIONS: list[tuple[re.Pattern, str]] = [
 ]
 
 # Politeness that does not change the meaning of a command.
-TRAILING = re.compile(r"\s+(please|now|then|thanks|thank you)$")
+# "now" is deliberately not stripped here: "not now" means something.
+TRAILING = re.compile(r"\s+(please|then|thanks|thank you)$")
 LEADING = re.compile(r"^(ok|okay|alright|right|and|so|um|uh|yeah|yep)[,\s]+")
 
 
@@ -60,6 +61,23 @@ def is_acceptance(said: str) -> bool:
     text = LEADING.sub("", text)
     text = TRAILING.sub("", text).strip()
     return bool(ACCEPTANCES.fullmatch(text))
+
+
+# Leaving a repair. Without this the only way out of a safety gate is to say the
+# machine is off, which is a trap: someone who changed their mind, or who came
+# back to ask something else, was told the same sentence forever.
+ESCAPES = re.compile(
+    r"(stop|cancel|quit|exit|never mind|nevermind|forget it|leave it|leave that|"
+    r"start over|start again|not now|later|abandon|stop the repair|im done with this)"
+)
+
+
+def is_escape(said: str) -> bool:
+    """Whether someone wants out of the repair they are in."""
+    text = said.strip().lower().rstrip(".!?").replace("'", "")
+    text = LEADING.sub("", text)
+    text = TRAILING.sub("", text).strip()
+    return bool(ESCAPES.fullmatch(text))
 
 
 def fast_action(said: str) -> str | None:
@@ -278,8 +296,23 @@ class Conversation:
             "seconds": round(ms / 1000, 2),
         }
 
+    def leave_repair(self) -> dict:
+        """Put a repair down. Nothing is lost: it restarts from the top."""
+        self.repair = self.step = None
+        self.offer = None
+        return {
+            "path": "fast",
+            "say": "Okay, I'll leave that for now. What else can I help with?",
+            "tool_calls": [],
+            "data": None,
+            "seconds": 0.0,
+        }
+
     def respond(self, said: str) -> dict:
         self.last_used = time.time()
+
+        if self.repair and is_escape(said):
+            return self.leave_repair()
 
         action = fast_action(said)
         if action and self.repair:
