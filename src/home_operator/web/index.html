@@ -326,6 +326,7 @@ function loadVoices() {
 
 const POLLY = "polly:Ruth";
 let usePolly = true, pollyUp = true, currentAudio = null, sayToken = 0;
+let pollyFailures = 0;  // consecutive; Ruth is only given up on after three
 
 function stopSpeaking() {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
@@ -366,15 +367,21 @@ async function say(line) {
       currentAudio = new Audio(url);
       currentAudio.onended = () => URL.revokeObjectURL(url);
       await currentAudio.play();
+      if (pollyFailures) { pollyFailures = 0; setVoiceBadge(true); }
       return;
     } catch (e) {
       if (token !== sayToken) return;
-      // Falling back to the browser's own voice sounds markedly worse, and the
-      // usual cause is an expired AWS session rather than anything in the code.
-      // Say so, rather than letting it be mistaken for a change in quality.
-      pollyUp = false;
+      // The browser's own voice sounds markedly worse, so one bad reply must not
+      // retire Ruth for the session. A single 642-character answer once did
+      // exactly that, and every reply afterwards came out in a different voice.
+      // Three failures in a row means something is actually wrong - usually an
+      // expired AWS session - and only then does the picker change.
+      pollyFailures += 1;
       setVoiceBadge(false, e.message);
-      loadVoices();
+      if (pollyFailures >= 3) {
+        pollyUp = false;
+        loadVoices();
+      }
     }
   }
   sayWithBrowser(line);
