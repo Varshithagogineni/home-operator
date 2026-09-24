@@ -39,18 +39,22 @@
       ],
       "maintenance": [
         {
+          "who": "homeowner",
           "task": "clean the door seal",
           "interval_days": 30
         },
         {
+          "who": "homeowner",
           "task": "run the tub clean cycle",
           "interval_days": 30
         },
         {
+          "who": "homeowner",
           "task": "clean the detergent dispenser",
           "interval_days": 30
         },
         {
+          "who": "homeowner",
           "task": "replace the water hoses",
           "interval_days": 1825
         }
@@ -269,10 +273,12 @@
       ],
       "maintenance": [
         {
+          "who": "homeowner",
           "task": "replace the water filter",
           "interval_days": 180
         },
         {
+          "who": "homeowner",
           "task": "replace the air filter",
           "interval_days": 180
         }
@@ -341,89 +347,89 @@
       ],
       "maintenance": [
         {
+          "who": "homeowner",
           "task": "clean or replace the air filter",
-          "interval_days": 30,
-          "who": "homeowner"
+          "interval_days": 30
         },
         {
+          "who": "dealer",
           "task": "inspect the cabinet for signs of damage",
-          "interval_days": 30,
-          "who": "dealer"
+          "interval_days": 30
         },
         {
+          "who": "dealer",
           "task": "inspect and clean the blower assembly",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "inspect and clean the door louvers",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "inspect external wiring for damage",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "inspect the airflow system for leaks",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "inspect the electrical disconnect",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "inspect the evaporator coil, drain pan and condensate drain lines",
-          "interval_days": 180,
-          "who": "dealer"
+          "interval_days": 180
         },
         {
+          "who": "dealer",
           "task": "check the combustion blower housing for lint and debris",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the burner assembly",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "homeowner",
           "task": "inspect the combustion area and vent system",
-          "interval_days": 365,
-          "who": "homeowner"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the control box, controls, wiring and connections",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the flue system",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the gas supply line and manual shut-off for leaks",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the gas valve and check manifold gas pressure",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the heat exchanger",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         },
         {
+          "who": "dealer",
           "task": "inspect the ignition system and safety controls",
-          "interval_days": 365,
-          "who": "dealer"
+          "interval_days": 365
         }
       ],
       "source": {

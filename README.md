@@ -2,7 +2,7 @@
 
 **Alexa+ can read your manual. Home Operator walks you through the fix.**
 
-Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotocol.io) server, that gives hands-free help with the appliances in your home: which parts they take, what maintenance is due, and (coming soon) step-by-step repairs that keep your place.
+Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotocol.io) server, that gives hands-free help with the appliances in your home: which parts they take, what maintenance is due, and step-by-step repairs that keep your place while you work.
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
@@ -217,11 +217,11 @@ Or the original sample dishwasher:
 9. "Anything I should take care of?" — the dishwasher is gone from the overdue list
 10. "I just got a Bosch dryer, model DLE3400W" — added, with a maintenance schedule
 
-**Voice.** The simulator speaks as **Ruth, an Amazon Polly generative voice**, through the server's `/speak` endpoint. Each line is synthesised once and cached in `media/cache/`, so repeats play instantly (about 16 ms versus 1.2 s for a first request) and cost nothing. Requests are capped at 600 characters. If the server can't reach AWS, `/speak` returns 503 and the simulator falls back to the browser's speech synthesis — so the project runs fully for anyone without an AWS account. The fallback voice is chosen from the dropdown under the input, which prefers premium system voices.
+**Voice.** The simulator speaks as **Ruth, an Amazon Polly generative voice**, through the server's `/speak` endpoint. Each line is synthesised once and cached in `media/cache/`, so repeats play instantly (about 16 ms versus 1.2 s for a first request) and cost nothing. A long reply is split between sentences and spoken in several requests joined into one recording, up to 3000 characters. If the server can't reach AWS, `/speak` returns 503 and the simulator falls back to the browser's speech synthesis — so the project runs fully for anyone without an AWS account. The fallback voice is chosen from the dropdown under the input, which prefers premium system voices.
 
 The simulator's earlier browser-only voice works as follows. Pick a voice from the dropdown under the input — quality varies a lot between machines, and the joke voices macOS ships are filtered out. Replies are written to be spoken rather than read: dates become "about seven months ago" instead of "219 days ago", counts are spelled out, and each sentence is spoken separately so there is a natural pause between them. For the final demo video, Amazon Polly generative voices (`Ruth`, `Danielle`, `Matthew`) sound markedly better; a three-minute script is about 2,500 characters, well inside the free tier.
 
-The assistant side is scripted, not an LLM. The hackathon rules allow a simulated Alexa+ experience, and everything behind it is a real MCP server.
+**Who decides what.** The assistant side is a real model: a Strands agent on Amazon Nova 2 Lite, standing in for Alexa+'s orchestrator, which the hackathon rules explicitly allow ("a simulated Alexa+ experience... built using any AI or agentic tool of their choice"). It chooses which tool to call and nothing else. During a repair it does not even choose the words: the step card speaks the tool's own text, because the model was caught reciting a step that appears in no manual. Navigation words skip the model entirely and answer in about 400 ms.
 
 ## Test it
 

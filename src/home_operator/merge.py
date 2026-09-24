@@ -26,7 +26,10 @@ def merge(home: dict, extracted: dict, *, appliance_id: str, nickname: str, room
         "purchase_date": purchase_date,
         "warranty_until": warranty_until,
         "consumables": extracted["consumables"],
-        "maintenance": extracted["maintenance"],
+        # Every task says who it is for. Only Carrier's manual separates the two
+        # explicitly; the rest describe user maintenance throughout, so anything
+        # a review did not mark is the homeowner's.
+        "maintenance": [{"who": "homeowner", **m} for m in extracted["maintenance"]],
         "source": extracted["source"],
     })
     for p in extracted["procedures"]:
