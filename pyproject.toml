@@ -27,6 +27,7 @@ dev = [
 ]
 speech = [
     "aws-sdk-bedrock-runtime[awscrt]>=0.1.0",
+    "websockets>=17.1",
 ]
 
 [build-system]

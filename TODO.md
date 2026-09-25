@@ -48,13 +48,29 @@ is not the right place to reimplement that, which is a fair answer if it comes u
 
 ## 2. Amazon Nova 2 Sonic, speech to speech
 
-Evaluated and not adopted: see FRICTION.md for the full entry. Three open tool
-use defects on re:Post, a Developer Preview SDK that AWS says not to use in
-production, no Ruth among its voices, and the SSML pacing would be lost. If it is
-revisited it should be a branch after the video is recorded, timeboxed, and never
-merged before the deadline.
+Built on the `nova-sonic` branch (2026-09-25), not merged. `src/home_operator/sonic.py`
+relays browser audio to Nova 2 Sonic over a WebSocket at `/voice`, and Sonic calls
+the eight tools on AgentCore. The new Echo Show style page is `/sim/`; the old
+text simulator is `/sim/classic.html`. Run with `uv sync --group speech`.
 
----
+What testing against the live model showed:
+
+- Tool use works. `promptStart` with `toolConfiguration` was accepted, and there
+  was no hang or loop across a five-turn repair.
+- Sonic does chain calls: told "yes, walk me through it" it started the repair,
+  tried to clear the power-off gate and advanced, in one breath, and the opening
+  safety warning was never spoken. The relay's Guard now allows one repair move
+  per thing the person says. The gate held regardless, because the relay passes
+  the transcript of what was actually heard as `said`, not the model's version.
+- Steps are spoken word for word when the tool reply carries a `speak` line.
+  Asked to repeat a held gate in its own words it paraphrased, so held gates get
+  a short fixed line. Every repair reply is checked against what Sonic said, and
+  drift is shown on the card.
+- About 1.7 to 2.3 s from the end of speech to the first audio, including
+  end-of-turn detection and the AgentCore tool call.
+
+Still true: the SDK is Developer Preview, Ruth is not among Sonic's voices, and
+SSML pacing is gone.
 
 ## 3. The furnace's model number is a series, not one unit
 

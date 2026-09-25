@@ -1,3 +1,6 @@
+import asyncio
+import base64
+import json
 import os
 from datetime import date
 from pathlib import Path
@@ -9,7 +12,8 @@ from pydantic import Field
 import anyio
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from starlette.routing import Mount, Route
+from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.websockets import WebSocket, WebSocketDisconnect
 from starlette.staticfiles import StaticFiles
 
 from home_operator import store, voice
@@ -245,12 +249,53 @@ async def warm(request: Request) -> Response:
     return JSONResponse({"warm": True, "tools": len(tools), "as_of": started.isoformat()})
 
 
+async def voice_socket(ws: WebSocket) -> None:
+    """Speech to speech: microphone PCM in, Nova 2 Sonic's voice out.
+
+    Binary frames in either direction are audio: 16 kHz PCM from the browser,
+    24 kHz PCM back. Text frames from here are JSON events for the screen.
+    Imported lazily like /chat: it needs AWS and the speech dependency group.
+    """
+    from home_operator import sonic
+
+    await ws.accept()
+    sending = asyncio.Lock()
+
+    async def emit(event: dict) -> None:
+        async with sending:
+            if event.get("type") == "audio":
+                await ws.send_bytes(base64.b64decode(event["pcm"]))
+            else:
+                await ws.send_text(json.dumps(event, default=str))
+
+    session = sonic.SonicSession(emit, voice=ws.query_params.get("voice") or sonic.VOICE_ID)
+    try:
+        await session.start()
+        await emit({"type": "ready", "tools": len(session._tools), "voice": session.voice})
+        while True:
+            message = await ws.receive()
+            if message["type"] == "websocket.disconnect":
+                break
+            if message.get("bytes"):
+                await session.send_audio(message["bytes"])
+    except WebSocketDisconnect:
+        pass
+    except Exception as exc:  # noqa: BLE001 - the page needs a reason, not a stack trace
+        try:
+            await emit({"type": "error", "error": f"{type(exc).__name__}: {exc}", "hint": "check .env and `aws login`"})
+        except Exception:  # noqa: BLE001
+            pass
+    finally:
+        await session.close()
+
+
 def build_app():
     """The MCP endpoint at /mcp, the Polly voice at /speak, and the simulator at /sim."""
     app = mcp.streamable_http_app(stateless_http=True, json_response=True)
     app.router.routes.append(Route("/speak", speak, methods=["POST"]))
     app.router.routes.append(Route("/chat", chat, methods=["POST"]))
     app.router.routes.append(Route("/chat/warm", warm, methods=["GET"]))
+    app.router.routes.append(WebSocketRoute("/voice", voice_socket))
     app.router.routes.append(
         Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")
     )
@@ -264,6 +309,7 @@ def main() -> None:
     port = int(os.environ.get("PORT", "8000"))
     print(f"MCP endpoint  http://{host}:{port}/mcp")
     print(f"Simulator     http://{host}:{port}/sim/")
+    print(f"Classic       http://{host}:{port}/sim/classic.html")
     uvicorn.run(build_app(), host=host, port=port, log_level="info")
 
 
