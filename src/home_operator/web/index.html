@@ -198,6 +198,29 @@ body:not(.notrace) .words { padding-bottom: 210px; }
 .saywhat { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .saywhat span { font-size: 13px; color: var(--muted); border: 1px solid var(--panel-edge); border-radius: 999px; padding: 4px 11px; }
 
+/* ---- what can I ask: the household and a demo script ---- */
+#guide { position: fixed; top: 0; left: 0; bottom: 0; width: min(520px, 100vw); background: #0b0d12; border-right: 1px solid var(--panel-edge); transform: translateX(-100%); transition: transform .35s ease; z-index: 30; display: flex; flex-direction: column; }
+#guide.open { transform: none; }
+#guide header { padding: 18px 20px; border-bottom: 1px solid var(--panel-edge); }
+#guide h3 { margin: 0; font-size: 15px; font-weight: 600; }
+#guide .body { overflow: auto; padding: 8px 20px 28px; }
+#guide p.lead { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 12px 0 16px; }
+.appl { border: 1px solid var(--panel-edge); border-radius: 14px; padding: 14px 16px; margin: 10px 0; background: #10131a; }
+.appl h4 { margin: 0; font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.appl h4 small { color: var(--faint); font-weight: 400; font-size: 12px; }
+.appl .what { color: var(--muted); font-size: 13px; margin: 4px 0 10px; line-height: 1.45; }
+.appl ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.appl li { font-size: 14px; color: var(--text); }
+.appl li::before { content: "\201C"; color: var(--cyan); }
+.appl li::after { content: "\201D"; color: var(--cyan); }
+.appl li em { font-style: normal; color: var(--faint); font-size: 12px; margin-left: 6px; }
+.script { counter-reset: s; margin: 8px 0 0; padding: 0; list-style: none; }
+.script li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.06); font-size: 14px; line-height: 1.45; }
+.script li::before { content: counter(s); width: 22px; height: 22px; border-radius: 50%; background: rgba(0,202,255,.14); color: var(--cyan); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.script b { color: var(--text); font-weight: 600; }
+.script span { color: var(--muted); display: block; font-size: 13px; }
+.sec { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); font-weight: 600; margin: 22px 0 4px; }
+
 /* ---- toast ---- */
 #toast { position: fixed; left: 50%; bottom: 128px; transform: translate(-50%, 10px); background: #1a1d24; border: 1px solid var(--panel-edge); padding: 12px 18px; border-radius: 14px; font-size: 14px; color: var(--text); opacity: 0; transition: opacity .3s, transform .3s; z-index: 15; max-width: min(560px, calc(100vw - 32px)); }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -279,6 +302,10 @@ body:not(.notrace) .words { padding-bottom: 210px; }
 
   <footer>
     <div class="side">
+      <button class="ctl" id="guidebtn" title="What can I ask? (H)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg>
+        <span class="sr">What can I ask?</span>
+      </button>
       <button class="ctl" id="mute" aria-pressed="false" title="Mute microphone (M)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/><path class="slash" d="M4 4l16 16" style="display:none"/></svg>
         <span class="sr">Mute microphone</span>
@@ -313,9 +340,47 @@ body:not(.notrace) .words { padding-bottom: 210px; }
     </button>
     <h1>Talk to Home Operator</h1>
     <p>Hands-free help with the appliances in your home. Just talk, and interrupt whenever you like. Say &ldquo;next&rdquo; to move through a repair.</p>
-    <div class="fine">Speech to speech with Amazon Nova 2 Sonic. Tools on Amazon Bedrock AgentCore.<br>Headphones help if your speakers are loud. <a href="classic.html">Classic text simulator</a></div>
+    <div class="fine">Not sure what to say? Tap <b>?</b> at the bottom left for the appliances and a demo script.<br><br>Speech to speech with Amazon Nova 2 Sonic. Tools on Amazon Bedrock AgentCore.<br>Headphones help if your speakers are loud. <a href="classic.html">Classic text simulator</a></div>
   </div>
 </div>
+
+<aside id="guide" aria-label="What can I ask?">
+  <header><h3>What can I ask?</h3><button class="ctl" id="guideclose" title="Close" style="width:36px;height:36px">&times;</button></header>
+  <div class="body">
+    <p class="lead">This is a demo home with five real appliances. Everything Home Operator knows about them was read from each manufacturer's manual by Amazon Bedrock, then checked by a person against the page. It can look things up, diagnose problems, and walk you through a repair one step at a time.</p>
+
+    <div class="sec">A two-minute demo</div>
+    <ol class="script">
+      <li><div><b>&ldquo;My washer won't drain.&rdquo;</b><span>It diagnoses from the LG manual and offers to walk you through cleaning the drain pump filter.</span></div></li>
+      <li><div><b>&ldquo;Yes, walk me through it.&rdquo;</b><span>Step 1 is a safety gate: turn off and unplug the washer. The ring turns amber.</span></div></li>
+      <li><div><b>&ldquo;Next.&rdquo;</b><span>It refuses. The gate only clears when you say the machine is off.</span></div></li>
+      <li><div><b>&ldquo;Tell me step four.&rdquo;</b><span>Still refuses: you can't skip past a safety step.</span></div></li>
+      <li><div><b>&ldquo;Okay, it's unplugged.&rdquo;</b><span>Now it moves to step 2, word for word from page 40 of the manual.</span></div></li>
+      <li><div><b>&ldquo;Skip to step five.&rdquo; &middot; &ldquo;Go back.&rdquo; &middot; &ldquo;Say that again.&rdquo;</b><span>Move around freely once it's safe. Interrupt it any time.</span></div></li>
+      <li><div><b>&ldquo;What filter does the furnace take?&rdquo;</b><span>Ask something else mid-repair. Your place is kept.</span></div></li>
+    </ol>
+
+    <div class="sec">The five appliances</div>
+    <div class="appl"><h4>Washer <small>LG WM9500HKA &middot; laundry room</small></h4>
+      <div class="what">4 guided repairs, 11 error codes, 16 problems. Its water hoses are years overdue.</div>
+      <ul><li>My washer won't drain<em>&rarr; drain pump filter, 8 steps</em></li><li>The washer is showing IE<em>&rarr; inlet filters</em></li><li>The washer smells musty<em>&rarr; clean the drum</em></li><li>What does error code UE mean?</li></ul></div>
+    <div class="appl"><h4>Dishwasher <small>Bosch SHE53T55UC &middot; kitchen</small></h4>
+      <div class="what">Named in a real 2017 recall for a power cord that can overheat, so it warns you once. 2 repairs, 16 problems.</div>
+      <ul><li>The dishwasher smells bad<em>&rarr; clean the filter, 3 steps</em></li><li>My dishes aren't getting clean<em>&rarr; spray arms</em></li><li>Tell me about the dishwasher</li></ul></div>
+    <div class="appl"><h4>Furnace <small>Carrier 58STA &middot; basement</small></h4>
+      <div class="what">Gas furnace. Most of its 17 maintenance tasks are for a technician, and it says so.</div>
+      <ul><li>What filter does the furnace take?</li><li>There's hardly any air coming from the vents<em>&rarr; air filter, 9 steps</em></li><li>The furnace makes a loud bang when it starts</li></ul></div>
+    <div class="appl"><h4>Fridge <small>Whirlpool GSS30C6EY &middot; kitchen</small></h4>
+      <div class="what">Water and air filters every six months. 5 repairs.</div>
+      <ul><li>Walk me through replacing the fridge water filter</li><li>What water filter does the fridge take?</li><li>I replaced the fridge water filter<em>&rarr; logs it</em></li></ul></div>
+    <div class="appl"><h4>Oven <small>LG WSEP4727F &middot; kitchen</small></h4>
+      <div class="what">Wall oven with steam. 4 repairs and its F-codes.</div>
+      <ul><li>The oven light doesn't work<em>&rarr; change the bulb, 8 steps</em></li><li>The oven is showing F-9</li><li>What bulb does the oven take?</li></ul></div>
+
+    <div class="sec">Around the house</div>
+    <div class="appl"><ul><li>Is anything due around the house?</li><li>I just got a Bosch dryer, model WTG86403UC<em>&rarr; adds it</em></li><li>It still won't drain, I need someone<em>&rarr; brief for a pro</em></li><li>Stop<em>&rarr; puts a repair down</em></li></ul></div>
+  </div>
+</aside>
 
 <aside id="hood" aria-label="Under the hood">
   <header><h3>Under the hood</h3><button class="ctl" id="hoodclose" title="Close" style="width:36px;height:36px">&times;</button></header>
@@ -868,6 +933,8 @@ $("mute").onclick = () => {
 };
 $("homebtn").onclick = () => show("home");
 $("hoodbtn").onclick = () => $("hood").classList.toggle("open");
+$("guidebtn").onclick = () => $("guide").classList.toggle("open");
+$("guideclose").onclick = () => $("guide").classList.remove("open");
 $("tracebtn").onclick = () => {
   const off = body.classList.toggle("notrace");
   $("tracebtn").setAttribute("aria-pressed", String(!off));
@@ -885,7 +952,8 @@ document.addEventListener("keydown", e => {
   if (e.key === "m" || e.key === "M") $("mute").click();
   if (e.key === "d" || e.key === "D") $("hoodbtn").click();
   if (e.key === "t" || e.key === "T") $("tracebtn").click();
-  if (e.key === "Escape") $("hood").classList.remove("open");
+  if (e.key === "h" || e.key === "H" || e.key === "?") $("guidebtn").click();
+  if (e.key === "Escape") { $("hood").classList.remove("open"); $("guide").classList.remove("open"); }
 });
 requestAnimationFrame(animateLevel);
 </script>

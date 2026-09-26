@@ -206,3 +206,54 @@ def test_a_step_named_by_the_person_becomes_a_jump():
     assert g.jump_target("navigate_repair", {"action": "next"}) == 5
     g.heard("repeat")
     assert g.jump_target("navigate_repair", {"action": "repeat", "step": 2}) is None
+
+
+def test_a_recall_warning_is_spoken_once_per_conversation():
+    g = Guard()
+    due = {"say_first": "Heads up, the dishwasher's model is named in a recall.", "overdue": []}
+    first = g.once("get_maintenance_due", due)
+    assert first["say_first"] == due["say_first"]
+    again = g.once("get_appliance", {**due, "nickname": "Dishwasher"})
+    assert "say_first" not in again and again["recall_already_mentioned"]
+    assert due["say_first"]  # the tool's own data, which the card shows, is untouched
+
+
+def test_a_repairs_opening_line_is_never_dropped():
+    g = Guard()
+    g.once("start_repair", started())
+    assert g.once("start_repair", started())["say_first"] == started()["say_first"]
+
+
+# -- speech versus the manuals' index ------------------------------------------
+
+from home_operator.sonic import due_line, normalize_symptom, wrong_code
+
+
+def _diagnose(appliance, heard):
+    return store.diagnose_symptom(store.load_home(), appliance, normalize_symptom(heard), date.today())
+
+
+def test_a_code_heard_as_letters_is_the_code_not_the_first_one_listed():
+    """ "u e" used to score only on "error code" and come back as IE."""
+    assert _diagnose("washer", "error code u e")["symptom"] == "shows error code UE"
+    assert _diagnose("washer", "it's showing o e")["symptom"] == "shows error code OE"
+
+
+def test_smells_finds_the_manuals_odor_entry():
+    assert _diagnose("dishwasher", "it smells bad")["symptom"] == "odor"
+
+
+def test_a_code_the_manual_does_not_have_is_not_answered_with_another():
+    heard = "error code zz"
+    assert wrong_code(heard, _diagnose("washer", heard)) == "zz"
+    assert wrong_code("error code u e", _diagnose("washer", "error code u e")) is None
+    assert wrong_code("won't drain", _diagnose("washer", "won't drain")) is None
+
+
+def test_whats_due_is_one_sentence_about_the_worst():
+    line = due_line({"overdue": [
+        {"nickname": "Washer", "task": "replace the water hoses", "who": "homeowner"},
+        {"nickname": "Furnace", "task": "clean or replace the air filter", "who": "homeowner"},
+    ], "upcoming": []})
+    assert line == "Two things are overdue. The most overdue is the washer: replace the water hoses."
+    assert "Nothing's overdue" in due_line({"overdue": [], "upcoming": []})
