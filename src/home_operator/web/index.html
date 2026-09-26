@@ -574,11 +574,12 @@ function animateLevel() {
 }
 
 // ---------------------------------------------------------------- connection
-let ws = null, live = false, speechEndedAt = 0, awaitingFirstAudio = false;
+let ws = null, live = false, speechEndedAt = 0, awaitingFirstAudio = false, lastError = null;
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/voice?voice=${encodeURIComponent($("voice").value)}`);
   ws.binaryType = "arraybuffer";
+  lastError = null;
   setChip("conn", "Connecting", "wait");
   ws.onmessage = ({ data }) => {
     if (data instanceof ArrayBuffer) {
@@ -598,9 +599,15 @@ function connect() {
     live = false;
     body.classList.remove("live");
     setState(null);
-    setChip("conn", "Disconnected", "bad");
     $("orb").querySelector("span").textContent = "Start";
-    toast("Disconnected. Tap the ring to reconnect.");
+    // Say why, not just that: an expired AWS login looked like a dead app.
+    if (lastError) {
+      setChip("conn", lastError.code === "aws_login" ? "AWS sign-in expired" : "Server error", "bad");
+      toast(`${lastError.error} ${lastError.hint ? `Fix: ${lastError.hint}.` : ""}`, 15000);
+    } else {
+      setChip("conn", "Disconnected", "bad");
+      toast("Disconnected. Tap the ring to reconnect.");
+    }
   };
   ws.onerror = () => setChip("conn", "Connection failed", "bad");
 }
@@ -739,6 +746,7 @@ function onEvent(e) {
   switch (e.type) {
     case "ready":
       setChip("conn", "Listening", "ok");
+      if (muted) toast("Connected, but your microphone is muted. Press M or the red mic to unmute.", 6000);
       setChip("brain", `Nova 2 Sonic &middot; <b>${esc(e.voice)}</b>`);
       setChip("tools", `AgentCore &middot; <b>${e.tools}</b> tools`, "ok");
       setState("listening");
@@ -793,6 +801,7 @@ function onEvent(e) {
       if (!isSpeaking()) setState("listening");
       break;
     case "error":
+      lastError = e;
       body.classList.add("error");
       setChip("conn", "Error", "bad");
       toast(e.hint ? `${e.error} (${e.hint})` : e.error, 8000);

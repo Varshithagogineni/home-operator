@@ -281,8 +281,17 @@ async def voice_socket(ws: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     except Exception as exc:  # noqa: BLE001 - the page needs a reason, not a stack trace
+        text = f"{type(exc).__name__}: {exc}"
+        # The one failure anyone running this will meet: an `aws login` session
+        # lasts about a day, and the page used to say only "Disconnected".
+        expired = any(w in text for w in ("LoginRefreshRequired", "expired", "NoCredentials", "ExpiredToken"))
         try:
-            await emit({"type": "error", "error": f"{type(exc).__name__}: {exc}", "hint": "check .env and `aws login`"})
+            await emit({
+                "type": "error",
+                "code": "aws_login" if expired else "server",
+                "error": "The server's AWS sign-in has expired." if expired else text,
+                "hint": "run `aws login` where the server runs, then press Start" if expired else "check .env and `aws login`",
+            })
         except Exception:  # noqa: BLE001
             pass
     finally:
