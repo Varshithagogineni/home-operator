@@ -121,3 +121,88 @@ def test_coverage_allows_friendly_words_but_not_rewording():
     line = "Step 2. Open the drain pump filter cover."
     assert coverage(line, "Good. Step 2. Open the drain pump filter cover.") == 1.0
     assert coverage(line, "Now open the drain filter cover") < 0.85
+
+
+# -- narration, and going to a step by number ------------------------------------
+
+import asyncio
+from datetime import date
+
+from home_operator import store
+from home_operator.sonic import is_narration, requested_step, walk
+
+
+def test_spoken_reasoning_is_caught():
+    for leak in (
+        "The user wants the filter, so I will call get appliance.",
+        "Okay, calling the diagnose symptom tool.",
+        "The tool response shows three items overdue.",
+        "Let me call navigate_repair.",
+    ):
+        assert is_narration(leak), leak
+
+
+def test_ordinary_speech_is_not_caught():
+    for fine in (
+        "It takes a sixteen by twenty-five filter.",
+        "Tell me when the washer is off and unplugged.",
+        "You'll want a towel and a flat tool.",
+        "I can call someone for you.",
+        "Step 2. Open the drain pump filter cover.",
+    ):
+        assert not is_narration(fine), fine
+
+
+def test_steps_asked_for_by_number():
+    assert requested_step("tell me step four", 8) == 4
+    assert requested_step("go to step 3", 8) == 3
+    assert requested_step("what's the fifth step", 8) == 5
+    assert requested_step("skip to the final step", 8) == 8
+    # "last step" already means "back" in chat.py; "next step" is not a number.
+    assert requested_step("last step", 8) is None
+    assert requested_step("next step", 8) is None
+
+
+def _local_call():
+    home = store.load_home()
+
+    async def call(name, args):
+        assert name == "navigate_repair"
+        return store.navigate_repair(home, args["action"], args["repair"], args["step"], date.today(), args["said"])
+
+    return call
+
+
+def test_jumping_ahead_cannot_skip_a_power_off_gate():
+    data, held = asyncio.run(walk(_local_call(), REPAIR, 1, 4, 8))
+    assert held
+    assert data["step_number"] == 1 and data["awaiting_confirmation"]
+
+
+def test_jumping_ahead_past_a_cleared_gate_lands_on_the_step():
+    data, held = asyncio.run(walk(_local_call(), REPAIR, 2, 5, 8))
+    assert not held
+    assert data["step_number"] == 5
+
+
+def test_jumping_to_the_final_step_does_not_finish_the_repair():
+    data, held = asyncio.run(walk(_local_call(), REPAIR, 2, 8, 8))
+    assert data["step_number"] == 8 and not data.get("finished")
+
+
+def test_jumping_back_to_the_gate_asks_again():
+    data, held = asyncio.run(walk(_local_call(), REPAIR, 5, 1, 8))
+    assert not held
+    assert data["step_number"] == 1 and data["awaiting_confirmation"]
+
+
+def test_a_step_named_by_the_person_becomes_a_jump():
+    g = Guard()
+    g.heard("walk me through it")
+    g.observe("start_repair", started())
+    g.heard("its unplugged")
+    g.observe("navigate_repair", at_step(2))
+    g.heard("tell me step five")
+    assert g.jump_target("navigate_repair", {"action": "next"}) == 5
+    g.heard("repeat")
+    assert g.jump_target("navigate_repair", {"action": "repeat", "step": 2}) is None

@@ -164,6 +164,7 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Severity:** Medium. Nothing is broken; the feature is simply not adoptable on a deadline.
 - **Workaround:** Kept Polly generative Ruth for speech, with the browser's own speech recognition for input. The tools stay reachable by any model because they are plain MCP.
 - **Suggestion:** The three re:Post tool-use reports are the blocker worth fixing first: speech-to-speech without reliable tool calling cannot drive an assistant that does anything. Publishing a known-issues list for Nova 2 Sonic tool use, and a supported non-preview client path, would make it adoptable.
+- **Update, 2026-09-25:** Built after all, on the `nova-sonic` branch, and tested against the live model rather than the re:Post reports. `promptStart` with `toolConfiguration` was accepted, and a five-turn repair ran with no hang and no loop. The real defect was different: Sonic chains calls. Told "yes, walk me through it", it started the repair, tried to clear the power-off gate and advanced in one turn, so the opening safety warning was never spoken. The relay now allows one repair move per thing the person says, and passes the transcript of what was heard as `said`, which is why the gate held. The preview SDK also does not read `aws login` credentials; the relay signs with boto3's credential chain instead. About 2 s from end of speech to first audio.
 
 ### Nova 2 Lite speaks repair steps it was never given, including past a safety gate
 - **Date:** 2026-09-24

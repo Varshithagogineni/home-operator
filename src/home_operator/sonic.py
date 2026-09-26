@@ -56,9 +56,17 @@ You are Home Operator, a voice assistant for the appliances in one home. The
 person is standing at the machine, often with their hands full. Everything you
 say is heard, never read.
 
-How you sound: warm, calm, brief. Like a friend who has done this before. One or
-two short sentences a turn. No lists, no markdown, no exclamation marks, no
-"great question", no apologising. Say numbers as words a person would say.
+How you sound: warm, calm, and short. Like a friend who has done this before and
+is in no rush. One sentence is usually enough; never more than two, and under
+twenty-five words. No lists, no exclamation marks, no "great question", no
+apologising, no offers of extra help they did not ask for. Say numbers as words
+a person would say. They can always ask for more.
+
+Only ever say the words meant for the person. Never say what you are thinking
+or doing: no "the user", no "I need to call", no "let me check", never a tool
+name, never a field name like speak or instruction. Wrong: "The user wants the
+filter, so I will call get appliance." Right: "It takes a sixteen by twenty-five
+filter."
 
 The hard rules:
 - Every fact about this home's appliances comes from a tool. You know nothing
@@ -72,7 +80,13 @@ The hard rules:
   tell someone to stop using it: a recall names model numbers, not serial
   numbers, so this one may or may not be affected. Say it once per conversation.
 - When a tool reply returns several things, say how many and the one that
-  matters most. The screen shows the rest.
+  matters most. The screen shows the rest, so never read out a list.
+- A field named "instruction" is for you. Follow it; never say it.
+- If a tool finds nothing, say so in one sentence. Do not invent checks, steps
+  or fixes of your own.
+
+Repairs go one step at a time. Say the one step, then stop and wait. Never read
+ahead, never summarise the remaining steps.
 
 Choosing a tool:
 - What an appliance is or which part it takes: get_appliance.
@@ -84,6 +98,10 @@ Choosing a tool:
 - During a repair, "next", "back", "repeat", or telling you the machine is off
   or unplugged: navigate_repair. Use "done" when they say it is off or
   unplugged, and put their exact words in "said".
+- They ask for a particular step ("tell me step four", "go back to step two",
+  "skip to the final step"): navigate_repair with action "repeat" and step set
+  to that number. A safety step cannot be skipped; if the reply says to wait,
+  say that.
 - They finished a job: log_service. A new appliance: add_appliance. They want a
   technician: prepare_pro_brief.
 One tool per turn. Do not look an appliance up with get_appliance before another
@@ -147,12 +165,84 @@ def coverage(expected: str, actual: str) -> float:
 MIN_COVERAGE = 0.85
 
 
+# Sonic now and then speaks its own reasoning aloud: "the user is asking about
+# the filter, so I'll call get appliance". The prompt forbids it, but a prompt is
+# a request. Each sentence's text arrives just before its audio, so a sentence
+# that reads like narration is caught here and its audio is never played.
+NARRATION = re.compile(
+    r"\b(get appliance|get maintenance due|diagnose symptom|start repair|navigate repair"
+    r"|log service|add appliance|prepare pro brief)\b"
+    r"|\bthe user\b"
+    r"|\b(call|calling|use|using|invoke|invoking|run|running) (the )?(\w+ ){0,3}(tool|function)\b"
+    r"|\btool (call|reply|response|result|results|returned|says|output)\b"
+    r"|\b(speak|say first|instruction) field\b"
+    r"|\b(ill|i will|i need to|i should|i must|let me|im going to) (call|invoke) (the )?"
+    r"(get|diagnose|start|navigate|log|add|prepare)\b"
+)
+
+
+def is_narration(text: str) -> bool:
+    return bool(NARRATION.search(_clean(text)))
+
+
+_NUMBERS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+_ORDINALS = {
+    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6,
+    "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+}
+_STEP_NUMBER = re.compile(r"\bstep (?:number )?(\d+|" + "|".join(_NUMBERS) + r")\b")
+_STEP_ORDINAL = re.compile(r"\b(" + "|".join(_ORDINALS) + r"|final) step\b")
+
+
+def requested_step(said: str, total: int | None) -> int | None:
+    """The step number someone asked for by name, if they did.
+
+    "Last step" is deliberately not here: in chat.py it already means the step
+    before this one, and someone saying it mid-repair usually means that.
+    """
+    text = _clean(said)
+    match = _STEP_NUMBER.search(text)
+    if match:
+        word = match.group(1)
+        return int(word) if word.isdigit() else _NUMBERS[word]
+    match = _STEP_ORDINAL.search(text)
+    if match:
+        return total if match.group(1) == "final" else _ORDINALS[match.group(1)]
+    return None
+
+
+async def walk(call, repair: str, current: int, target: int, total: int) -> tuple[dict | None, bool]:
+    """Go to a step by name, without skipping a safety gate.
+
+    Going back is one "repeat" at that step: the server re-asks any gate there.
+    Going forward is one "next" at a time, so the server holds at any power-off
+    step on the way exactly as it would if the person said "next" themselves.
+    Nothing is said on their behalf: `said` is empty, so no gate can clear.
+    Returns the reply and whether a gate held the walk short of the target.
+    """
+    if target <= current:
+        return await call("navigate_repair", {"action": "repeat", "repair": repair, "step": target, "said": ""}), False
+    step, data = current, None
+    while step < target:
+        data = await call("navigate_repair", {"action": "next", "repair": repair, "step": step, "said": ""})
+        if not isinstance(data, dict) or not data.get("active") or data.get("finished"):
+            return data, False
+        if data.get("step_number") == step:
+            return data, True
+        step = data["step_number"]
+    return data, False
+
+
 class Guard:
     """The rules from chat.py, applied to Sonic's tool calls."""
 
     def __init__(self) -> None:
         self.repair: str | None = None
         self.step: int | None = None
+        self.total: int | None = None
         self.last_heard = ""
         self.last_speak: str | None = None
         self.diagnosed_this_turn = False
@@ -164,7 +254,7 @@ class Guard:
         self.diagnosed_this_turn = False
         self.moved_this_turn = False
         if self.repair and chat.is_escape(self.last_heard):
-            self.repair = self.step = None
+            self.repair = self.step = self.total = None
 
     def prepare(self, name: str, args: dict) -> tuple[dict, dict | None]:
         """The arguments to actually send, or a reply that stops the call."""
@@ -202,13 +292,27 @@ class Guard:
                 args["action"] = action
         return args, None
 
-    def observe(self, name: str, data: dict | None) -> bool:
+    def jump_target(self, name: str, args: dict) -> int | None:
+        """The step to go to, when someone asked for one by number.
+
+        Their own words win; failing that, a "repeat" the model aimed at a
+        different step is taken as the jump the prompt tells it to make.
+        """
+        if name != "navigate_repair" or not self.repair or not self.step:
+            return None
+        target = requested_step(self.last_heard, self.total)
+        if target is None and (args or {}).get("action") == "repeat":
+            step = (args or {}).get("step")
+            target = step if isinstance(step, int) else None
+        return target if target is not None and target != self.step else None
+
+    def observe(self, name: str, data: dict | None, held: bool | None = None) -> bool:
         """Record a tool reply. Returns whether a safety gate held the step still."""
         if name == "diagnose_symptom":
             self.diagnosed_this_turn = True
         if not isinstance(data, dict) or data.get("blocked"):
             return False
-        held = (
+        held = held if held is not None else (
             name == "navigate_repair"
             and bool(data.get("awaiting_confirmation"))
             and data.get("step_number") == self.step
@@ -221,12 +325,14 @@ class Guard:
 
     def _track(self, data: dict) -> None:
         if data.get("finished"):
-            self.repair = self.step = None
+            self.repair = self.step = self.total = None
             return
         if data.get("repair") and (data.get("started") or data.get("active")):
             self.repair = data["repair"]
         if isinstance(data.get("step_number"), int) and self.repair:
             self.step = data["step_number"]
+        if isinstance(data.get("total_steps"), int):
+            self.total = data["total_steps"]
 
 
 # -- the Bedrock bidirectional stream --------------------------------------------
@@ -296,6 +402,8 @@ class SonicSession:
         self._closed = False
         self._expected_speak: str | None = None
         self._said: list[str] = []
+        self._mute_next = False   # the next audio block speaks narration: drop it
+        self._muting = False
         self._role = None
         self._stage = None
         self._pending: set[asyncio.Task] = set()
@@ -457,10 +565,14 @@ class SonicSession:
             self._role = start.get("role")
             fields = start.get("additionalModelFields")
             self._stage = json.loads(fields).get("generationStage") if fields else None
+            if start.get("type") == "AUDIO":
+                # This audio speaks the sentence whose text just arrived.
+                self._muting, self._mute_next = self._mute_next, False
         elif "textOutput" in ev:
             await self._on_text(ev["textOutput"])
         elif "audioOutput" in ev:
-            await self.emit({"type": "audio", "pcm": ev["audioOutput"]["content"]})
+            if not self._muting:
+                await self.emit({"type": "audio", "pcm": ev["audioOutput"]["content"]})
         elif "toolUse" in ev:
             use = ev["toolUse"]
             task = asyncio.create_task(self._tool(use))
@@ -472,6 +584,8 @@ class SonicSession:
             await self.emit({"type": "thinking"})
         elif "contentEnd" in ev:
             reason = ev["contentEnd"].get("stopReason")
+            if ev["contentEnd"].get("type") == "AUDIO":
+                self._muting = False
             if reason == "INTERRUPTED":
                 await self.emit({"type": "interrupted"})
             elif reason == "END_TURN":
@@ -493,9 +607,15 @@ class SonicSession:
         elif role == "ASSISTANT" and self._stage == "SPECULATIVE":
             # Arrives a sentence ahead of its audio: good for captions, but it
             # can still change, so it is never recorded or checked.
+            if is_narration(text):
+                self._mute_next = True
+                await self.emit({"type": "narration_muted", "text": text.strip()})
+                return
             await self.emit({"type": "caption", "text": text})
         elif role == "ASSISTANT":
             text = text.strip()
+            if is_narration(text):
+                return
             self._said.append(text)
             if self.history and self.history[-1][0] == "ASSISTANT":
                 self.history[-1] = ("ASSISTANT", f"{self.history[-1][1]} {text}")
@@ -519,27 +639,51 @@ class SonicSession:
             args = json.loads(use.get("content") or "{}")
         except ValueError:
             args = {}
+        asked = dict(args)
+        call_id = use.get("toolUseId", "")
+        await self.emit({"type": "tool_start", "id": call_id, "name": name, "args": asked})
         args, blocked = self.guard.prepare(name, args)
+        target = None if blocked else self.guard.jump_target(name, asked)
         started = time.perf_counter()
+        calls, held = 1, None
         if blocked is not None:
-            data = blocked
+            data, calls = blocked, 0
+        elif target is not None and self.guard.total and not 1 <= target <= self.guard.total:
+            data, calls = {"blocked": True, "instruction": (
+                f"There are only {self.guard.total} steps. Say so in one short sentence."
+            )}, 0
         else:
             try:
-                result = await self._mcp.call_tool(name, args)
-                data = chat._first_json(result)
+                if target is not None:
+                    counter = {"n": 0}
+
+                    async def call(tool, arguments):
+                        counter["n"] += 1
+                        return chat._first_json(await self._mcp.call_tool(tool, arguments))
+
+                    frm = self.guard.step
+                    data, held = await walk(call, self.guard.repair, frm, target, self.guard.total or target)
+                    calls = counter["n"]
+                    args = {"action": "go to step", "repair": self.guard.repair, "from": frm, "to": target}
+                else:
+                    data = chat._first_json(await self._mcp.call_tool(name, args))
             except Exception as exc:  # noqa: BLE001 - the model is told, and says so
                 data = {"error": f"The tool failed: {type(exc).__name__}. Say you could not reach it."}
         ms = round((time.perf_counter() - started) * 1000)
-        held = self.guard.observe(name, data)
+        held = self.guard.observe(name, data, held)
         speak = speak_line(name, data, held)
+        if held and target is not None and isinstance(data, dict) and data.get("confirm_prompt"):
+            speak = f"We can't skip past this one. {data['confirm_prompt']}"
         reply = dict(data) if isinstance(data, dict) else {"result": data}
         await self._check_spoken()  # anything said before this call is not this line
         if speak:
             reply["speak"] = speak
             self._expected_speak = speak
             self.guard.last_speak = speak
-        await self.emit({"type": "tool", "name": name, "args": args, "data": data, "ms": ms,
-                         "speak": speak, "held": held, "blocked": bool(blocked)})
+        await self.emit({"type": "tool", "id": call_id, "name": name, "asked": asked, "args": args,
+                         "data": data, "ms": ms, "calls": calls, "speak": speak, "held": held,
+                         "blocked": bool(blocked) or bool(isinstance(data, dict) and data.get("blocked")),
+                         "reason": (data or {}).get("instruction") if isinstance(data, dict) else None})
         await self._tool_result(use["toolUseId"], reply)
 
     async def _tool_result(self, tool_use_id: str, reply: dict) -> None:

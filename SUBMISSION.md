@@ -212,10 +212,10 @@ reason, so callers must pattern-match English to know whether to retry.
 return null rather than infer a missing interval would remove a whole class of
 error. For multilingual documents, say which language section to cite.
 
-### Amazon Nova 2 Sonic: evaluated, not adopted
+### Amazon Nova 2 Sonic: evaluated, not adopted for the submission
 
-Speech-to-speech was the obvious fit for a hands-free product, and was dropped
-for four reasons together: `InvokeModelWithBidirectionalStream` needs
+Speech-to-speech was the obvious fit for a hands-free product, and was left out
+of the submitted build for four reasons together: `InvokeModelWithBidirectionalStream` needs
 `aws-sdk-bedrock-runtime`, which AWS's own docs label Developer Preview and say
 not to use in production; three tool-use defects are open on re:Post
 (`promptStart` rejected when `toolConfiguration` is included, a hang when
@@ -223,6 +223,10 @@ chaining tools, an infinite loop with multiple tools); its voices do not include
 Polly's generative Ruth; and raw PCM output discards the SSML pacing written
 into every line. **Tool use is the blocker worth fixing first** - speech-to-speech
 without reliable tool calling cannot drive an assistant that does anything.
+
+Since built on a branch and tested against the live model: tool use worked, but
+Sonic chained calls and skipped a spoken safety warning until the relay allowed
+one repair move per thing the person says. See FRICTION.md for the details.
 
 ### Alexa+ add-on tooling
 
