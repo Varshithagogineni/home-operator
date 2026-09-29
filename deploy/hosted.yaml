@@ -27,6 +27,10 @@ Parameters:
   ArtifactKey:
     Type: String
     Default: home-operator/app.tar.gz
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    Description: Sent by CloudFront on every request, so only this distribution can reach the server.
 
 Resources:
   Role:
@@ -121,8 +125,10 @@ Resources:
           systemctl stop home-operator 2>/dev/null || true
           rm -rf /home/app/app && mkdir -p /home/app/app
           tar -xzf $TMP/app.tar.gz -C /home/app/app
-          aws ssm get-parameter --name /home-operator/env --with-decryption --query Parameter.Value --output text > /home/app/app/.env
-          echo "ACCESS_CODE=$(aws ssm get-parameter --name /home-operator/access-code --with-decryption --query Parameter.Value --output text)" >> /home/app/app/.env
+          umask 077
+          p() { aws ssm get-parameter --name /home-operator/$1 --with-decryption --query Parameter.Value --output text; }
+          { p env; echo; echo "ACCESS_CODE=$(p access-code)"; echo "COOKIE_SECRET=$(p cookie-secret)"; echo "ORIGIN_SECRET=$(p origin-secret)"; } > /home/app/app/.env
+          umask 022
           chown -R app:app /home/app/app
           chmod 600 /home/app/app/.env
           sudo -u app bash -lc 'cd /home/app/app && ~/.local/bin/uv sync --frozen --no-dev --group speech'
@@ -169,6 +175,9 @@ Resources:
               OriginProtocolPolicy: http-only
               OriginReadTimeout: 60
               OriginKeepaliveTimeout: 60
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: !Ref OriginSecret
         DefaultCacheBehavior:
           TargetOriginId: app
           ViewerProtocolPolicy: redirect-to-https

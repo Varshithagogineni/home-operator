@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import hmac
 import json
 import os
 import time
@@ -279,18 +278,24 @@ async def voice_socket(ws: WebSocket) -> None:
         await ws.close(code=4429)
         return
 
-    session = sonic.SonicSession(emit, voice=ws.query_params.get("voice") or sonic.VOICE_ID)
-    deadline = time.monotonic() + gate.SESSION_SECONDS
+    # Everything after a slot is taken sits inside the try, so the finally
+    # always gives it back; a constructor that raised used to keep it for good.
+    session = None
     try:
+        session = sonic.SonicSession(emit, voice=ws.query_params.get("voice") or sonic.VOICE_ID)
+        deadline = time.monotonic() + gate.SESSION_SECONDS
         await session.start()
         await emit({"type": "ready", "tools": len(session._tools), "voice": session.voice})
         while True:
-            message = await ws.receive()
-            if message["type"] == "websocket.disconnect":
-                break
-            if time.monotonic() > deadline:
+            # Waits at most until the deadline, so a tab that stops sending
+            # audio cannot hold a Sonic stream open past the time limit.
+            try:
+                message = await asyncio.wait_for(ws.receive(), timeout=max(0.0, deadline - time.monotonic()))
+            except asyncio.TimeoutError:
                 await emit({"type": "error", "code": "time_limit",
                             "error": "That conversation reached its time limit.", "hint": "press Start to begin a new one"})
+                break
+            if message["type"] == "websocket.disconnect":
                 break
             if message.get("bytes"):
                 await session.send_audio(message["bytes"])
@@ -301,25 +306,30 @@ async def voice_socket(ws: WebSocket) -> None:
         # The one failure anyone running this will meet: an `aws login` session
         # lasts about a day, and the page used to say only "Disconnected".
         expired = any(w in text for w in ("LoginRefreshRequired", "expired", "NoCredentials", "ExpiredToken"))
+        hosted = bool(gate.access_code())
+        print(f"voice session failed: {text}", flush=True)  # the detail stays in the server log
         try:
             await emit({
                 "type": "error",
                 "code": "aws_login" if expired else "server",
-                "error": "The server's AWS sign-in has expired." if expired else text,
-                "hint": "run `aws login` where the server runs, then press Start" if expired else "check .env and `aws login`",
+                "error": "The server's AWS sign-in has expired." if expired
+                else ("Something went wrong reaching AWS." if hosted else text),
+                "hint": "run `aws login` where the server runs, then press Start" if expired
+                else ("please try again in a minute" if hosted else "check .env and `aws login`"),
             })
         except Exception:  # noqa: BLE001
             pass
     finally:
         gate.LIMITS.release()
-        await session.close()
+        if session is not None:
+            await session.close()
 
 
 def _client(request: Request) -> str:
     # Behind CloudFront every request comes from CloudFront. It appends the
     # viewer's real address last; anything before that the viewer could have
     # written themselves, so only the last one counts towards the guess limit.
-    forwarded = request.headers.get("x-forwarded-for", "")
+    forwarded = (request.headers.getlist("x-forwarded-for") or [""])[-1]
     return forwarded.split(",")[-1].strip() or (request.client.host if request.client else "?")
 
 
@@ -336,14 +346,15 @@ async def unlock(request: Request) -> Response:
     except ValueError:
         attempt = ""
     code = gate.access_code()
-    if code and not hmac.compare_digest(gate.token_for(attempt), gate.token_for(code)):
+    if code and not gate.codes_match(attempt, code):
         gate.ATTEMPTS.failed(who)
         return JSONResponse({"ok": False, "error": "That code isn't right."}, status_code=403)
     response = JSONResponse({"ok": True})
     if code:
-        https = request.headers.get("cloudfront-forwarded-proto") == "https" or request.url.scheme == "https"
+        # A code is only set when hosted, and hosted is always HTTPS to the
+        # browser; CloudFront talks plain HTTP to us, so the scheme can't tell.
         response.set_cookie(gate.COOKIE, gate.token_for(code), max_age=gate.COOKIE_DAYS * 86400,
-                            httponly=True, secure=https, samesite="lax")
+                            httponly=True, secure=True, samesite="lax")
     return response
 
 
@@ -367,8 +378,16 @@ class AccessCode:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] in ("http", "websocket") and gate.is_protected(scope.get("path", "")):
+        if scope["type"] in ("http", "websocket"):
             headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+            if not gate.from_cloudfront(headers):
+                if scope["type"] == "websocket":
+                    await receive()
+                    await send({"type": "websocket.close", "code": 1008})
+                    return
+                await JSONResponse({"error": "not found"}, status_code=404)(scope, receive, send)
+                return
+        if scope["type"] in ("http", "websocket") and gate.is_protected(scope.get("path", "")):
             if not gate.allowed(gate.cookie_from(headers)):
                 if scope["type"] == "websocket":
                     await receive()

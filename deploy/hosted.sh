@@ -21,11 +21,17 @@ settings() {
   # Stored encrypted in SSM, read by the instance at start; never printed.
   aws ssm put-parameter --name /home-operator/env --type SecureString \
     --value "file://.env" --overwrite >/dev/null
+  # Made once and kept. The code is what judges type; the two secrets never
+  # leave AWS. The code is random from the system's generator, not a word list
+  # that sits in this repository.
   if ! aws ssm get-parameter --name /home-operator/access-code >/dev/null 2>&1; then
-    local words=(amber birch cedar delta ember fable harbor iris juniper kestrel lumen maple nimbus orchid pebble quartz raven sierra tidal umber willow)
-    local code="${words[RANDOM % ${#words[@]}]}-${words[RANDOM % ${#words[@]}]}-$((RANDOM % 90 + 10))"
+    local code; code=$(openssl rand -hex 3)-$(openssl rand -hex 3)
     aws ssm put-parameter --name /home-operator/access-code --type SecureString --value "$code" >/dev/null
   fi
+  for name in cookie-secret origin-secret; do
+    aws ssm get-parameter --name "/home-operator/$name" >/dev/null 2>&1 ||
+      aws ssm put-parameter --name "/home-operator/$name" --type SecureString --value "$(openssl rand -hex 32)" >/dev/null
+  done
 }
 
 bundle() {
@@ -60,7 +66,8 @@ case "${1:-}" in
     aws cloudformation deploy --stack-name "$STACK" --template-file deploy/hosted.yaml \
       --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset \
       --parameter-overrides VpcId="$vpc" SubnetId="$subnet" CloudFrontPrefixList="$prefix" \
-        ArtifactBucket="$BUCKET" ArtifactKey="$KEY"
+        ArtifactBucket="$BUCKET" ArtifactKey="$KEY" \
+        OriginSecret="$(aws ssm get-parameter --name /home-operator/origin-secret --with-decryption --query Parameter.Value --output text)"
     echo "Link: $(output Url)"
     ;;
   update)
