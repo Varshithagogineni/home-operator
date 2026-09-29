@@ -106,3 +106,6 @@ def test_root_opens_the_app(monkeypatch):
     client = _client(monkeypatch, "")
     r = client.get("/", follow_redirects=False)
     assert r.status_code in (302, 307) and r.headers["location"] == "/sim/"
+    # A shared link's code must survive the redirect; it once did not.
+    r = client.get("/?code=abc-123", follow_redirects=False)
+    assert r.headers["location"] == "/sim/?code=abc-123"

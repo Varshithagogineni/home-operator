@@ -363,7 +363,9 @@ async def ping(request: Request) -> Response:
 
 
 async def home(request: Request) -> Response:
-    return RedirectResponse("/sim/")
+    # Keep the query: a shared link's ?code= rides through this redirect.
+    query = request.url.query
+    return RedirectResponse("/sim/" + (f"?{query}" if query else ""))
 
 
 class AccessCode:
