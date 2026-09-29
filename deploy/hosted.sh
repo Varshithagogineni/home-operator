@@ -4,8 +4,10 @@
 #
 #   deploy/hosted.sh up       create or update everything, print the link
 #   deploy/hosted.sh update   ship the current commit to the running server
-#   deploy/hosted.sh code     print the access code to give judges
-#   deploy/hosted.sh url      print the link
+#   deploy/hosted.sh link     print the one-click link for judges (code built in)
+#   deploy/hosted.sh code     print the access code on its own
+#   deploy/hosted.sh url      print the link without the code
+#   deploy/hosted.sh newcode  replace the code; old links stop working
 #   deploy/hosted.sh down     delete it all (the settings in SSM are kept)
 set -euo pipefail
 
@@ -85,13 +87,22 @@ case "${1:-}" in
   url)
     output Url
     ;;
+  link)
+    echo "$(output Url)?code=$(aws ssm get-parameter --name /home-operator/access-code --with-decryption --query Parameter.Value --output text)"
+    ;;
+  newcode)
+    aws ssm delete-parameter --name /home-operator/access-code
+    aws ssm delete-parameter --name /home-operator/cookie-secret  # signs out everyone already in
+    "$0" update
+    "$0" link
+    ;;
   down)
     aws cloudformation delete-stack --stack-name "$STACK"
     aws cloudformation wait stack-delete-complete --stack-name "$STACK"
     echo "Deleted. The access code and settings remain in SSM under /home-operator/."
     ;;
   *)
-    sed -n '2,10p' "$0"
+    sed -n '2,13p' "$0"
     exit 1
     ;;
 esac

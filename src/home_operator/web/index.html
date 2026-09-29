@@ -637,7 +637,22 @@ function connect() {
 // On a hosted link the tools need an access code; on a laptop they do not, and
 // the box never appears.
 let locked = false;
-fetch("/unlock").then(r => r.json()).then(d => { locked = !!d.locked; body.classList.toggle("locked", locked); if (locked) $("code").focus(); }).catch(() => {});
+// A shared link can carry the code (?code=...), so a judge clicks once and never
+// sees the code screen. It is taken off the address bar straight away, so it
+// is not copied along with the page address or left in view on a recording.
+(async () => {
+  const fromLink = new URLSearchParams(location.search).get("code");
+  if (fromLink) {
+    history.replaceState(null, "", location.pathname);
+    await fetch("/unlock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: fromLink }) }).catch(() => {});
+  }
+  try {
+    const d = await (await fetch("/unlock")).json();
+    locked = !!d.locked;
+    body.classList.toggle("locked", locked);
+    if (locked) $("code").focus();
+  } catch (_) {}
+})();
 
 async function unlockFirst() {
   if (!locked) return true;
