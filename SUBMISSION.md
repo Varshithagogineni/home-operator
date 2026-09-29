@@ -27,15 +27,18 @@ Something in your house breaks. The manual is in a drawer, or a PDF on a phone
 you do not want to touch with wet hands, and the answer is on page 40.
 
 Home Operator is an Alexa+ add-on that knows the five appliances in one home and
-talks you through them:
+talks you through them, out loud, and you can interrupt it at any time:
 
 - **"My washer is showing OE."** It names the fault from the manufacturer's own
   troubleshooting table, in order of likelihood, and offers the fix.
 - **"Walk me through it."** Eight steps, one at a time, waiting for you. The
   first step is a safety gate: it will not go on until you say the washer is
   off and unplugged.
-- **"Hold on, someone's at the door."** Your place is kept. Come back and say
-  "where was I", and it is still on step four.
+- **"Tell me step four."** Refused while the washer is still plugged in: a
+  safety step can't be skipped. Once it's off, jump to any step, go back, or
+  say "repeat".
+- **"What filter does the furnace take?"** Ask anything in the middle of a
+  repair. Your place is kept.
 - **"Anything I should take care of?"** Overdue maintenance worked out from a
   real service history, and it says which jobs are yours and which belong to a
   technician, because the manuals are explicit about the difference.
@@ -52,32 +55,41 @@ Commission's live API, not staged for the demo.
 Two lanes, and only one runs while you are talking.
 
 ```
-  "my washer won't drain"
+  "my washer won't drain"   (your voice, from the browser)
         |
         v
-  AGENT              Strands Agents SDK + Amazon Bedrock (Nova 2 Lite)
-                     decides WHICH tool to call, and nothing else
+  AMAZON NOVA 2 SONIC  speech to speech, standing in for Alexa+
+                       hears you, decides WHICH tool to call, speaks
         |
+  RELAY                enforces what a prompt can only ask for
         |  Authorization: Bearer <JWT>
         v
-  AMAZON COGNITO     client_credentials, no users and no passwords:
-                     the agent proves it is the agent
+  AMAZON COGNITO       client_credentials, no users and no passwords
         |
         v
-  AGENTCORE RUNTIME  protocol MCP, CUSTOM_JWT authorizer
-                     the eight tools decide WHAT IS TRUE, ~2 ms each
+  AGENTCORE RUNTIME    protocol MCP, CUSTOM_JWT authorizer
+                       the eight tools decide WHAT IS TRUE, ~2 ms each
 ```
 
 **The model decides which tool to call; the tools decide what is true.** Repair
 steps, intervals and part numbers are served verbatim from JSON that a person
 checked against the manufacturer's manual, page by page. The model has no other
-source of appliance facts, so it cannot invent a repair step. During a repair it
-does not even choose the words: the step card speaks the tool's own text.
+source of appliance facts, so it cannot invent a repair step.
 
-Navigation is faster still. "Next", "back", "repeat" and "it's unplugged" skip
-the model entirely and answer in about 400 ms, because someone standing at a
-machine with wet hands should not wait for a language model to work out that
-"next" means next.
+**A speech model speaks for itself, so the relay enforces the rules.** Tested
+against the live model, Nova 2 Sonic did three things a prompt had told it not
+to: it tried to clear the power-off gate when the person had only said "yes",
+it started a repair, cleared the gate and advanced in one breath so the safety
+warning was never spoken, and now and then it said its reasoning aloud. So the
+relay passes the tools the words it actually heard, not the model's version;
+allows one move through a repair per thing said; quotes each step from the
+manual and checks what was spoken against it; and drops the audio of any
+sentence that narrates a tool call before it is played. About two seconds from
+the end of your sentence to the first word back, tool call included.
+
+Every tool call is on screen as it happens, with what the model asked for next
+to what was sent, so a viewer can see that the answers come from AgentCore and
+not from the model.
 
 **The slow lane runs days earlier, offline.** A manual PDF goes to Amazon S3,
 Amazon Bedrock reads it and returns structured steps, intervals and symptoms,
@@ -91,11 +103,13 @@ in the repo, so the difference is auditable.
 The Alexa+ add-on toolkit is a partner-only preview - confirmed twice by Amazon
 staff in the hackathon forum - so there is no way to run this on a real device.
 The rules explicitly allow a simulated Alexa+ experience "built using any AI or
-agentic tool of their choice", and that is what the browser front end is. A
-Strands agent on Nova 2 Lite stands in for Alexa+'s orchestrator. It is labelled
-as such on screen and in the footer.
+agentic tool of their choice", and that is what the browser front end is: an
+Echo Show style screen, with Amazon Nova 2 Sonic standing in for Alexa+'s voice
+and orchestrator. The screen says so. The original text simulator, with a
+Strands agent on Nova 2 Lite, is kept alongside it.
 
-Everything behind it is real: the MCP server runs on AgentCore Runtime, the
+Everything behind it is real: the voice is hosted on AWS and needs nobody's
+login to run, the MCP server runs on AgentCore Runtime, the
 Cognito authorizer validates every call, the appliances are real models, the
 manual data is traceable to a page, and the recall came from the government's
 own API.
@@ -107,14 +121,17 @@ and the service history is seeded.
 
 ## Built with
 
-`amazon-bedrock` `amazon-bedrock-agentcore` `strands-agents` `amazon-cognito`
+`amazon-nova-sonic` `amazon-bedrock` `amazon-bedrock-agentcore` `strands-agents`
+`amazon-cognito` `amazon-ec2` `amazon-cloudfront` `aws-iam` `aws-systems-manager`
 `amazon-polly` `amazon-s3` `model-context-protocol` `python` `starlette`
-`uvicorn` `javascript` `cpsc-api`
+`uvicorn` `websockets` `javascript` `cpsc-api`
 
 ---
 
 ## Links
 
+- **Try it:** https://d6zzi2o2me078.cloudfront.net/?code=9bad96-b7c7a5 (Chrome;
+  allow the microphone, then talk. Tap ? for things to say.)
 - **Repo:** https://github.com/Varshithagogineni/home-operator
 - **Open source project:** https://github.com/Varshithagogineni/cpsc-recall-check
 - **Video:** *(add before submitting)*
@@ -212,21 +229,28 @@ reason, so callers must pattern-match English to know whether to retry.
 return null rather than infer a missing interval would remove a whole class of
 error. For multilingual documents, say which language section to cite.
 
-### Amazon Nova 2 Sonic: evaluated, not adopted for the submission
+### Amazon Nova 2 Sonic: first ruled out, then adopted
 
-Speech-to-speech was the obvious fit for a hands-free product, and was left out
-of the submitted build for four reasons together: `InvokeModelWithBidirectionalStream` needs
-`aws-sdk-bedrock-runtime`, which AWS's own docs label Developer Preview and say
-not to use in production; three tool-use defects are open on re:Post
-(`promptStart` rejected when `toolConfiguration` is included, a hang when
-chaining tools, an infinite loop with multiple tools); its voices do not include
-Polly's generative Ruth; and raw PCM output discards the SSML pacing written
-into every line. **Tool use is the blocker worth fixing first** - speech-to-speech
-without reliable tool calling cannot drive an assistant that does anything.
+Speech-to-speech was the obvious fit for a hands-free product, and was first
+ruled out on paper: `InvokeModelWithBidirectionalStream` is not in boto3 and
+needs `aws-sdk-bedrock-runtime`, which AWS's own docs label Developer Preview;
+and three tool-use defects were open on re:Post (`promptStart` rejected when
+`toolConfiguration` is included, a hang when chaining tools, an infinite loop
+with multiple tools).
 
-Since built on a branch and tested against the live model: tool use worked, but
-Sonic chained calls and skipped a spoken safety warning until the relay allowed
-one repair move per thing the person says. See FRICTION.md for the details.
+Tested against the live model instead, none of the three reproduced across a
+full eight-step repair. **What did go wrong is worth fixing in the model:** it
+chains tool calls within one user turn (start a repair, clear its safety gate
+and advance, in one breath), it fills tool arguments with its own paraphrase of
+what the user said, and it occasionally speaks its reasoning aloud, tool names
+included. Each needed code in a relay rather than a prompt. Two smaller
+papercuts: the preview SDK does not read `aws login` credentials, so the relay
+signs with boto3's credential chain; and a spoken error code arrives as letters
+("u e"), which an index keyed on "UE" misses.
+
+**Suggestion:** an option to allow at most one tool call per user turn, and a
+documented way to mark a tool argument as "the user's verbatim words", would
+remove most of the relay. See FRICTION.md for the details.
 
 ### Alexa+ add-on tooling
 

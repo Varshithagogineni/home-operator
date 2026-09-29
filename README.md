@@ -6,11 +6,26 @@ Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotoco
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
+## Try it
+
+**[Open Home Operator](https://d6zzi2o2me078.cloudfront.net/?code=9bad96-b7c7a5)** in Chrome, on a laptop or a phone. Tap the ring, allow the microphone, and talk. You can interrupt it at any time.
+
+1. "My washer won't drain." It diagnoses from LG's manual and offers the fix.
+2. "Yes, walk me through it." Step 1 is a safety gate: turn the washer off and unplug it.
+3. "Next." Refused. The gate clears only when you say the machine is off.
+4. "Tell me step four." Still refused: a safety step can't be skipped.
+5. "Okay, it's unplugged." Step 2, word for word from page 40 of the manual.
+6. "What filter does the furnace take?" Ask anything mid-repair; your place is kept.
+
+Tap **?** for the five appliances and more to try. Press **D** to see every tool call the voice model makes, with what it asked for and what was actually sent to AgentCore.
+
+The voice is **Amazon Nova 2 Sonic**, speech to speech, standing in for Alexa+. It calls the same eight MCP tools on AgentCore Runtime that Alexa+ would.
+
 > **Status:** All eight tools run on Amazon Bedrock AgentCore Runtime behind a Cognito authorizer, and a Bedrock model chooses which one to call. The demo household is **five real appliances**, their repair steps, error codes and maintenance intervals taken from the manufacturers' own manuals via Amazon Bedrock and then checked by a person against the pages: the **LG WM9500HKA** washer, the **LG WSEP4727F** wall oven, the **Whirlpool GSS30C6EY** refrigerator, the **Bosch SHE53T55UC** dishwasher and the **Carrier 58STA** gas furnace. Nothing in the household is invented.
 
 The recall check is real too. The Bosch dishwasher's model is named in CPSC's 2017 BSH recall for a power cord that can overheat, which Home Operator finds by querying the live CPSC API — no staged data.
 
-The tools run on **Amazon Bedrock AgentCore Runtime**, behind an **Amazon Cognito** authorizer, and a **Bedrock** model chooses which one to call. See [Architecture](#architecture).
+The tools run on **Amazon Bedrock AgentCore Runtime**, behind an **Amazon Cognito** authorizer. You talk to them through **Amazon Nova 2 Sonic**, a speech-to-speech model that decides which tool to call; a relay between the two enforces the safety rules the model can't be trusted with. See [Architecture](#architecture).
 
 ## Tools
 
@@ -68,6 +83,34 @@ Two lanes, and only one of them runs while someone is talking.
   |   the eight tools    HTTP, JSON responses     |   no model in the path
   +-----------------------------------------------+
 ```
+
+### The voice
+
+```
+  browser mic --16 kHz PCM--> RELAY --audio-->     AMAZON NOVA 2 SONIC
+  (Echo Show     WebSocket    sonic.py              speech to speech,
+   style page)  <--24 kHz----       <--voice------  decides which tool
+                                    <--toolUse-----
+                               |
+                               |  the guard: repair id and step from the last
+                               |  reply, gate cleared only by the words heard,
+                               |  one repair move per thing said
+                               v
+                         AGENTCORE RUNTIME  (the same eight MCP tools)
+```
+
+Sonic speaks for itself, so the relay does what a prompt can only ask for:
+
+- **A safety gate is cleared by what the person said, not by what the model says they said.** The relay replaces the model's `said` with the transcript of what was actually heard. Tested live: told "yes, walk me through it", Sonic tried to clear the power-off gate itself, and the server refused.
+- **One move through a repair per thing said.** Sonic once started a repair, cleared the gate and advanced in a single breath, skipping the spoken safety warning.
+- **Steps are quoted.** Each repair reply carries the manual's line; what Sonic actually said is compared with it and the card says whether it matched.
+- **Its reasoning is never played.** Each sentence's text arrives just before its audio, so a sentence like "the user wants the filter, so I'll call get appliance" is caught and its audio dropped.
+- **"Tell me step four" walks the server one step at a time**, so a power-off step on the way holds exactly as it would for "next".
+- **Speech is heard the way manuals are indexed**: "u e" becomes the error code UE, "smells" becomes "odor", and a code the manual lacks is said to be missing rather than answered with a different one.
+
+About two seconds from the end of speech to the first word back, including the tool call.
+
+### The tools
 
 **The model decides which tool to call; the tools decide what is true.** Repair
 steps, intervals and part numbers are served verbatim from JSON that a person
@@ -170,6 +213,17 @@ protects nothing: the container is not routable and the only way in is through
 AgentCore, which has already validated the JWT. `server.py` keeps the protection
 for local runs. Both are logged in [FRICTION.md](FRICTION.md).
 
+## Host the voice app
+
+```bash
+deploy/hosted.sh up       # create everything and print the link (about 10 minutes)
+deploy/hosted.sh link     # the link with the access code built in
+deploy/hosted.sh update   # ship the current commit
+deploy/hosted.sh down     # delete it all
+```
+
+The hosted app signs its AWS calls with its own IAM role, which AWS refreshes on its own, so it keeps working when nobody is logged in. Running it on a laptop instead borrows an `aws login` session, which lapses after a few hours. The endpoints that reach AWS need an access code; the link above carries it, so nobody has to type it.
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/). It installs Python 3.12 for you if needed.
@@ -178,7 +232,8 @@ for local runs. Both are logged in [FRICTION.md](FRICTION.md).
 ## Run it
 
 ```bash
-uv sync
+uv sync --group speech   # the speech group adds Nova 2 Sonic's streaming client
+aws login                # the voice needs AWS credentials
 uv run home-operator
 ```
 
@@ -187,13 +242,18 @@ This serves two things:
 | URL | What it is |
 |---|---|
 | `http://127.0.0.1:8000/mcp` | The MCP endpoint, Streamable HTTP, stateless, JSON responses |
-| `http://127.0.0.1:8000/sim/` | A simulated Alexa+ experience for demos |
+| `http://127.0.0.1:8000/sim/` | The voice app: a simulated Alexa+ experience, speech to speech |
+| `http://127.0.0.1:8000/sim/classic.html` | The original text simulator |
 
 Set `PORT` or `HOST` to change the address.
 
 ## The simulator
 
-Open `http://127.0.0.1:8000/sim/` and talk to it by typing, or click the suggested phrases. It plays the part of Alexa+: it works out which tool your words call, speaks the reply aloud, and shows the matching screen. A live panel lists every MCP call with its latency, so you can see that the answers come from the real server.
+`/sim/` is the voice app: an Echo Show style screen, speech to speech with Nova 2 Sonic, the light ring and bar following whoever is speaking, repair steps as cards with the manual's page, and a live panel of every tool call. It needs `uv sync --group speech` and AWS credentials.
+
+`/sim/classic.html` is the original text simulator, described below. It still works without the speech dependencies.
+
+Open `http://127.0.0.1:8000/sim/classic.html` and talk to it by typing, or click the suggested phrases. It plays the part of Alexa+: it works out which tool your words call, speaks the reply aloud, and shows the matching screen. A live panel lists every MCP call with its latency, so you can see that the answers come from the real server.
 
 Try the washer, whose data comes from LG's real manual:
 
@@ -287,7 +347,9 @@ What review found across three manuals: the model copied all four procedures and
 
 | Service | What it does here | How |
 |---|---|---|
-| **Amazon Polly** (generative engine, voice Ruth) | Speaks every reply in the simulator, and narrates the demo video | `src/home_operator/voice.py` calls `synthesize_speech` through boto3; `/speak` in `server.py` serves the MP3 |
+| **Amazon Nova 2 Sonic** (Bedrock bidirectional stream) | The voice: hears the person, decides which tool to call, and speaks | `src/home_operator/sonic.py`, through `aws-sdk-bedrock-runtime` (bidirectional streaming is not in boto3). The browser reaches it over the `/voice` WebSocket |
+| **Amazon EC2**, **Amazon CloudFront**, **AWS IAM**, **AWS Systems Manager** | Host the voice app on a public HTTPS link that needs nobody's login | `deploy/hosted.yaml`: one instance whose IAM role allows only the models it uses; CloudFront for HTTPS, which a browser requires before it opens a microphone; settings and secrets in SSM Parameter Store; updates through SSM Run Command, with no SSH |
+| **Amazon Polly** (generative engine, voice Ruth) | Speaks every reply in the classic text simulator | `src/home_operator/voice.py` calls `synthesize_speech` through boto3; `/speak` in `server.py` serves the MP3 |
 | **Amazon Bedrock** (Amazon Nova 2 Lite, Converse API) | Reads a manufacturer's PDF manual once, ahead of time, and extracts parts, maintenance intervals, error codes, symptoms and step-by-step repairs | `src/home_operator/extract.py`; run `uv run home-operator-extract manual.pdf --brand LG --model WM9500HKA --category "washing machine"`. Output is validated against a strict schema and reviewed by a person before use |
 | **Amazon S3** | Holds manuals too large to send inline (over 4.5 MB); Bedrock reads them straight from the bucket | `upload_manual()` in `extract.py`, then a `s3Location` document block. The bucket is private |
 | **Amazon Bedrock AgentCore Runtime** | Hosts the MCP server itself, so the tools run on AWS rather than a laptop | `src/home_operator/mcp_entry.py` is the entry point; `homeoperator/` is the AgentCore CDK project. Protocol `MCP`, `CodeZip` build, so no container image is needed |
@@ -317,12 +379,18 @@ src/home_operator/
   mcp_entry.py           entry point used when the server runs on AgentCore Runtime
   auth.py                Cognito machine-to-machine token, cached
   mcp_client.py          MCP session against the AgentCore endpoint
-  agent.py               Strands + Bedrock agent that picks the tools
+  agent.py               Strands + Bedrock agent that picks the tools (classic simulator)
+  chat.py                the classic simulator's conversation layer
+  sonic.py               Nova 2 Sonic relay and the guard that enforces the safety rules
+  gate.py                access code and conversation limits for the hosted link
+  web/index.html         the voice app
+  web/classic.html       the original text simulator
   data/extracted/        raw and reviewed extractions, with the review log
   data/sample_home.json  sample appliances, symptoms and repair procedures
 demo.py                  runs the full story against a running server
 homeoperator/            AgentCore CDK project (created by `agentcore create`)
-tests/                   211 tests, with real CPSC recall records as fixtures
+deploy/                  hosted.yaml and hosted.sh: the public link, on EC2 and CloudFront
+tests/                   247 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 
