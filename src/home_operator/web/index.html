@@ -166,6 +166,12 @@ body.gate.listening #bar::before { background: linear-gradient(90deg, rgba(255,1
 #go { width: 120px; height: 120px; border-radius: 50%; position: relative; }
 #go::before { content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 6px; background: conic-gradient(from var(--spin), var(--blue), var(--cyan), var(--blue), var(--cyan), var(--blue)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spin 6s linear infinite; filter: drop-shadow(0 0 16px rgba(0,202,255,.6)); }
 #go svg { width: 40px; height: 40px; position: relative; }
+#codebox { display: none; margin: 0 auto 26px; max-width: 320px; }
+body.locked #codebox { display: block; }
+#codebox input { width: 100%; background: rgba(255,255,255,.06); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 14px 16px; color: var(--text); font: inherit; font-size: 17px; text-align: center; letter-spacing: .02em; outline: none; }
+#codebox input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,202,255,.18); }
+#codebox label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+#codeerr { min-height: 20px; font-size: 13px; color: #ff9da0; margin-top: 8px; }
 #start .fine { font-size: 13px; color: var(--faint); margin-top: 22px; }
 #start .fine a { color: var(--muted); }
 
@@ -339,6 +345,11 @@ body:not(.notrace) .words { padding-bottom: 210px; }
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
     </button>
     <h1>Talk to Home Operator</h1>
+    <form id="codebox" onsubmit="return false">
+      <label for="code">Enter the access code to start</label>
+      <input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="access code">
+      <div id="codeerr" role="alert"></div>
+    </form>
     <p>Hands-free help with the appliances in your home. Just talk, and interrupt whenever you like. Say &ldquo;next&rdquo; to move through a repair.</p>
     <div class="fine">Not sure what to say? Tap <b>?</b> at the bottom left for the appliances and a demo script.<br><br>Speech to speech with Amazon Nova 2 Sonic. Tools on Amazon Bedrock AgentCore.<br>Headphones help if your speakers are loud. <a href="classic.html">Classic text simulator</a></div>
   </div>
@@ -594,7 +605,18 @@ function connect() {
     }
     onEvent(JSON.parse(data));
   };
-  ws.onclose = () => {
+  ws.onclose = ev => {
+    if (ev.code === 4401) {
+      // The code was never given, or the cookie expired: ask for it again.
+      live = false;
+      body.classList.remove("live");
+      setState(null);
+      locked = true;
+      body.classList.add("locked");
+      $("start").classList.remove("hidden");
+      setChip("conn", "Access code needed", "wait");
+      return;
+    }
     if (!live) return;
     live = false;
     body.classList.remove("live");
@@ -612,7 +634,26 @@ function connect() {
   ws.onerror = () => setChip("conn", "Connection failed", "bad");
 }
 
+// On a hosted link the tools need an access code; on a laptop they do not, and
+// the box never appears.
+let locked = false;
+fetch("/unlock").then(r => r.json()).then(d => { locked = !!d.locked; body.classList.toggle("locked", locked); if (locked) $("code").focus(); }).catch(() => {});
+
+async function unlockFirst() {
+  if (!locked) return true;
+  const code = $("code").value.trim();
+  if (!code) { $("codeerr").textContent = "Enter the access code first."; $("code").focus(); return false; }
+  const res = await fetch("/unlock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) { $("codeerr").textContent = d.error || "That didn't work."; return false; }
+  locked = false;
+  body.classList.remove("locked");
+  $("codeerr").textContent = "";
+  return true;
+}
+
 async function start() {
+  if (!(await unlockFirst())) return;
   $("start").classList.add("hidden");
   try {
     if (!outCtx) initOutput();
@@ -932,6 +973,7 @@ const RENDER = {
 
 // ---------------------------------------------------------------- controls
 $("go").onclick = start;
+$("code").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
 $("orb").onclick = () => (live ? stop() : start());
 $("mute").onclick = () => {
   muted = !muted;
@@ -957,7 +999,7 @@ $("voice").onchange = () => {
 };
 try { const v = localStorage.getItem("ho-voice"); if (v) $("voice").value = v; } catch (_) {}
 document.addEventListener("keydown", e => {
-  if (e.target.tagName === "SELECT") return;
+  if (["SELECT", "INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
   if (e.key === "m" || e.key === "M") $("mute").click();
   if (e.key === "d" || e.key === "D") $("hoodbtn").click();
   if (e.key === "t" || e.key === "T") $("tracebtn").click();

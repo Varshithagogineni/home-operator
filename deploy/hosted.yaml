@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Home Operator, hosted: the voice simulator and its Nova 2 Sonic relay on one
+  small EC2 instance, behind CloudFront for HTTPS. The instance signs its AWS
+  calls with an IAM role, so nothing here depends on anyone's `aws login`.
+  The eight MCP tools stay where they are, on AgentCore Runtime.
+  Create and update with deploy/hosted.sh; delete the stack to remove it all.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A public subnet; the instance needs outbound internet for Bedrock and Cognito.
+  CloudFrontPrefixList:
+    Type: String
+    Description: The managed prefix list com.amazonaws.global.cloudfront.origin-facing, so only CloudFront can reach the instance.
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+  InstanceType:
+    Type: String
+    Default: t4g.small
+  ArtifactBucket:
+    Type: String
+    Description: Where deploy/hosted.sh uploads the app.
+  ArtifactKey:
+    Type: String
+    Default: home-operator/app.tar.gz
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Home Operator hosted server. Credentials rotate automatically; nothing expires.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # Lets deploy/hosted.sh update the app with SSM Run Command: no SSH, no open port 22.
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: home-operator
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: TheTwoModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:InvokeModelWithBidirectionalStream
+                Resource:
+                  - arn:aws:bedrock:*::foundation-model/amazon.nova-2-sonic-v1:0
+                  - arn:aws:bedrock:*::foundation-model/amazon.nova-2-lite-v1:0
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/us.amazon.nova-2-lite-v1:0
+              - Sid: TheClassicPagesVoice
+                Effect: Allow
+                Action: polly:SynthesizeSpeech
+                Resource: "*"
+              - Sid: ItsSettings
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/home-operator/*
+              - Sid: ItsCode
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub arn:aws:s3:::${ArtifactBucket}/${ArtifactKey}
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Role]
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Home Operator - only CloudFront may reach the app port
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourcePrefixListId: !Ref CloudFrontPrefixList
+          Description: CloudFront origin-facing addresses
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref SecurityGroup]
+      MetadataOptions:
+        HttpTokens: required
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: { VolumeSize: 16, VolumeType: gp3, Encrypted: true }
+      Tags:
+        - { Key: Name, Value: home-operator }
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf install -y tar gzip
+          id app || useradd -m -s /bin/bash app
+          sudo -u app bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+
+          # Fetch the app and its settings, install, and (re)start. Run again by
+          # `deploy/hosted.sh update` through SSM Run Command.
+          cat > /usr/local/bin/ho-update <<'SCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+          export AWS_REGION=${AWS::Region}
+          TMP=$(mktemp -d)
+          aws s3 cp s3://${ArtifactBucket}/${ArtifactKey} $TMP/app.tar.gz
+          systemctl stop home-operator 2>/dev/null || true
+          rm -rf /home/app/app && mkdir -p /home/app/app
+          tar -xzf $TMP/app.tar.gz -C /home/app/app
+          aws ssm get-parameter --name /home-operator/env --with-decryption --query Parameter.Value --output text > /home/app/app/.env
+          echo "ACCESS_CODE=$(aws ssm get-parameter --name /home-operator/access-code --with-decryption --query Parameter.Value --output text)" >> /home/app/app/.env
+          chown -R app:app /home/app/app
+          chmod 600 /home/app/app/.env
+          sudo -u app bash -lc 'cd /home/app/app && ~/.local/bin/uv sync --frozen --no-dev --group speech'
+          systemctl start home-operator
+          rm -rf $TMP
+          SCRIPT
+          chmod 755 /usr/local/bin/ho-update
+
+          cat > /etc/systemd/system/home-operator.service <<'UNIT'
+          [Unit]
+          Description=Home Operator
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User=app
+          WorkingDirectory=/home/app/app
+          Environment=HOST=0.0.0.0
+          Environment=PORT=8080
+          ExecStart=/home/app/.local/bin/uv run --no-sync home-operator
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemctl daemon-reload
+          systemctl enable home-operator
+          /usr/local/bin/ho-update
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Home Operator
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: app
+            DomainName: !GetAtt Instance.PublicDnsName
+            CustomOriginConfig:
+              HTTPPort: 8080
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 60
+        DefaultCacheBehavior:
+          TargetOriginId: app
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          Compress: true
+          # CachingDisabled: every request reaches the app, which is what a live voice session needs.
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          # AllViewerExceptHostHeader: cookies (the access code), query strings and the WebSocket upgrade pass through.
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+
+Outputs:
+  Url:
+    Description: The link to share.
+    Value: !Sub https://${Distribution.DomainName}/
+  InstanceId:
+    Value: !Ref Instance

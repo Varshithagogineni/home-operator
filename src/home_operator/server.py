@@ -1,7 +1,9 @@
 import asyncio
 import base64
+import hmac
 import json
 import os
+import time
 from datetime import date
 from pathlib import Path
 from typing import Annotated
@@ -11,12 +13,12 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 import anyio
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from starlette.staticfiles import StaticFiles
 
-from home_operator import store, voice
+from home_operator import gate, store, voice
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -268,13 +270,27 @@ async def voice_socket(ws: WebSocket) -> None:
             else:
                 await ws.send_text(json.dumps(event, default=str))
 
+    refused = gate.LIMITS.acquire()
+    if refused:
+        await emit({"type": "error", "code": refused, "error": (
+            "Home Operator is busy with other conversations right now." if refused == "busy"
+            else "Home Operator has reached today's limit of conversations."
+        ), "hint": "try again in a few minutes" if refused == "busy" else "try again tomorrow"})
+        await ws.close(code=4429)
+        return
+
     session = sonic.SonicSession(emit, voice=ws.query_params.get("voice") or sonic.VOICE_ID)
+    deadline = time.monotonic() + gate.SESSION_SECONDS
     try:
         await session.start()
         await emit({"type": "ready", "tools": len(session._tools), "voice": session.voice})
         while True:
             message = await ws.receive()
             if message["type"] == "websocket.disconnect":
+                break
+            if time.monotonic() > deadline:
+                await emit({"type": "error", "code": "time_limit",
+                            "error": "That conversation reached its time limit.", "hint": "press Start to begin a new one"})
                 break
             if message.get("bytes"):
                 await session.send_audio(message["bytes"])
@@ -295,7 +311,74 @@ async def voice_socket(ws: WebSocket) -> None:
         except Exception:  # noqa: BLE001
             pass
     finally:
+        gate.LIMITS.release()
         await session.close()
+
+
+def _client(request: Request) -> str:
+    # Behind CloudFront every request comes from CloudFront. It appends the
+    # viewer's real address last; anything before that the viewer could have
+    # written themselves, so only the last one counts towards the guess limit.
+    forwarded = request.headers.get("x-forwarded-for", "")
+    return forwarded.split(",")[-1].strip() or (request.client.host if request.client else "?")
+
+
+async def unlock_status(request: Request) -> Response:
+    return JSONResponse({"locked": not gate.allowed(gate.cookie_from(dict(request.headers)))})
+
+
+async def unlock(request: Request) -> Response:
+    who = _client(request)
+    if gate.ATTEMPTS.blocked(who):
+        return JSONResponse({"ok": False, "error": "Too many tries. Wait a few minutes."}, status_code=429)
+    try:
+        attempt = str((await request.json()).get("code", ""))
+    except ValueError:
+        attempt = ""
+    code = gate.access_code()
+    if code and not hmac.compare_digest(gate.token_for(attempt), gate.token_for(code)):
+        gate.ATTEMPTS.failed(who)
+        return JSONResponse({"ok": False, "error": "That code isn't right."}, status_code=403)
+    response = JSONResponse({"ok": True})
+    if code:
+        https = request.headers.get("cloudfront-forwarded-proto") == "https" or request.url.scheme == "https"
+        response.set_cookie(gate.COOKIE, gate.token_for(code), max_age=gate.COOKIE_DAYS * 86400,
+                            httponly=True, secure=https, samesite="lax")
+    return response
+
+
+async def ping(request: Request) -> Response:
+    return JSONResponse({"ok": True})
+
+
+async def home(request: Request) -> Response:
+    return RedirectResponse("/sim/")
+
+
+class AccessCode:
+    """Holds back the endpoints that reach AWS until the access code is given.
+
+    Plain ASGI rather than Starlette middleware, because it has to cover the
+    WebSocket too. A refused socket is accepted and then closed with 4401, so
+    the page can tell "needs the code" apart from "the network dropped".
+    """
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket") and gate.is_protected(scope.get("path", "")):
+            headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+            if not gate.allowed(gate.cookie_from(headers)):
+                if scope["type"] == "websocket":
+                    await receive()
+                    await send({"type": "websocket.accept"})
+                    await send({"type": "websocket.close", "code": 4401})
+                    return
+                response = JSONResponse({"error": "access code required"}, status_code=401)
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 def build_app():
@@ -305,6 +388,10 @@ def build_app():
     app.router.routes.append(Route("/chat", chat, methods=["POST"]))
     app.router.routes.append(Route("/chat/warm", warm, methods=["GET"]))
     app.router.routes.append(WebSocketRoute("/voice", voice_socket))
+    app.router.routes.append(Route("/unlock", unlock_status, methods=["GET"]))
+    app.router.routes.append(Route("/unlock", unlock, methods=["POST"]))
+    app.router.routes.append(Route("/ping", ping, methods=["GET"]))
+    app.router.routes.append(Route("/", home, methods=["GET"]))
     app.router.routes.append(
         Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")
     )
@@ -319,7 +406,11 @@ def main() -> None:
     print(f"MCP endpoint  http://{host}:{port}/mcp")
     print(f"Simulator     http://{host}:{port}/sim/")
     print(f"Classic       http://{host}:{port}/sim/classic.html")
-    uvicorn.run(build_app(), host=host, port=port, log_level="info")
+    if gate.access_code():
+        print("Access code   required for /voice, /chat, /speak and /mcp")
+    # proxy_headers: behind CloudFront, trust its forwarded address and scheme.
+    uvicorn.run(AccessCode(build_app()), host=host, port=port, log_level="info",
+                proxy_headers=True, forwarded_allow_ips="*")
 
 
 if __name__ == "__main__":
