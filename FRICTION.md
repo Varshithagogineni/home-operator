@@ -154,7 +154,7 @@ hackathon's product feedback. Each entry follows the submission format.
 - **Workaround:** None needed; it is noise.
 - **Suggestion:** Implement `DELETE` as a no-op returning 200, or state in the MCP protocol contract that termination is unsupported so clients can stop logging it as a failure.
 
-### Amazon Nova 2 Sonic was evaluated for speech-to-speech and not adopted
+### Amazon Nova 2 Sonic was first ruled out for speech-to-speech, then adopted after testing
 - **Date:** 2026-09-23
 - **Tool / API:** Amazon Nova 2 Sonic (`amazon.nova-2-sonic-v1:0`), `aws-sdk-bedrock-runtime` (Developer Preview), Amazon Polly
 - **Task attempted:** Replace the Polly text-to-speech layer with a true speech-to-speech model that can also call the MCP tools.

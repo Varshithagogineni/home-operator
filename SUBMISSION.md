@@ -141,7 +141,63 @@ and the service history is seeded.
 ## Product feedback
 
 *(The full log, with reproduction steps, is FRICTION.md in the repo: 14 entries
-written as they happened.)*
+written as they happened, each with the task, steps, expected and actual result,
+severity, workaround and suggestion.)*
+
+### Which developer tools, APIs and SDKs did you use, and for what?
+
+| Tool | What it does in Home Operator |
+|---|---|
+| **Amazon Bedrock AgentCore Runtime** + the AgentCore CLI and CDK | Hosts the MCP server: eight tools, protocol MCP, `CodeZip` build, `CUSTOM_JWT` authorizer. `homeoperator/` is the CDK project; `src/home_operator/mcp_entry.py` is the entry point |
+| **Amazon Nova 2 Sonic** (Bedrock bidirectional streaming, `aws-sdk-bedrock-runtime`) | The voice: hears the person, decides which tool to call, speaks the answer, and can be interrupted. `src/home_operator/sonic.py` |
+| **Amazon Bedrock**, Nova 2 Lite, Converse API document understanding | Read each manufacturer's PDF once and extracted repair steps, error codes, intervals and parts. `src/home_operator/extract.py` |
+| **Amazon Cognito** | Machine-to-machine sign-in to the tools: a user pool, a resource server and a `client_credentials` app client. `src/home_operator/auth.py` |
+| **Amazon S3** | Holds the manuals over Bedrock's 4.5 MB inline limit, read by Bedrock straight from the bucket |
+| **Amazon EC2, Amazon CloudFront, AWS IAM, AWS Systems Manager, AWS CloudFormation** | Host the voice app on a public HTTPS link with its own IAM role, secrets in SSM Parameter Store, updates through SSM Run Command, all from one template. `deploy/hosted.yaml` |
+| **Strands Agents SDK** with Nova 2 Lite | The agent behind the original text simulator, `src/home_operator/agent.py` |
+| **Amazon Polly** (generative, voice Ruth) | Speaks the original text simulator's replies |
+| **MCP Python SDK** 2.x | The server and its clients |
+| **CPSC recalls API** (US government, public) | Finds safety recalls on the household's models, through the open-source `cpsc-recall-check` library |
+| **Alexa+ add-on documentation and CLI** | Read, but not usable: the toolkit is partner-only (below) |
+
+### What worked well?
+
+- **AgentCore Runtime with `CodeZip`.** A Python MCP server deployed without
+  Docker or an ARM image, behind a JWT authorizer, and redeployed in one
+  command. Once the 421 below was solved, it has answered every call since.
+- **Cognito `client_credentials`.** Exactly the right shape for one service
+  proving who it is to another: no users and no passwords anywhere.
+- **Nova 2 Sonic's tool use and latency.** Tool calls worked across a full
+  eight-step repair, about two seconds from the end of a sentence to the first
+  word back with the tool call included, and interrupting it feels natural. When
+  a tool reply carried the exact line to say, it said the manual's steps word for
+  word. Its speech-start and speech-end events made the listening and thinking
+  states on screen easy to build.
+- **Bedrock document understanding.** It read a 92-page manual, and a 44-page
+  one that is only scanned images, and copied every procedure accurately.
+- **IAM roles for hosting.** The voice app signs its own calls with credentials
+  AWS keeps fresh, so the public link works without anyone being logged in.
+
+### What needs work?
+
+The sections below, most important first.
+
+### How was your onboarding experience?
+
+On the AWS side, good once past a few walls, each of which cost an hour or more
+because nothing said what was wrong: a new account cannot call Bedrock for up to
+two hours; `aws login` credentials need an undocumented extra in the Python SDK;
+the AgentCore MCP samples no longer run on the current SDK; and a deployed server
+fails with a bare 421. Nova 2 Sonic needs a separate Developer Preview SDK that
+is not in boto3. On the Alexa+ side, onboarding was not possible: the documented
+CLI is not on public npm and the toolkit is partner-only, which is why the front
+end is a simulator. All of these are in FRICTION.md.
+
+### Would you build with these devices and services again?
+
+Yes. AgentCore, Bedrock and Nova 2 Sonic carried this project from a laptop to a
+public link with a real voice, and each problem above had a workaround. The day
+the Alexa+ add-on toolkit opens, this is the first thing I would put on it.
 
 ### The one that matters most: a model will talk past its tools, and no prompt stops it
 
