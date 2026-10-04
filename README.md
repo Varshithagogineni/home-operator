@@ -58,6 +58,18 @@ That is not a shortcut, it is a fix. Progress used to live in the server's memor
 
 ## Architecture
 
+[![Home Operator system architecture](docs/architecture.png)](docs/architecture.png)
+
+Read it left to right. You speak into the **browser page** (blue); **CloudFront** gives
+it the secure HTTPS address a browser needs before it will open a microphone, and
+passes everything through to the **voice app on EC2** (amber). There the relay streams
+your audio to **Amazon Nova 2 Sonic**, which decides which tool to call, and checks each
+call against the safety rules (the darker amber steps) before sending it, with a token
+from **Amazon Cognito**, to the **MCP server on Bedrock AgentCore** (purple). Its eight
+tools answer from data a person checked against the manuals. The **green band** is how
+that data was made, days earlier: manual PDFs, read by Amazon Bedrock, every entry
+checked by a person. Click the image for full size.
+
 Two lanes, and only one of them runs while someone is talking.
 
 ```
@@ -390,6 +402,7 @@ src/home_operator/
 demo.py                  runs the full story against a running server
 homeoperator/            AgentCore CDK project (created by `agentcore create`)
 deploy/                  hosted.yaml and hosted.sh: the public link, on EC2 and CloudFront
+docs/architecture.png    the system architecture diagram
 tests/                   247 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
