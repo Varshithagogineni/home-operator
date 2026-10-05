@@ -33,7 +33,20 @@
       },
       "lifecycleConfiguration": {
         "idleRuntimeSessionTimeout": 3600
-      }
+      },
+      "envVars": [
+        {
+          "name": "HOME_TABLE",
+          "value": "home-operator-household"
+        },
+        {
+          "name": "HOUSEHOLD_ID",
+          "value": "demo"
+        }
+      ],
+      "additionalPolicies": [
+        "agentcore-household-policy.json"
+      ]
     }
   ],
   "memories": [],

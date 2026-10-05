@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Home Operator household changes: jobs people logged and appliances they added,
+  one item per household. The checked manual data is not stored here; it ships
+  with the code and is never written. Deploy before the AgentCore runtime that
+  reads it:
+    aws cloudformation deploy --stack-name home-operator-household \
+      --template-file deploy/household-table.yaml
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain   # a teardown of the app should not erase a household
+    Properties:
+      TableName: home-operator-household
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: household_id, AttributeType: S }
+      KeySchema:
+        - { AttributeName: household_id, KeyType: HASH }
+      SSESpecification: { SSEEnabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+
+Outputs:
+  TableName:
+    Value: !Ref Table
+  TableArn:
+    Value: !GetAtt Table.Arn

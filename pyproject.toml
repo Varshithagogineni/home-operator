@@ -18,6 +18,7 @@ home-operator-mcp = "home_operator.mcp_entry:main"
 home-operator-agent = "home_operator.agent:main"
 home-operator-check-recalls = "home_operator.recalls:main"
 home-operator-extract = "home_operator.extract:main"
+home-operator-reset-household = "home_operator.household:reset_main"
 
 [dependency-groups]
 dev = [

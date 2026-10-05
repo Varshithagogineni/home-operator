@@ -17,11 +17,22 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from starlette.staticfiles import StaticFiles
 
-from home_operator import gate, store, voice
+from home_operator import gate, household, store, voice
 
 WEB_DIR = Path(__file__).parent / "web"
 
-HOME = store.load_home()
+# The checked manual data plus whatever people have changed since. Kept in
+# DynamoDB when HOME_TABLE is set, so a logged job survives a restart.
+HOUSEHOLD = household.Household()
+
+
+def _changing(fn):
+    """Run a tool that adds to the household, and keep what it added."""
+    home = HOUSEHOLD.load()
+    before = {"service_log": list(home["service_log"]), "appliances": list(home["appliances"])}
+    result = fn(home)
+    HOUSEHOLD.save(before, home)
+    return result
 
 mcp = MCPServer(
     name="home-operator",
@@ -58,7 +69,7 @@ def get_appliance(
         Field(description='The appliance as the person said it, e.g. "furnace", "the fridge", or "kitchen dishwasher".'),
     ],
 ) -> dict:
-    return store.describe_appliance(HOME, appliance, date.today())
+    return store.describe_appliance(HOUSEHOLD.load(), appliance, date.today())
 
 
 @mcp.tool(
@@ -80,7 +91,7 @@ def get_maintenance_due(
         Field(description="How many days ahead to look for upcoming tasks. Overdue tasks are always included.", ge=0, le=365),
     ] = 30,
 ) -> dict:
-    return store.maintenance_due(HOME, date.today(), within_days)
+    return store.maintenance_due(HOUSEHOLD.load(), date.today(), within_days)
 
 
 @mcp.tool(
@@ -96,7 +107,7 @@ def diagnose_symptom(
     appliance: Annotated[str, Field(description='Which appliance, e.g. "dishwasher" or "the furnace".')],
     symptom: Annotated[str, Field(description='What it is doing, in the person\'s own words, e.g. "it will not drain".')],
 ) -> dict:
-    return store.diagnose_symptom(HOME, appliance, symptom, date.today())
+    return store.diagnose_symptom(HOUSEHOLD.load(), appliance, symptom, date.today())
 
 
 @mcp.tool(
@@ -115,7 +126,7 @@ def start_repair(
     appliance: Annotated[str, Field(description='Which appliance, e.g. "dishwasher".')],
     task: Annotated[str, Field(description='The repair to walk through, e.g. "clean the filter".')],
 ) -> dict:
-    return store.start_repair(HOME, appliance, task, date.today())
+    return store.start_repair(HOUSEHOLD.load(), appliance, task, date.today())
 
 
 @mcp.tool(
@@ -140,7 +151,8 @@ def navigate_repair(
         "A vague yes is not a confirmation that a machine is switched off."
     ))] = "",
 ) -> dict:
-    return store.navigate_repair(HOME, action, repair, step, date.today(), said)
+    # Finishing the last step logs the service, so this one can change the household too.
+    return _changing(lambda home: store.navigate_repair(home, action, repair, step, date.today(), said))
 
 
 @mcp.tool(
@@ -156,7 +168,7 @@ def log_service(
     task: Annotated[str, Field(description='What was done, e.g. "replaced the water filter".')],
     notes: Annotated[str | None, Field(description="Anything worth remembering next time.")] = None,
 ) -> dict:
-    return store.log_service(HOME, appliance, task, date.today(), notes)
+    return _changing(lambda home: store.log_service(home, appliance, task, date.today(), notes))
 
 
 @mcp.tool(
@@ -175,7 +187,7 @@ def add_appliance(
     room: Annotated[str | None, Field(description='Where it is, e.g. "kitchen".')] = None,
     nickname: Annotated[str | None, Field(description='What the person calls it, e.g. "upstairs washer".')] = None,
 ) -> dict:
-    return store.add_appliance(HOME, kind, brand, model_number, date.today(), room, nickname)
+    return _changing(lambda home: store.add_appliance(home, kind, brand, model_number, date.today(), room, nickname))
 
 
 @mcp.tool(
@@ -191,7 +203,7 @@ def prepare_pro_brief(
     appliance: Annotated[str, Field(description='Which appliance, e.g. "dishwasher".')],
     symptom: Annotated[str | None, Field(description='The problem in the person\'s words, e.g. "still won\'t drain".')] = None,
 ) -> dict:
-    return store.prepare_pro_brief(HOME, appliance, date.today(), symptom)
+    return store.prepare_pro_brief(HOUSEHOLD.load(), appliance, date.today(), symptom)
 
 
 async def speak(request: Request) -> Response:

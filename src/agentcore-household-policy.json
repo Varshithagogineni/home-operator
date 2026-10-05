@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "HouseholdChangesOnly",
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
+      "Resource": "arn:aws:dynamodb:us-east-1:258524844702:table/home-operator-household"
+    }
+  ]
+}
