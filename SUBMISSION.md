@@ -44,6 +44,13 @@ talks you through them, out loud, and you can interrupt it at any time:
   technician, because the manuals are explicit about the difference.
 - **"It still won't drain, I need someone."** A brief to read to a repair
   professional: model, age, warranty, the fault, and what you already tried.
+- **A photo of a new appliance's label.** Alexa+ already reads photos people
+  upload; here a Nova model stands in for that step, and Home Operator's own
+  `add_appliance` tool takes the hand-off: the model is registered with a
+  maintenance schedule and checked against the government's recall database,
+  live, in about two seconds.
+- **"I replaced the fridge filter."** Logged with today's date and kept: what
+  you do and add is stored in Amazon DynamoDB, so it is still there tomorrow.
 
 And before any of that, if it matters: **"Your dishwasher's model is named in a
 safety recall, so it may be affected. The power cord can overheat and catch
@@ -91,6 +98,12 @@ Every tool call is on screen as it happens, with what the model asked for next
 to what was sent, so a viewer can see that the answers come from AgentCore and
 not from the model.
 
+**Measured, not just claimed.** In 43 spoken conversations with the live link,
+the washer's power-off gate held every time someone said "next", "tell me step
+four" or a bare "yes please" (30 of 30), and opened every time they said "okay,
+it's unplugged" (10 of 10). The safety warning and every repair line were spoken
+word for word in all 40 completed runs. The harness is `evals/voice_safety.py`.
+
 **The slow lane runs days earlier, offline.** A manual PDF goes to Amazon S3,
 Amazon Bedrock reads it and returns structured steps, intervals and symptoms,
 and then a person checks every entry against the page. Every correction is
@@ -122,7 +135,7 @@ and the service history is seeded.
 ## Built with
 
 `amazon-nova-sonic` `amazon-bedrock` `amazon-bedrock-agentcore` `strands-agents`
-`amazon-cognito` `amazon-ec2` `amazon-cloudfront` `aws-iam` `aws-systems-manager`
+`amazon-cognito` `amazon-dynamodb` `amazon-ec2` `amazon-cloudfront` `aws-iam` `aws-systems-manager`
 `amazon-polly` `amazon-s3` `model-context-protocol` `python` `starlette`
 `uvicorn` `websockets` `javascript` `cpsc-api`
 
@@ -144,60 +157,119 @@ and the service history is seeded.
 written as they happened, each with the task, steps, expected and actual result,
 severity, workaround and suggestion.)*
 
-### Which developer tools, APIs and SDKs did you use, and for what?
+Devpost asks five things of each tool: what it was used for, what worked, what
+needs work, how onboarding went, and whether we would build with it again. Each
+tool is answered on its own below; the longer write-ups after them are the
+"needs work" items worth the most to the teams.
 
-| Tool | What it does in Home Operator |
-|---|---|
-| **Amazon Bedrock AgentCore Runtime** + the AgentCore CLI and CDK | Hosts the MCP server: eight tools, protocol MCP, `CodeZip` build, `CUSTOM_JWT` authorizer. `homeoperator/` is the CDK project; `src/home_operator/mcp_entry.py` is the entry point |
-| **Amazon Nova 2 Sonic** (Bedrock bidirectional streaming, `aws-sdk-bedrock-runtime`) | The voice: hears the person, decides which tool to call, speaks the answer, and can be interrupted. `src/home_operator/sonic.py` |
-| **Amazon Bedrock**, Nova 2 Lite, Converse API document understanding | Read each manufacturer's PDF once and extracted repair steps, error codes, intervals and parts. `src/home_operator/extract.py` |
-| **Amazon Cognito** | Machine-to-machine sign-in to the tools: a user pool, a resource server and a `client_credentials` app client. `src/home_operator/auth.py` |
-| **Amazon S3** | Holds the manuals over Bedrock's 4.5 MB inline limit, read by Bedrock straight from the bucket |
-| **Amazon EC2, Amazon CloudFront, AWS IAM, AWS Systems Manager, AWS CloudFormation** | Host the voice app on a public HTTPS link with its own IAM role, secrets in SSM Parameter Store, updates through SSM Run Command, all from one template. `deploy/hosted.yaml` |
-| **Strands Agents SDK** with Nova 2 Lite | The agent behind the original text simulator, `src/home_operator/agent.py` |
-| **Amazon Polly** (generative, voice Ruth) | Speaks the original text simulator's replies |
-| **MCP Python SDK** 2.x | The server and its clients |
-| **CPSC recalls API** (US government, public) | Finds safety recalls on the household's models, through the open-source `cpsc-recall-check` library |
-| **Alexa+ add-on documentation and CLI** | Read, but not usable: the toolkit is partner-only (below) |
+### Amazon Bedrock AgentCore Runtime (with the AgentCore CLI and CDK)
 
-### What worked well?
+- **Used for:** hosting the MCP server, the eight tools the voice calls, behind
+  a `CUSTOM_JWT` authorizer, built with `CodeZip`. Environment variables and an
+  extra IAM policy give it the household table in DynamoDB.
+- **Worked well:** a Python MCP server deployed with no Docker and no ARM image,
+  redeployed in one command, and `agentcore deploy --diff` showed exactly which
+  permission and setting would change before anything did.
+- **Needs work:** a deployed server fails with a bare `421` (the MCP SDK's
+  DNS-rebinding check rejects AgentCore's proxy host); AgentCore health-checks
+  `/ping`, which no MCP SDK serves; every session close logs a `404`; and the
+  documented MCP samples no longer run on the current SDK.
+- **Onboarding:** the samples failing on a fresh install, then the 421, which
+  only CloudWatch explained. Once past those, nothing else went wrong.
+- **Again?** Yes. It is the most direct way we found to put an MCP server on AWS
+  behind real authentication.
 
-- **AgentCore Runtime with `CodeZip`.** A Python MCP server deployed without
-  Docker or an ARM image, behind a JWT authorizer, and redeployed in one
-  command. Once the 421 below was solved, it has answered every call since.
-- **Cognito `client_credentials`.** Exactly the right shape for one service
-  proving who it is to another: no users and no passwords anywhere.
-- **Nova 2 Sonic's tool use and latency.** Tool calls worked across a full
-  eight-step repair, about two seconds from the end of a sentence to the first
-  word back with the tool call included, and interrupting it feels natural. When
-  a tool reply carried the exact line to say, it said the manual's steps word for
-  word. Its speech-start and speech-end events made the listening and thinking
-  states on screen easy to build.
-- **Bedrock document understanding.** It read a 92-page manual, and a 44-page
-  one that is only scanned images, and copied every procedure accurately.
-- **IAM roles for hosting.** The voice app signs its own calls with credentials
-  AWS keeps fresh, so the public link works without anyone being logged in.
+### Amazon Nova 2 Sonic
 
-### What needs work?
+- **Used for:** the voice. It hears the person, decides which tool to call, and
+  speaks, and can be interrupted. `src/home_operator/sonic.py`.
+- **Worked well:** tool use across a full eight-step repair; about two seconds
+  from the end of a sentence to the first word back, tool call included; natural
+  interruption; speech-start and speech-end events that made the on-screen
+  listening and thinking states easy; and, given the exact line, it spoke every
+  repair step word for word (40 of 40 runs).
+- **Needs work:** it chains tool calls in one turn (start a repair, clear its
+  safety gate and advance, in one breath); it fills tool arguments with its own
+  paraphrase of what the person said; and now and then it speaks its reasoning.
+  Each needed code in a relay. Bidirectional streaming is not in boto3, and the
+  Developer Preview SDK does not read `aws login` credentials.
+- **Onboarding:** finding the separate preview SDK, and open re:Post reports that
+  made tool use look riskier than it turned out to be.
+- **Again?** Yes, with the relay. An option for at most one tool call per turn
+  would remove most of it.
 
-The sections below, most important first.
+### Amazon Bedrock with Nova 2 Lite (document understanding, photo reading)
 
-### How was your onboarding experience?
+- **Used for:** reading each manufacturer's PDF once and extracting steps, error
+  codes, intervals and parts (`extract.py`); and reading the brand and model off
+  a photo of an appliance's rating label (`photo.py`).
+- **Worked well:** it read a 92-page manual, and a 44-page one that is only
+  scanned images, and copied every procedure accurately. It reads a rating
+  label in about a second.
+- **Needs work:** it invents figures where a manual is vague ("every 30 days"
+  where LG says "periodically"), dropped two safety warnings, and cited the
+  French half of a bilingual manual. The content filter once blocked its own
+  output, reported only in English prose.
+- **Onboarding:** a new account cannot call Bedrock for up to two hours, and the
+  error does not say that waiting is the fix.
+- **Again?** Yes, for extraction a person then checks. 46 corrections say it
+  should never be trusted unreviewed for safety steps.
 
-On the AWS side, good once past a few walls, each of which cost an hour or more
-because nothing said what was wrong: a new account cannot call Bedrock for up to
-two hours; `aws login` credentials need an undocumented extra in the Python SDK;
-the AgentCore MCP samples no longer run on the current SDK; and a deployed server
-fails with a bare 421. Nova 2 Sonic needs a separate Developer Preview SDK that
-is not in boto3. On the Alexa+ side, onboarding was not possible: the documented
-CLI is not on public npm and the toolkit is partner-only, which is why the front
-end is a simulator. All of these are in FRICTION.md.
+### Amazon Cognito
 
-### Would you build with these devices and services again?
+- **Used for:** machine-to-machine sign-in to the tools: `client_credentials`,
+  no users and no passwords.
+- **Worked well:** exactly the right shape for one service proving who it is.
+- **Needs work:** `client_credentials` needs a custom scope, so a resource server
+  must exist first; and a Cognito access token has no `aud` claim, so the
+  natural `allowedAudience` check rejects every call. `allowedClients` works.
+- **Onboarding:** quick once those two were known.
+- **Again?** Yes.
 
-Yes. AgentCore, Bedrock and Nova 2 Sonic carried this project from a laptop to a
-public link with a real voice, and each problem above had a workaround. The day
-the Alexa+ add-on toolkit opens, this is the first thing I would put on it.
+### Amazon DynamoDB
+
+- **Used for:** a household's changes (logged jobs, added appliances), one item
+  per household, read on every call so every AgentCore copy agrees.
+- **Worked well:** `list_append` updates, on-demand billing, and a one-resource
+  CloudFormation template.
+- **Needs work:** the boto3 resource API returns numbers as `Decimal`, which
+  breaks date arithmetic until converted.
+- **Onboarding:** minutes.
+- **Again?** Yes.
+
+### Amazon EC2, CloudFront, IAM, Systems Manager and CloudFormation
+
+- **Used for:** hosting the voice app on a public HTTPS link (`deploy/hosted.yaml`).
+- **Worked well:** an IAM role means the app never depends on anyone's login;
+  CloudFront's managed policies carry WebSockets and cookies with no custom
+  config; SSM Run Command ships updates with no SSH.
+- **Needs work:** `aws login` sessions lapse after a few hours, and an app run
+  from a laptop simply stops; nothing in the CLI says so up front.
+- **Onboarding:** straightforward.
+- **Again?** Yes.
+
+### Strands Agents SDK and Amazon Polly
+
+- **Used for:** the original text simulator: a Strands agent on Nova 2 Lite
+  picking tools, Polly's generative voice Ruth speaking.
+- **Worked well:** Strands' `MCPClient` talked to the AgentCore endpoint with a
+  bearer token unchanged; Polly's generative voice was the best of the TTS
+  voices we compared.
+- **Needs work:** `MCPClient.call_tool_sync` paid an AgentCore session wake-up on
+  every call: 3.6 to 8.3 seconds, against 0.3 to 0.45 with one held session.
+- **Again?** Yes, with session reuse documented.
+
+### Alexa+ add-on documentation and CLI
+
+- **Used for:** designing the add-on. The documented model, an add-on as tools
+  Alexa+ calls, is exactly why this is an MCP server.
+- **Needs work:** `npm install -g @alexa-ai/cli` returns 404 on public npm, and
+  the testing docs describe a simulator participants cannot use. Amazon staff
+  confirmed in the forum that the toolkit is partner-only; that should be on the
+  documentation page.
+- **Onboarding:** not possible for a participant, which is why the front end is
+  a simulator.
+- **Again?** Yes, the day it opens. This is the first thing we would put on it.
 
 ### The one that matters most: a model will talk past its tools, and no prompt stops it
 

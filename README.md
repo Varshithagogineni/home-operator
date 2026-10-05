@@ -16,6 +16,7 @@ Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonapp
 4. "Tell me step four." Still refused: a safety step can't be skipped.
 5. "Okay, it's unplugged." Step 2, word for word from page 40 of the manual.
 6. "What filter does the furnace take?" Ask anything mid-repair; your place is kept.
+7. Tap the camera and photograph an appliance's rating label. It is read, registered and checked against the government's recall database in about two seconds.
 
 Tap **?** for the five appliances and more to try. Press **D** to see every tool call the voice model makes, with what it asked for and what was actually sent to AgentCore.
 
@@ -389,6 +390,8 @@ What review found across three manuals: the model copied all four procedures and
 | Service | What it does here | How |
 |---|---|---|
 | **Amazon Nova 2 Sonic** (Bedrock bidirectional stream) | The voice: hears the person, decides which tool to call, and speaks | `src/home_operator/sonic.py`, through `aws-sdk-bedrock-runtime` (bidirectional streaming is not in boto3). The browser reaches it over the `/voice` WebSocket |
+| **Amazon DynamoDB** | Keeps a household's changes, the jobs people log and appliances they add, so they survive a restart | `src/home_operator/household.py`; one item per household, read on every call so every AgentCore copy agrees. The checked manual data is never written. `deploy/household-table.yaml` |
+| **Amazon Bedrock**, Nova 2 Lite, reading photos | Reads the brand and model off a photo of an appliance's rating label, standing in for Alexa+'s own photo reading | `src/home_operator/photo.py`, then the `add_appliance` tool and a live CPSC recall check. A model number that does not look like one is refused rather than guessed |
 | **Amazon EC2**, **Amazon CloudFront**, **AWS IAM**, **AWS Systems Manager** | Host the voice app on a public HTTPS link that needs nobody's login | `deploy/hosted.yaml`: one instance whose IAM role allows only the models it uses; CloudFront for HTTPS, which a browser requires before it opens a microphone; settings and secrets in SSM Parameter Store; updates through SSM Run Command, with no SSH |
 | **Amazon Polly** (generative engine, voice Ruth) | Speaks every reply in the classic text simulator | `src/home_operator/voice.py` calls `synthesize_speech` through boto3; `/speak` in `server.py` serves the MP3 |
 | **Amazon Bedrock** (Amazon Nova 2 Lite, Converse API) | Reads a manufacturer's PDF manual once, ahead of time, and extracts parts, maintenance intervals, error codes, symptoms and step-by-step repairs | `src/home_operator/extract.py`; run `uv run home-operator-extract manual.pdf --brand LG --model WM9500HKA --category "washing machine"`. Output is validated against a strict schema and reviewed by a person before use |
@@ -424,6 +427,8 @@ src/home_operator/
   chat.py                the classic simulator's conversation layer
   sonic.py               Nova 2 Sonic relay and the guard that enforces the safety rules
   gate.py                access code and conversation limits for the hosted link
+  household.py           a household's changes, kept in DynamoDB
+  photo.py               reads an appliance's rating label from a photo
   web/index.html         the voice app
   web/classic.html       the original text simulator
   data/extracted/        raw and reviewed extractions, with the review log
@@ -432,7 +437,8 @@ demo.py                  runs the full story against a running server
 homeoperator/            AgentCore CDK project (created by `agentcore create`)
 deploy/                  hosted.yaml and hosted.sh: the public link, on EC2 and CloudFront
 docs/architecture.png    the system architecture diagram
-tests/                   247 tests, with real CPSC recall records as fixtures
+evals/                   voice_safety.py: spoken conversations with the live app, and their results
+tests/                   264 tests, with real CPSC recall records as fixtures
 FRICTION.md              developer friction log for the hackathon feedback
 ```
 
