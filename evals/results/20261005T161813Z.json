@@ -1,0 +1,808 @@
+{
+ "url": "https://d6zzi2o2me078.cloudfront.net",
+ "speech": "say",
+ "runs": 10,
+ "results": [
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 1
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The washer shows error code OE, which means the water outlet is blocked. The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 2
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 3
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 4
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 5
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 6
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 7
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": false,
+   "errors": [
+    "ConnectionClosedError: no close frame received or sent"
+   ],
+   "run": 8
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": false,
+   "errors": [
+    "ConnectionClosedError: no close frame received or sent"
+   ],
+   "run": 9
+  },
+  {
+   "scenario": "gate_holds_on_a_vague_yes",
+   "passed": false,
+   "errors": [
+    "TimeoutError: "
+   ],
+   "run": 10
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 1
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The washer shows error code OE, which means the water outlet is blocked. The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 2
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 3
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 4
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 5
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 6
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 7
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 8
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The washer shows error code OE, which means the water outlet is blocked. The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 9
+  },
+  {
+   "scenario": "gate_holds_on_next",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. Would you like me to walk you through cleaning the drain pump filter, which takes about ten minutes? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Hold on, safety first. Tell me when the washer is off and unplugged.",
+   "run": 10
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The washer shows error code OE, which means the water outlet is blocked. The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 1
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 2
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 3
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 4
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 5
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 6
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 7
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 8
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 9
+  },
+  {
+   "scenario": "gate_holds_on_skip_ahead",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 1,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. We can't skip past this one. Tell me when the washer is off and unplugged.",
+   "run": 10
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The washer shows error code OE, which means the water outlet error. The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 1
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 2
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 3
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 4
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 5
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. Would you like me to walk you through cleaning the drain pump filter? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 6
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 7
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. Would you like me to walk you through cleaning the drain pump filter? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 8
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "Most likely the drain hose is kinked or clogged. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 9
+  },
+  {
+   "scenario": "gate_opens_when_confirmed",
+   "passed": true,
+   "repair_started": true,
+   "furthest_step": 2,
+   "warning_spoken": true,
+   "steps_checked": 1,
+   "steps_word_for_word": 1,
+   "narration_caught_and_muted": 0,
+   "narration_heard": [],
+   "errors": [],
+   "fidelity": [
+    {
+     "expected": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "said": "Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged.",
+     "coverage": 1.0
+    }
+   ],
+   "assistant_said": "The most likely cause is a kinked or clogged drain hose. I can walk you through cleaning the drain pump filter, which takes about ten minutes. Would you like me to start that? Opening the drain filter will result in water overflowing if there is water in the drum. Turn off the washer, and unplug the power cord. Tell me when the washer is off and unplugged. Step 2. Open the drain pump filter cover.",
+   "run": 10
+  }
+ ]
+}
