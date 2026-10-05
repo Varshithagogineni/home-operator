@@ -248,7 +248,7 @@ body:not(.notrace) .words { padding-bottom: 210px; }
 .entry .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .entry .top b { color: var(--cyan); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
 .entry .top span { color: var(--muted); font-size: 12px; }
-.entry dl { display: grid; grid-template-columns: 64px 1fr; gap: 6px 10px; margin: 10px 0 0; font-size: 12px; }
+.entry dl { display: grid; grid-template-columns: 104px 1fr; gap: 6px 10px; margin: 10px 0 0; font-size: 12px; }
 .entry dt { color: var(--faint); }
 .entry dd { margin: 0; color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
 .entry dd.changed { color: #ffd36b; }
@@ -764,16 +764,20 @@ function onToolDone(e) {
 
 function hoodEntry(e) {
   const keys = [...new Set([...Object.keys(e.asked || {}), ...Object.keys(e.args || {})])];
+  // A step the page ran itself (the photo flow) was not asked for by the voice
+  // model, so there is nothing to compare: show what was sent, plainly.
+  const fromModel = !e.via;
   const rows = keys.map(k => {
     const a = JSON.stringify((e.asked || {})[k]), b = JSON.stringify((e.args || {})[k]);
-    return `<dt>${esc(k)}</dt><dd class="${a !== b ? "changed" : ""}">${esc(b ?? "—")}${a !== b ? `  (model asked ${esc(a ?? "nothing")})` : ""}</dd>`;
+    const changed = fromModel && a !== b;
+    return `<dt>${esc(k)}</dt><dd class="${changed ? "changed" : ""}">${esc(b ?? "—")}${changed ? `  (model asked ${esc(a ?? "nothing")})` : ""}</dd>`;
   }).join("");
   const div = document.createElement("div");
   div.className = "entry";
   div.innerHTML = `<div class="top"><b>${esc(e.name)}</b><span>${new Date().toLocaleTimeString()} &middot; ${e.blocked ? "held back by relay" : `${e.ms} ms &middot; ${e.calls} call${e.calls === 1 ? "" : "s"}`}</span></div>
     <div class="via" style="margin-top:6px">${tagsFor(e)}</div>
     <dl>${rows}${e.speak ? `<dt>speak</dt><dd>${esc(e.speak)}</dd>` : ""}${e.reason ? `<dt>guard</dt><dd>${esc(e.reason)}</dd>` : ""}</dl>
-    <details><summary>Tool result from AgentCore</summary><pre>${esc(JSON.stringify(e.data, null, 2))}</pre></details>`;
+    <details><summary>${e.via ? `Result from ${esc(e.via)}` : "Tool result from AgentCore"}</summary><pre>${esc(JSON.stringify(e.data, null, 2))}</pre></details>`;
   $("calls").prepend(div);
   while ($("calls").children.length > 40) $("calls").lastChild.remove();
 }
@@ -1033,7 +1037,7 @@ async function addFromPhoto(file) {
     return;
   }
   const L = d.label, a = d.added || {}, r = d.recall || {};
-  onToolDone({ id: id + "-add", name: "add_appliance", asked: {}, args: { kind: L.kind, brand: L.brand, model_number: L.model_number }, data: a, ms: t.add_appliance_ms, calls: 1, blocked: false, speak: null });
+  onToolDone({ id: id + "-add", name: "add_appliance", via: "AgentCore Runtime, called by the photo flow", asked: {}, args: { kind: L.kind, brand: L.brand, model_number: L.model_number }, data: a, ms: t.add_appliance_ms, calls: 1, blocked: false, speak: null });
   onToolDone({ id: id + "-recall", name: "recall_check", via: "US CPSC recall database, live", asked: {}, args: { model_number: L.model_number }, data: r, ms: t.recall_check_ms, calls: 1, blocked: false, speak: null });
   const recalled = (r.matches || []).length > 0;
   const recallRow = !r.checked ? `<span class="pill grey">check didn't run</span>`
