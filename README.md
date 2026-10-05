@@ -8,6 +8,8 @@ Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonapp
 
 ## Try it
 
+**[Watch the demo video](https://youtu.be/YnIsw8vN3vo)** (2:46), recorded against the live app.
+
 **[Open Home Operator](https://d6zzi2o2me078.cloudfront.net/?code=9bad96-b7c7a5)** in Chrome, on a laptop or a phone. Tap the ring, allow the microphone, and talk. You can interrupt it at any time.
 
 1. "My washer won't drain." It diagnoses from LG's manual and offers the fix.

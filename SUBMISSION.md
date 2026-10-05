@@ -147,7 +147,7 @@ and the service history is seeded.
   allow the microphone, then talk. Tap ? for things to say.)
 - **Repo:** https://github.com/Varshithagogineni/home-operator
 - **Open source project:** https://github.com/Varshithagogineni/cpsc-recall-check
-- **Video:** *(add before submitting)*
+- **Video:** https://youtu.be/YnIsw8vN3vo
 
 ---
 
