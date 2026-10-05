@@ -29,7 +29,7 @@ COOKIE_DAYS = 30
 
 # The endpoints that spend money or change the home. The page itself, and
 # /ping for health checks, stay open so the code can be asked for at all.
-PROTECTED = ("/voice", "/chat", "/speak", "/mcp")
+PROTECTED = ("/voice", "/chat", "/speak", "/mcp", "/appliance-photo")
 
 MAX_FAILURES = 8          # wrong codes from one address...
 FAILURE_WINDOW = 15 * 60  # ...within this many seconds, then refused until it passes

@@ -298,6 +298,7 @@ async def voice_socket(ws: WebSocket) -> None:
         deadline = time.monotonic() + gate.SESSION_SECONDS
         await session.start()
         await emit({"type": "ready", "tools": len(session._tools), "voice": session.voice})
+        _warm_photo_tools()
         while True:
             # Waits at most until the deadline, so a tab that stops sending
             # audio cannot hold a Sonic stream open past the time limit.
@@ -311,6 +312,15 @@ async def voice_socket(ws: WebSocket) -> None:
                 break
             if message.get("bytes"):
                 await session.send_audio(message["bytes"])
+            elif message.get("text"):
+                # The page tells the voice about something that happened on
+                # screen - an appliance added from a photo - so it can say so.
+                try:
+                    note = json.loads(message["text"])
+                except ValueError:
+                    note = {}
+                if note.get("type") == "note" and isinstance(note.get("text"), str):
+                    await session.send_note(note["text"][:600])
     except WebSocketDisconnect:
         pass
     except Exception as exc:  # noqa: BLE001 - the page needs a reason, not a stack trace
@@ -370,6 +380,90 @@ async def unlock(request: Request) -> Response:
     return response
 
 
+PHOTO_LIMITS = gate.Limits(concurrent=2, per_day=100)
+_photo_tools = None
+
+
+def _call_tool(name: str, args: dict):
+    """An MCP call over one held-open session, opened on first use.
+
+    A fresh session per photo cost about five seconds of AgentCore waking up;
+    holding one answers in about 400 ms. Its token lasts an hour, so on any
+    failure the session is rebuilt once and the call retried.
+    """
+    from home_operator import chat as conversations
+    global _photo_tools
+    for attempt in (1, 2):
+        try:
+            if _photo_tools is None:
+                _photo_tools = conversations.FastLane()
+            return conversations._first_json(_photo_tools.call(name, args))
+        except Exception:
+            if _photo_tools is not None:
+                _photo_tools.close()
+            _photo_tools = None
+            if attempt == 2:
+                raise
+
+
+def _warm_photo_tools() -> None:
+    """Open the photo flow's tool session in the background, before it is needed."""
+    import threading
+    if _photo_tools is None:
+        threading.Thread(target=_open_photo_tools, daemon=True).start()
+
+
+def _open_photo_tools() -> None:
+    from home_operator import chat as conversations
+    global _photo_tools
+    try:
+        if _photo_tools is None:
+            _photo_tools = conversations.FastLane()
+    except Exception:  # noqa: BLE001 - the photo call opens it again if this failed
+        pass
+
+
+async def appliance_photo(request: Request) -> Response:
+    """Add an appliance from a photo of its label, the way Alexa+ would hand it over.
+
+    Nova reads the label (standing in for Alexa+'s own photo reading), the
+    add_appliance tool on AgentCore registers it, and the government recall
+    database is checked for that model, live.
+    """
+    from home_operator import photo
+
+    body = await request.body()
+    if len(body) > photo.MAX_BYTES * 1.4:
+        return JSONResponse({"error": "That photo is too large. Try one under 8 MB."}, status_code=413)
+    refused = PHOTO_LIMITS.acquire()
+    if refused:
+        return JSONResponse({"error": "Too many photos right now. Try again in a few minutes."}, status_code=429)
+    timings = {}
+    try:
+        image, media = photo.decode_upload(body, request.headers.get("content-type", ""))
+        t = time.perf_counter()
+        label = await anyio.to_thread.run_sync(photo.read_label, image, media)
+        timings["read_label_ms"] = round((time.perf_counter() - t) * 1000)
+        if not label["found"]:
+            return JSONResponse({"label": label, "timings": timings})
+        t = time.perf_counter()
+        added = await anyio.to_thread.run_sync(_call_tool, "add_appliance", {
+            "kind": label["kind"], "brand": label["brand"], "model_number": label["model_number"]})
+        timings["add_appliance_ms"] = round((time.perf_counter() - t) * 1000)
+        t = time.perf_counter()
+        appliance = {"brand": label["brand"], "model_number": label["model_number"], "category": store._category(label["kind"])}
+        recall = await anyio.to_thread.run_sync(photo.recall_check, appliance)
+        timings["recall_check_ms"] = round((time.perf_counter() - t) * 1000)
+        if recall.get("matches"):
+            recall["say_first"] = store.recall_sentence((added or {}).get("nickname", label["kind"]), recall["matches"][0])
+        return JSONResponse({"label": label, "added": added, "recall": recall, "timings": timings})
+    except Exception as exc:  # noqa: BLE001 - the page needs a reason
+        print(f"appliance photo failed: {type(exc).__name__}: {exc}", flush=True)
+        return JSONResponse({"error": "The photo could not be processed. Please try again."}, status_code=502)
+    finally:
+        PHOTO_LIMITS.release()
+
+
 async def ping(request: Request) -> Response:
     return JSONResponse({"ok": True})
 
@@ -424,6 +518,7 @@ def build_app():
     app.router.routes.append(Route("/unlock", unlock_status, methods=["GET"]))
     app.router.routes.append(Route("/unlock", unlock, methods=["POST"]))
     app.router.routes.append(Route("/ping", ping, methods=["GET"]))
+    app.router.routes.append(Route("/appliance-photo", appliance_photo, methods=["POST"]))
     app.router.routes.append(Route("/", home, methods=["GET"]))
     app.router.routes.append(
         Mount("/sim", app=StaticFiles(directory=WEB_DIR, html=True), name="sim")

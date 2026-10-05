@@ -25,7 +25,7 @@ def test_the_cookie_is_signed_with_a_server_secret_not_the_code():
 
 
 def test_only_the_endpoints_that_reach_aws_are_protected():
-    for path in ("/voice", "/chat", "/chat/warm", "/speak", "/mcp"):
+    for path in ("/voice", "/chat", "/chat/warm", "/speak", "/mcp", "/appliance-photo"):
         assert gate.is_protected(path), path
     for path in ("/", "/sim/", "/sim/index.html", "/ping", "/unlock", "/voiceover"):
         assert not gate.is_protected(path), path
@@ -82,6 +82,7 @@ def test_the_page_opens_but_the_tools_wait_for_the_code(monkeypatch):
     assert client.get("/sim/").status_code == 200
     assert client.get("/unlock").json() == {"locked": True}
     assert client.post("/speak", json={"text": "hi"}).status_code == 401
+    assert client.post("/appliance-photo", content=b"data:image/png;base64,AA==").status_code == 401
     assert client.post("/unlock", json={"code": "wrong"}).status_code == 403
     assert client.post("/unlock", json={"code": "amber river 42"}).json() == {"ok": True}
     assert client.get("/unlock").json() == {"locked": False}

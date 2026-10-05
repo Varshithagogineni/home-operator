@@ -312,6 +312,11 @@ body:not(.notrace) .words { padding-bottom: 210px; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg>
         <span class="sr">What can I ask?</span>
       </button>
+      <button class="ctl" id="photobtn" title="Add an appliance from a photo of its label (P)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span class="sr">Add an appliance from a photo</span>
+      </button>
+      <input type="file" id="photoinput" accept="image/*" hidden>
       <button class="ctl" id="mute" aria-pressed="false" title="Mute microphone (M)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/><path class="slash" d="M4 4l16 16" style="display:none"/></svg>
         <span class="sr">Mute microphone</span>
@@ -389,7 +394,7 @@ body:not(.notrace) .words { padding-bottom: 210px; }
       <ul><li>The oven light doesn't work<em>&rarr; change the bulb, 8 steps</em></li><li>The oven is showing F-9</li><li>What bulb does the oven take?</li></ul></div>
 
     <div class="sec">Around the house</div>
-    <div class="appl"><ul><li>Is anything due around the house?</li><li>I just got a Bosch dryer, model WTG86403UC<em>&rarr; adds it</em></li><li>It still won't drain, I need someone<em>&rarr; brief for a pro</em></li><li>Stop<em>&rarr; puts a repair down</em></li></ul></div>
+    <div class="appl"><ul><li>Is anything due around the house?</li><li>I just got a Bosch dryer, model WTG86403UC<em>&rarr; adds it</em></li><li>Or tap the camera and photograph an appliance's label<em>&rarr; read, added, recall-checked</em></li><li>It still won't drain, I need someone<em>&rarr; brief for a pro</em></li><li>Stop<em>&rarr; puts a repair down</em></li></ul></div>
   </div>
 </aside>
 
@@ -753,7 +758,7 @@ function onToolDone(e) {
   el.classList.remove("running");
   el.innerHTML = `<div class="ico">${BOLT}</div><div class="fn">${esc(e.name)}<em>(${esc(shortArgs(e.args))})</em></div>
     <div class="ms">${e.blocked ? "held back" : `${e.ms} ms`}</div>
-    <div class="via">${e.blocked ? "Relay guard" : "AgentCore Runtime"} ${tagsFor(e)}</div>`;
+    <div class="via">${e.via || (e.blocked ? "Relay guard" : "AgentCore Runtime")} ${tagsFor(e)}</div>`;
   hoodEntry(e);
 }
 
@@ -986,8 +991,76 @@ const RENDER = {
   add_appliance: renderAdd, prepare_pro_brief: renderBrief
 };
 
+// ---------------------------------------------------------------- add from a photo
+// Alexa+ already reads photos people upload and sees through an Echo Show's
+// camera. Here a Nova model stands in for that step, then hands what it read
+// to Home Operator's own add_appliance tool - the hand-off a real add-on gets.
+async function shrink(file) {
+  // Phones take 12-megapixel photos; a label reads fine at 1600 px.
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bitmap.width * scale); c.height = Math.round(bitmap.height * scale);
+  c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.88);
+}
+
+async function addFromPhoto(file) {
+  show("talk");
+  $("you").textContent = "Here's a photo of my appliance's label";
+  $("alexa").innerHTML = `<span class="pending">Reading the label&hellip;</span>`;
+  const id = "photo-" + Date.now();
+  onToolStart({ id, name: "read_label", args: { photo: file.name || "camera" } });
+  let url;
+  try { url = await shrink(file); } catch (_) { url = null; }
+  if (!url) { traceChip(id).remove(); $("alexa").textContent = "That file isn't a photo I can open. Try a JPEG or PNG."; return; }
+  card(`<div class="eyebrow">Photo</div><h2>Reading the label&hellip;</h2><img src="${url}" alt="" style="width:100%;max-height:280px;object-fit:contain;border-radius:14px;margin-top:6px">`);
+  let d;
+  try {
+    const res = await fetch("/appliance-photo", { method: "POST", headers: { "Content-Type": "text/plain" }, body: url });
+    d = await res.json();
+    if (!res.ok) throw new Error(d.error || "upload failed");
+  } catch (e) {
+    traceChip(id).remove();
+    $("alexa").textContent = e.message || "That photo couldn't be processed.";
+    card(""); return;
+  }
+  const t = d.timings || {};
+  onToolDone({ id, name: "read_label", via: "Amazon Nova 2 Lite, standing in for Alexa+", asked: {}, args: { photo: "label" }, data: d.label, ms: t.read_label_ms, calls: 1, blocked: false, speak: null });
+  if (!d.label.found) {
+    $("alexa").textContent = `I couldn't read that label clearly: ${d.label.unsure}. Try a closer, sharper photo of the sticker with the model number.`;
+    card(`<div class="eyebrow">Photo</div><h2>Couldn't read the label</h2><div class="row"><span>${esc(d.label.unsure)}</span><span></span></div>`);
+    return;
+  }
+  const L = d.label, a = d.added || {}, r = d.recall || {};
+  onToolDone({ id: id + "-add", name: "add_appliance", asked: {}, args: { kind: L.kind, brand: L.brand, model_number: L.model_number }, data: a, ms: t.add_appliance_ms, calls: 1, blocked: false, speak: null });
+  onToolDone({ id: id + "-recall", name: "recall_check", via: "US CPSC recall database, live", asked: {}, args: { model_number: L.model_number }, data: r, ms: t.recall_check_ms, calls: 1, blocked: false, speak: null });
+  const recalled = (r.matches || []).length > 0;
+  const recallRow = !r.checked ? `<span class="pill grey">check didn't run</span>`
+    : recalled ? `<span class="pill red">named in a recall</span>` : `<span class="pill green">none found</span>`;
+  card(`<div class="eyebrow">${a.added === false ? "Already registered" : "Added from a photo"}</div><h2>${esc(L.brand)} ${esc(a.nickname || L.kind)}</h2>
+    ${recalled ? `<div class="band warn"><b>Recall</b><span>${esc(r.matches[0].title)}. The model is named in the notice, so it may be affected: check the serial number.</span></div>` : ""}
+    <div class="row"><span>Model, read from the label</span><span>${esc(L.model_number)}</span></div>
+    ${L.serial_number ? `<div class="row"><span>Serial</span><span>${esc(L.serial_number)}</span></div>` : ""}
+    ${(a.maintenance_schedule || []).map(m => `<div class="row"><span>Maintenance</span><span>${esc(m)}</span></div>`).join("")}
+    <div class="row"><span>Safety recall check (CPSC, live)</span><span>${recallRow}</span></div>
+    ${L.unsure ? `<div class="row"><span>Not clearly readable</span><span>${esc(L.unsure)}</span></div>` : ""}`);
+  const sentence = a.added === false
+    ? `That ${L.brand} ${L.kind} is already registered.`
+    : `Added your ${L.brand} ${L.kind}, model ${L.model_number}.`;
+  $("alexa").textContent = sentence + (recalled ? " Heads up: its model is named in a safety recall." : r.checked ? " No safety recalls found for it." : "") + " ";
+  // Tell the voice what happened on screen, so it can say it and help with it next.
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    const recallNote = recalled ? ` Say this first, word for word: ${r.say_first}` : r.checked ? " The government recall database lists no recall for this model." : " The recall check could not run.";
+    const done = a.added === false ? "It was already in my home." : "The app has added it to my home with a standard maintenance schedule.";
+    ws.send(JSON.stringify({ type: "note", text: `I just photographed an appliance's rating label. The app read it as a ${L.brand} ${L.kind}, model ${L.model_number}. ${done}${recallNote} You don't need to call any tool for this. Just tell me in one short sentence, in your own words, that my ${L.brand} ${L.kind} is ${a.added === false ? "already set up" : "added"}.` }));
+  }
+}
+
 // ---------------------------------------------------------------- controls
 $("go").onclick = start;
+$("photobtn").onclick = () => $("photoinput").click();
+$("photoinput").onchange = e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) addFromPhoto(f); };
 $("code").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
 $("orb").onclick = () => (live ? stop() : start());
 $("mute").onclick = () => {
@@ -1019,6 +1092,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "d" || e.key === "D") $("hoodbtn").click();
   if (e.key === "t" || e.key === "T") $("tracebtn").click();
   if (e.key === "h" || e.key === "H" || e.key === "?") $("guidebtn").click();
+  if (e.key === "p" || e.key === "P") $("photobtn").click();
   if (e.key === "Escape") { $("hood").classList.remove("open"); $("guide").classList.remove("open"); }
 });
 requestAnimationFrame(animateLevel);

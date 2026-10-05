@@ -617,6 +617,25 @@ class SonicSession:
             "content": base64.b64encode(pcm16).decode(),
         }})
 
+    async def send_note(self, text: str) -> None:
+        """Something that happened on screen, told to Sonic as the person's own turn.
+
+        Used when an appliance is added from a photo: Sonic did not see the
+        upload, so it is told what was read and what the tools did, and says so.
+        """
+        if self._closed:
+            return
+        if self._stream is None:
+            await self._renew()
+        name = str(uuid.uuid4())
+        await self._send({"contentStart": {
+            "promptName": self._prompt, "contentName": name, "type": "TEXT",
+            "interactive": True, "role": "USER",
+            "textInputConfiguration": {"mediaType": "text/plain"},
+        }})
+        await self._send({"textInput": {"promptName": self._prompt, "contentName": name, "content": text}})
+        await self._send({"contentEnd": {"promptName": self._prompt, "contentName": name}})
+
     # -- receiving
 
     async def _read(self) -> None:
