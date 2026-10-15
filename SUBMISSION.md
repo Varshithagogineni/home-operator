@@ -86,7 +86,9 @@ Amazon Bedrock AgentCore Runtime. On `initialize` it answers
 handshake against the same entry point AgentCore runs, along with the rules
 2025-11-25 added that apply to a tools server: an invalid `Origin` header gets
 403, bad tool input comes back as a tool error the model can correct
-(SEP-1303), and the server describes itself in the handshake. The README has a
+(SEP-1303), and the server describes itself in the handshake. Checked live on
+5 and 15 October: asked for 2025-11-25, the deployed server answers
+2025-11-25, and asked for a newer revision it still answers 2025-11-25. The README has a
 one-line `curl` to see it yourself.
 
 **The model decides which tool to call; the tools decide what is true.** Repair
