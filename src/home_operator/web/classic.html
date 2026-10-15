@@ -253,7 +253,7 @@ async function callTool(name, args) {
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json, text/event-stream",
-      "MCP-Protocol-Version": "2025-03-26"
+      "MCP-Protocol-Version": "2025-11-25"
     },
     body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method: "tools/call",
                            params: { name, arguments: args } })

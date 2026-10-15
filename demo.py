@@ -10,7 +10,7 @@ def call(tool, **args):
     req = urllib.request.Request(URL, data=body, headers={
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
-        "MCP-Protocol-Version": "2025-03-26",
+        "MCP-Protocol-Version": "2025-11-25",
     })
     with urllib.request.urlopen(req, timeout=10) as r:
         payload = json.loads(r.read())

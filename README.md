@@ -2,7 +2,7 @@
 
 **Alexa+ can read your manual. Home Operator walks you through the fix.**
 
-Home Operator is an Alexa+ add-on, built as an [MCP](https://modelcontextprotocol.io) server, that gives hands-free help with the appliances in your home: which parts they take, what maintenance is due, and step-by-step repairs that keep your place while you work.
+Home Operator is an Alexa+ add-on, built as a self-hosted [MCP](https://modelcontextprotocol.io) server implementing [MCP spec 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25), that gives hands-free help with the appliances in your home: which parts they take, what maintenance is due, and step-by-step repairs that keep your place while you work.
 
 Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/) (Alexa+ track).
 
@@ -93,7 +93,7 @@ Two lanes, and only one of them runs while someone is talking.
                          |  CUSTOM_JWT authorizer validates the token
                          v
   +-----------------------------------------------+
-  | AGENTCORE RUNTIME    protocol MCP             |   decides WHAT IS TRUE
+  | AGENTCORE RUNTIME    MCP spec 2025-11-25      |   decides WHAT IS TRUE
   |   0.0.0.0:8000/mcp   stateless streamable     |   the eight tools, ~2 ms each
   |   the eight tools    HTTP, JSON responses     |   no model in the path
   +-----------------------------------------------+
@@ -285,7 +285,7 @@ This serves two things:
 
 | URL | What it is |
 |---|---|
-| `http://127.0.0.1:8000/mcp` | The MCP endpoint, Streamable HTTP, stateless, JSON responses |
+| `http://127.0.0.1:8000/mcp` | The MCP endpoint, spec 2025-11-25, Streamable HTTP, stateless, JSON responses |
 | `http://127.0.0.1:8000/sim/` | The voice app: a simulated Alexa+ experience, speech to speech |
 | `http://127.0.0.1:8000/sim/classic.html` | The original text simulator |
 
@@ -357,10 +357,12 @@ Or from the command line:
 npx @modelcontextprotocol/inspector --cli --server-url http://127.0.0.1:8000/mcp --transport http --method tools/call --tool-name get_appliance --tool-arg appliance=furnace
 ```
 
-Alexa+ connects using an older protocol version (`2025-03-26`). To check that handshake directly:
+### MCP spec version
+
+The server implements **MCP spec 2025-11-25**, using the official Python SDK (`mcp` 2.1). On `initialize` it answers `"protocolVersion": "2025-11-25"`, including to a client that asks for a newer revision, as the spec's lifecycle rules require. The deployed AgentCore runtime negotiates 2025-11-25 with the agent. `tests/test_mcp_version.py` checks this against the same entry point AgentCore runs, together with the 2025-11-25 rules that apply to a tools server: 403 for an invalid `Origin` header, bad tool input returned as a tool error the model can correct (SEP-1303), and `serverInfo.description`. Older clients are still served through the spec's version negotiation, which matters because Amazon's [Alexa+ MCP client lifecycle](https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html) documents the Alexa+ client offering `2025-03-26`. To see the handshake yourself:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+curl -s -X POST http://127.0.0.1:8000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
 ```
 
 ## How a manual becomes data

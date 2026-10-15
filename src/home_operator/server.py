@@ -38,6 +38,11 @@ mcp = MCPServer(
     name="home-operator",
     title="Home Operator",
     version="0.1.0",
+    description=(
+        "An Alexa+ add-on for the appliances in one home: faults, step-by-step "
+        "repairs with safety gates, maintenance and recalls, from the manufacturers' manuals."
+    ),
+    website_url="https://github.com/Varshithagogineni/home-operator",
     instructions=(
         "Hands-free help with the appliances in this home: what each one is, "
         "which replacement parts it takes, and what maintenance is due."

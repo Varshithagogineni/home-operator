@@ -25,9 +25,16 @@ both found by reading CloudWatch logs rather than documentation:
 
 2. A /ping route. AgentCore health-checks the container and was getting 404s.
 
+Switching off (1) also switches off the SDK's Origin check, and MCP spec
+2025-11-25 says a server MUST answer an invalid Origin with 403. AgentCore's
+callers are agents, which send no Origin, so OriginCheck puts that one rule back:
+no Origin passes, any Origin not in MCP_ALLOWED_ORIGINS gets 403.
+
 Run locally exactly as AgentCore will run it:
     uv run home-operator-mcp
 """
+
+import os
 
 import uvicorn
 from mcp.server.transport_security import TransportSecuritySettings
@@ -46,6 +53,26 @@ async def ping(request: Request) -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
 
+class OriginCheck:
+    """403 for a request whose Origin header is not allowed, as the spec requires."""
+
+    def __init__(self, app, allowed: set[str]) -> None:
+        self.app = app
+        self.allowed = allowed
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            origin = next((v.decode() for k, v in scope.get("headers", []) if k == b"origin"), None)
+            if origin and origin not in self.allowed:
+                await JSONResponse({"error": "invalid Origin header"}, status_code=403)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+def allowed_origins() -> set[str]:
+    return {o.strip() for o in os.environ.get("MCP_ALLOWED_ORIGINS", "").split(",") if o.strip()}
+
+
 def build_app():
     app = mcp.streamable_http_app(
         stateless_http=True,
@@ -56,7 +83,7 @@ def build_app():
         ),
     )
     app.router.routes.append(Route("/ping", ping, methods=["GET"]))
-    return app
+    return OriginCheck(app, allowed_origins())
 
 
 def main() -> None:

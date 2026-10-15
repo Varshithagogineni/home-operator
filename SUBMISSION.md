@@ -7,7 +7,7 @@ this file: every claim is checkable in the repo.
 
 ## Track and mini challenges
 
-- **Track:** Alexa+ (self-hosted MCP server)
+- **Track:** Alexa+ (self-hosted MCP server, implementing MCP spec 2025-11-25)
 - **Mini challenges:** AWS Builder, Open Source
 
 ---
@@ -74,9 +74,20 @@ Two lanes, and only one runs while you are talking.
   AMAZON COGNITO       client_credentials, no users and no passwords
         |
         v
-  AGENTCORE RUNTIME    protocol MCP, CUSTOM_JWT authorizer
+  AGENTCORE RUNTIME    MCP spec 2025-11-25, CUSTOM_JWT authorizer
                        the eight tools decide WHAT IS TRUE, ~2 ms each
 ```
+
+**The MCP server implements spec 2025-11-25.** It is a self-hosted server
+built on the official Python MCP SDK (`mcp` 2.1), serving Streamable HTTP on
+Amazon Bedrock AgentCore Runtime. On `initialize` it answers
+`"protocolVersion": "2025-11-25"`, and the live AgentCore deployment negotiates
+2025-11-25 with the agent. `tests/test_mcp_version.py` in the repo checks the
+handshake against the same entry point AgentCore runs, along with the rules
+2025-11-25 added that apply to a tools server: an invalid `Origin` header gets
+403, bad tool input comes back as a tool error the model can correct
+(SEP-1303), and the server describes itself in the handshake. The README has a
+one-line `curl` to see it yourself.
 
 **The model decides which tool to call; the tools decide what is true.** Repair
 steps, intervals and part numbers are served verbatim from JSON that a person
