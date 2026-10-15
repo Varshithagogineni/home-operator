@@ -137,6 +137,6 @@ service can do for you.
 ## What's next
 
 Account linking with OAuth 2.1 so each household's own data is reached with
-their own identity, a database so a logged service survives a restart, and —
-the day the Alexa+ toolkit opens up — running this where it was always meant to
-run.
+their own identity, a separate DynamoDB record per household instead of one shared
+demo home, and — the day the Alexa+ toolkit opens up — running this where it was
+always meant to run.
