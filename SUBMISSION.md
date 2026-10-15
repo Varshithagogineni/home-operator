@@ -16,8 +16,8 @@ this file: every claim is checkable in the repo.
 
 *(one line, under 200 characters)*
 
-> Alexa+ can read your appliance manual. Home Operator walks you through the fix,
-> step by step, hands free, from the manufacturer's own pages.
+> An Alexa+ add-on, a self-hosted MCP server on spec 2025-11-25, that talks you
+> through appliance repairs step by step, hands free, from the manufacturer's own pages.
 
 ---
 
