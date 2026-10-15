@@ -1,3 +1,10 @@
+> **Alexa+ track:** Home Operator is a **self-hosted MCP server implementing MCP
+> spec 2025-11-25**, built on the official Python MCP SDK (`mcp` 2.1) and deployed
+> on **Amazon Bedrock AgentCore Runtime**. On `initialize` it answers
+> `"protocolVersion": "2025-11-25"`, which `tests/test_mcp_version.py` checks and
+> the live deployment confirms. The browser front end simulates the Alexa+
+> experience, as the rules allow, with Amazon Nova 2 Sonic as the voice.
+
 ## Inspiration
 
 The dishwasher stops draining on a weeknight. The manual is in a drawer, or it
@@ -46,7 +53,7 @@ a page number and quoting what the manual actually says. Raw and reviewed files
 sit side by side in the repo, so the difference is auditable.
 
 The fast lane is what runs while someone is standing at a machine. An
-**MCP server** with eight tools is deployed on **Amazon Bedrock AgentCore
+**MCP server** implementing spec 2025-11-25, with eight tools, is deployed on **Amazon Bedrock AgentCore
 Runtime**, behind an **Amazon Cognito** authorizer using machine-to-machine
 credentials — no users, no passwords, the agent proves it is the agent.
 
